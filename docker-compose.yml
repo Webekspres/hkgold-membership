@@ -1,0 +1,101 @@
+version: '3.8'
+
+networks:
+  hkgold-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+
+services:
+  # 1. DATABASE SYSTEM (Shared MySQL Engine)
+  db:
+    image: mysql:8.0
+    container_name: hkgold-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: hkgold_vip_db
+      MYSQL_ROOT_PASSWORD: root_password_super_secure
+    ports:
+      - "3306:3306" # Dibuka ke localhost agar Flyenv/DBeaver bisa remote
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - hkgold-network
+
+  # 2. CACHE & QUEUE SYSTEM (Redis for BullMQ)
+  redis:
+    image: redis:7-alpine
+    container_name: hkgold-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - hkgold-network
+
+  # 3. CORE API ENGINE (ElysiaJS - Bun Runtime)
+  # api:
+  #   image: oven/bun:alpine
+  #   container_name: hkgold-api-elysia
+  #   restart: always
+  #   working_dir: /app
+  #   volumes:
+  #     - ./apps/api-elysia:/app
+  #     - ./packages:/packages
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - DATABASE_URL=mysql://root:root_password_super_secure@db:3306/hkgold_vip_db
+  #     - REDIS_URL=redis://redis:6379
+  #   command: bun run --watch src/index.ts
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   networks:
+  #     - hkgold-network
+
+  # 4. BACKGROUND WORKER (ElysiaJS/Bun Running BullMQ)
+  # worker:
+  #   image: oven/bun:alpine
+  #   container_name: hkgold-worker-elysia
+  #   restart: always
+  #   working_dir: /app
+  #   volumes:
+  #     - ./apps/worker-elysia:/app
+  #     - ./packages:/packages
+  #   environment:
+  #     - DATABASE_URL=mysql://root:root_password_super_secure@db:3306/hkgold_vip_db
+  #     - REDIS_URL=redis://redis:6379
+  #   command: bun run --watch src/worker.ts
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   networks:
+  #     - hkgold-network
+
+  # 5. BACKOFFICE PANEL (Laravel 13 + Filament v5)
+  # backoffice:
+  #   image: bitnami/laravel:latest
+  #   container_name: hkgold-backoffice-filament
+  #   restart: always
+  #   volumes:
+  #     - ./apps/backoffice-filament:/app
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - DB_CONNECTION=mysql
+  #     - DB_HOST=db
+  #     - DB_PORT=3306
+  #     - DB_DATABASE=hkgold_vip_db
+  #     - DB_USERNAME=root
+  #     - DB_PASSWORD=root
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - hkgold-network
+
+
+
+
