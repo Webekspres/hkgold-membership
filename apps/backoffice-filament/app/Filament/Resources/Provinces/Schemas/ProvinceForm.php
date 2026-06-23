@@ -13,7 +13,7 @@ class ProvinceForm
     {
         return $schema
             ->components([
-                TextInput::make('name')
+                TextInput::make('nama')
                     ->label('Nama Provinsi')
                     ->required()
                     ->maxLength(150),

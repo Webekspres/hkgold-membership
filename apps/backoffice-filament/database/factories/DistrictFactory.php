@@ -20,22 +20,11 @@ class DistrictFactory extends Factory
      */
     public function definition(): array
     {
-        $districts = [
-            'Semarang Tengah',
-            'Laweyan',
-            'Pontianak Kota',
-            'Gondokusuman',
-            'Genteng',
-            'Coblong',
-            'Kebayoran Baru',
-            'Demak',
-            'Depok',
-            'Klojen',
-        ];
-
         return [
-            'regency_id' => Regency::factory(),
-            'name' => fake()->randomElement($districts),
+            'city_id' => Regency::factory(),
+            'nama' => fake()->unique()->streetName(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

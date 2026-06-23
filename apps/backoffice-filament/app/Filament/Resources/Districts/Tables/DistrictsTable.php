@@ -19,17 +19,17 @@ class DistrictsTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Kecamatan')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('regency.name')
+                TextColumn::make('regency.nama')
                     ->label('Kota/Kabupaten')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('regency.province.name')
+                TextColumn::make('regency.province.nama')
                     ->label('Provinsi')
                     ->searchable()
                     ->sortable(),
@@ -39,11 +39,11 @@ class DistrictsTable
                     ->counts('villages')
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([
                 SelectFilter::make('province_id')
                     ->label('Provinsi')
-                    ->options(fn (): array => Province::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
@@ -53,9 +53,9 @@ class DistrictsTable
                         ),
                     )),
 
-                SelectFilter::make('regency_id')
+                SelectFilter::make('city_id')
                     ->label('Kota/Kabupaten')
-                    ->relationship('regency', 'name')
+                    ->relationship('regency', 'nama')
                     ->searchable()
                     ->preload(),
             ])

@@ -16,12 +16,12 @@ class VillageForm
             ->components([
                 Select::make('district_id')
                     ->label('Kecamatan')
-                    ->relationship('district', 'name')
+                    ->relationship('district', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),
 
-                TextInput::make('name')
+                TextInput::make('nama')
                     ->label('Nama Kelurahan')
                     ->required()
                     ->maxLength(150),

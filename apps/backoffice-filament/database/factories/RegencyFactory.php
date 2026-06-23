@@ -20,22 +20,11 @@ class RegencyFactory extends Factory
      */
     public function definition(): array
     {
-        $regencies = [
-            'Kota Semarang',
-            'Kota Solo',
-            'Kota Pontianak',
-            'Kota Yogyakarta',
-            'Kota Surabaya',
-            'Kota Bandung',
-            'Kota Jakarta Selatan',
-            'Kabupaten Demak',
-            'Kabupaten Sleman',
-            'Kota Malang',
-        ];
-
         return [
             'province_id' => Province::factory(),
-            'name' => fake()->randomElement($regencies),
+            'nama' => 'Kota '.fake()->unique()->city(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Tables;
+namespace App\Filament\Resources\Members\Tables;
 
 use App\Enums\TierStatus as EnumsTierStatus;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Table;
-use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
 
 class MembersTable
 {
@@ -18,75 +17,66 @@ class MembersTable
         return $table
             ->columns([
                 TextColumn::make('member_code')
-                    ->label('Kode member')
+                    ->label('Kode')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->copyMessage('Kode member disalin')
+                    ->copyMessageDuration(1500),
 
-                // PERBAIKAN: Menggabungkan Avatar dan Nama ke dalam 1 kolom menggunakan Stack Horizontal
                 TextColumn::make('user.name')
-                    ->label('Member')
-                    ->weight(FontWeight::SemiBold)
+                    ->label('Nama')
                     ->searchable()
-                    ->description(fn($record): ?string => $record->member_code ? null : null) // Opsional jika butuh sub-text
-                    // Gunakan metode prepended untuk menyelipkan Avatar bulat sebelum teks Nama
-                    ->prependView('filament.tables.columns.avatar-wrapper', [
-                        'image' => fn($record) => $record->user?->profilePhoto?->file_url
-                    ])
-                    // --- ATAU CARA FILAMENT STANDARD TANPA CUSTOM VIEW (REKOMENDASI): ---
+                    ->sortable()
                     ->html()
-                    ->formatStateUsing(function ($record, $state) {
-                        $avatarUrl = $record->user?->profilePhoto?->file_url
-                            ?? 'https://ui-avatars.com/api/?name=' . urlencode($state) . '&background=random';
-                        return "
-                            <div class='flex items-center gap-3'>
-                                <img src='{$avatarUrl}' class='w-10 h-10 rounded-full object-cover border border-gray-200' alt='Avatar'>
-                                <span class='font-semibold'>{$state}</span>
+                    ->formatStateUsing(function ($record, $state): string {
+                        $name = e($state ?? '');
+                        $avatarUrl = e(
+                            $record->user?->profilePhoto?->file_url
+                            ?? 'https://ui-avatars.com/api/?name='.urlencode($state ?? 'Member').'&background=random'
+                        );
+
+                        return <<<HTML
+                            <div class="flex items-center gap-3">
+                                <img src="{$avatarUrl}" class="h-10 w-10 shrink-0 rounded-full border border-gray-200 object-cover" alt="Avatar">
+                                <span class="font-semibold">{$name}</span>
                             </div>
-                        ";
+                            HTML;
                     }),
 
                 TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
 
                 TextColumn::make('user.phone')
-                    ->label('Telepon')
+                    ->label('No. HP')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->formatStateUsing(fn (?string $state): string => filled($state)
+                        ? '+'.ltrim($state, '+')
+                        : '—'),
 
                 TextColumn::make('total_points')
-                    ->label('Total poin')
+                    ->label('Poin')
                     ->numeric(decimalPlaces: 2)
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
 
                 TextColumn::make('tier')
                     ->label('Tier')
                     ->badge()
-                    ->formatStateUsing(fn(EnumsTierStatus $state): string => match ($state) {
+                    ->formatStateUsing(fn (EnumsTierStatus $state): string => match ($state) {
                         EnumsTierStatus::Silver => 'Silver',
                         EnumsTierStatus::Gold => 'Gold',
                         EnumsTierStatus::Platinum => 'Platinum',
                         EnumsTierStatus::Sapphire => 'Sapphire',
                     })
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false), // Jangan disembunyikan agar tabel terisi proporsional
-
-                TextColumn::make('dob')
-                    ->label('Tanggal lahir')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
 
                 TextColumn::make('created_at')
-                    ->label('Terdaftar')
+                    ->label('Created at')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -94,7 +84,6 @@ class MembersTable
             ])
             ->recordActions([
                 ViewAction::make(),
-            ])
-            ->columnManager();
+            ]);
     }
 }

@@ -30,7 +30,7 @@ class PostalCodeResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $recordTitleAttribute = 'code';
+    protected static ?string $recordTitleAttribute = 'kodepos';
 
     public static function form(Schema $schema): Schema
     {

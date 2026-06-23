@@ -10,17 +10,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('districts', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('regency_id')->constrained('regencies')->cascadeOnDelete();
-            $table->string('name', 150);
+        Schema::create('sub_districts', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
+            $table->string('nama', 150);
+            $table->decimal('latitude', 15, 11)->nullable();
+            $table->decimal('longitude', 15, 11)->nullable();
 
-            $table->index('regency_id');
+            $table->index('city_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('districts');
+        Schema::dropIfExists('sub_districts');
     }
 };

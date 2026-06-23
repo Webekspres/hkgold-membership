@@ -23,8 +23,10 @@ class VillageFactory extends Factory
         $prefix = fake()->randomElement(['Kelurahan', 'Desa']);
 
         return [
-            'district_id' => District::factory(),
-            'name' => $prefix.' '.fake()->lastName(),
+            'sub_district_id' => District::factory(),
+            'nama' => $prefix.' '.fake()->lastName(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

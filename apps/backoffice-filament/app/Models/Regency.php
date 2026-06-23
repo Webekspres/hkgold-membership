@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\RegencyFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,16 +13,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Regency extends Model
 {
     /** @use HasFactory<RegencyFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     public $timestamps = false;
 
-    protected $table = 'regencies';
+    protected $table = 'cities';
 
     protected $fillable = [
         'province_id',
-        'name',
+        'nama',
+        'latitude',
+        'longitude',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'decimal:11',
+            'longitude' => 'decimal:11',
+        ];
+    }
 
     public function province(): BelongsTo
     {
@@ -32,6 +41,6 @@ class Regency extends Model
 
     public function districts(): HasMany
     {
-        return $this->hasMany(District::class);
+        return $this->hasMany(District::class, 'city_id');
     }
 }

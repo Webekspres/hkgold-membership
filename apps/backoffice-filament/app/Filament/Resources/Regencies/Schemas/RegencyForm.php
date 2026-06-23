@@ -16,12 +16,12 @@ class RegencyForm
             ->components([
                 Select::make('province_id')
                     ->label('Provinsi')
-                    ->relationship('province', 'name')
+                    ->relationship('province', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),
 
-                TextInput::make('name')
+                TextInput::make('nama')
                     ->label('Nama Kota/Kabupaten')
                     ->required()
                     ->maxLength(150),

@@ -14,12 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Address master (FK chain)
-            ProvinceSeeder::class,
-            RegencySeeder::class,
-            DistrictSeeder::class,
-            VillageSeeder::class,
-            PostalCodeSeeder::class,
+            LocationSeeder::class,
             AddressSeeder::class,
             // Core loyalty domain
             LoyaltyConfigSeeder::class,

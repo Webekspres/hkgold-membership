@@ -11,8 +11,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('provinces', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->string('name', 150);
+            $table->id();
+            $table->foreignId('nation_id')->constrained('nations')->cascadeOnDelete();
+            $table->string('nama', 150);
+            $table->decimal('latitude', 15, 11)->nullable();
+            $table->decimal('longitude', 15, 11)->nullable();
+
+            $table->index('nation_id');
         });
     }
 

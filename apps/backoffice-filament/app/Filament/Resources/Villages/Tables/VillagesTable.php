@@ -20,31 +20,31 @@ class VillagesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Kelurahan')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.name')
+                TextColumn::make('district.nama')
                     ->label('Kecamatan')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.regency.name')
+                TextColumn::make('district.regency.nama')
                     ->label('Kota/Kabupaten')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.regency.province.name')
+                TextColumn::make('district.regency.province.nama')
                     ->label('Provinsi')
                     ->searchable()
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([
                 SelectFilter::make('province_id')
                     ->label('Provinsi')
-                    ->options(fn (): array => Province::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
@@ -56,19 +56,19 @@ class VillagesTable
 
                 SelectFilter::make('regency_id')
                     ->label('Kota/Kabupaten')
-                    ->options(fn (): array => Regency::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Regency::query()->orderBy('nama')->pluck('nama', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
                         fn (Builder $query): Builder => $query->whereHas(
                             'district',
-                            fn (Builder $query): Builder => $query->where('regency_id', $data['value']),
+                            fn (Builder $query): Builder => $query->where('city_id', $data['value']),
                         ),
                     )),
 
                 SelectFilter::make('district_id')
                     ->label('Kecamatan')
-                    ->relationship('district', 'name')
+                    ->relationship('district', 'nama')
                     ->searchable()
                     ->preload(),
             ])

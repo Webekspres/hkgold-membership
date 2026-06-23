@@ -10,7 +10,7 @@ use App\Filament\Resources\Members\Pages\ListMembers;
 use App\Filament\Resources\Members\Pages\ViewMember;
 use App\Filament\Resources\Members\Schemas\MemberForm;
 use App\Filament\Resources\Members\Schemas\MemberInfolist;
-use App\Filament\Tables\MembersTable;
+use App\Filament\Resources\Members\Tables\MembersTable;
 use App\Models\Member;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -76,7 +76,7 @@ class MemberResource extends Resource
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
         return parent::getRecordRouteBindingEloquentQuery()
-            ->with(['user.profilePhoto', 'address'])
+            ->with(['user.profilePhoto', 'address.village.district.regency', 'address.postalCode'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

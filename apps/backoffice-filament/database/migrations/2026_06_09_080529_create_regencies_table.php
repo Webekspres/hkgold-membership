@@ -10,10 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('regencies', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('province_id')->constrained('provinces')->cascadeOnDelete();
-            $table->string('name', 150);
+        Schema::create('cities', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('province_id')->constrained('provinces')->cascadeOnDelete();
+            $table->string('nama', 150);
+            $table->decimal('latitude', 15, 11)->nullable();
+            $table->decimal('longitude', 15, 11)->nullable();
 
             $table->index('province_id');
         });
@@ -21,6 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('regencies');
+        Schema::dropIfExists('cities');
     }
 };

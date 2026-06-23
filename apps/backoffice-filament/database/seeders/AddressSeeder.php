@@ -17,11 +17,11 @@ class AddressSeeder extends Seeder
     public function run(): void
     {
         if (Village::query()->count() === 0) {
-            $this->call(VillageSeeder::class);
+            $this->call(LocationSeeder::class);
         }
 
         if (PostalCode::query()->count() === 0) {
-            $this->call(PostalCodeSeeder::class);
+            return;
         }
 
         $villages = Village::query()->pluck('id')->all();

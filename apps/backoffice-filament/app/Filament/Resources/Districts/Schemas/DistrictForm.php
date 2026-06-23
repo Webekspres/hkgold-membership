@@ -16,12 +16,12 @@ class DistrictForm
             ->components([
                 Select::make('regency_id')
                     ->label('Kota/Kabupaten')
-                    ->relationship('regency', 'name')
+                    ->relationship('regency', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),
 
-                TextInput::make('name')
+                TextInput::make('nama')
                     ->label('Nama Kecamatan')
                     ->required()
                     ->maxLength(150),

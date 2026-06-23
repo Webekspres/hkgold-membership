@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Members\Pages;
 
 use App\Enums\Role;
 use App\Filament\Resources\Members\MemberResource;
+use App\Filament\Resources\Members\Support\MemberFormSupport;
 use App\Models\Member;
 use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
@@ -18,23 +19,30 @@ class CreateMember extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $state = $this->form->getState();
+        $state = MemberFormSupport::formState($this->form);
 
         return DB::transaction(function () use ($data, $state): Member {
+            $profilePhotoId = MemberFormSupport::storeProfilePhoto(
+                $state['profile_photo'] ?? null,
+                (string) $state['name'],
+            );
+
             $user = User::query()->create([
                 'name' => $state['name'],
                 'email' => $state['email'],
-                'phone' => $state['phone'],
+                'phone' => MemberFormSupport::normalizePhone($state['phone'] ?? null),
                 'password' => $state['password'],
                 'role' => Role::Customer,
-                'profile_photo_id' => $state['profile_photo_id'] ?? null,
+                'profile_photo_id' => $profilePhotoId,
                 'is_active' => $state['is_active'] ?? true,
             ]);
 
+            $addressId = MemberFormSupport::syncAddress($state);
+
             return Member::query()->create([
                 'id' => $user->id,
-                'member_code' => $data['member_code'],
-                'address_id' => $data['address_id'] ?? null,
+                'member_code' => MemberFormSupport::generateMemberCode(),
+                'address_id' => $addressId,
                 'dob' => $data['dob'] ?? null,
                 'total_points' => $data['total_points'] ?? 0,
                 'tier' => $data['tier'],

@@ -17,12 +17,12 @@ class RegenciesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Kota/Kabupaten')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('province.name')
+                TextColumn::make('province.nama')
                     ->label('Provinsi')
                     ->searchable()
                     ->sortable(),
@@ -32,11 +32,11 @@ class RegenciesTable
                     ->counts('districts')
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([
                 SelectFilter::make('province_id')
                     ->label('Provinsi')
-                    ->relationship('province', 'name')
+                    ->relationship('province', 'nama')
                     ->searchable()
                     ->preload(),
             ])

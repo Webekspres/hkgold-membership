@@ -11,11 +11,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('villages', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('district_id')->constrained('districts')->cascadeOnDelete();
-            $table->string('name', 150);
+            $table->id();
+            $table->foreignId('sub_district_id')->constrained('sub_districts')->cascadeOnDelete();
+            $table->string('nama', 150);
+            $table->decimal('latitude', 15, 11)->nullable();
+            $table->decimal('longitude', 15, 11)->nullable();
 
-            $table->index('district_id');
+            $table->index('sub_district_id');
         });
     }
 

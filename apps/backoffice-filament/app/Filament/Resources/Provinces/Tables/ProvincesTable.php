@@ -16,7 +16,7 @@ class ProvincesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Provinsi')
                     ->searchable()
                     ->sortable(),
@@ -26,7 +26,7 @@ class ProvincesTable
                     ->counts('regencies')
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([])
             ->recordActions([
                 ActionGroup::make([
