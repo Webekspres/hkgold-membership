@@ -55,11 +55,11 @@ class MemberFormSupport
         return '62'.$digits;
     }
 
-    public static function generateMemberCode(): string
+    public static function generateMemberNumber(): string
     {
         do {
             $code = 'HK'.chr(random_int(65, 90)).str_pad((string) random_int(0, 9_999_999), 7, '0', STR_PAD_LEFT);
-        } while (Member::query()->where('member_code', $code)->exists());
+        } while (Member::query()->where('member_number', $code)->exists());
 
         return $code;
     }

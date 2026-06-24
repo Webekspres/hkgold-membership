@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TierStatus;
 use Database\Factories\PointAnnualArchiveFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,20 +18,23 @@ class PointAnnualArchive extends Model
 
     protected $table = 'point_annual_archives';
 
-    public const UPDATED_AT = null;
+    public $timestamps = false;
 
     protected $fillable = [
         'member_id',
-        'points_snapshot',
         'archive_year',
+        'frozen_points_total',
+        'last_tier_position',
+        'frozen_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'points_snapshot' => 'decimal:2',
             'archive_year' => 'integer',
-            'created_at' => 'datetime',
+            'frozen_points_total' => 'integer',
+            'last_tier_position' => TierStatus::class,
+            'frozen_at' => 'datetime',
         ];
     }
 

@@ -13,16 +13,12 @@ return new class extends Migration
         Schema::create('contents', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('type');
-            $table->string('title', 255);
-            $table->longText('body');
-            $table->string('location', 255)->nullable();
-            $table->dateTime('start_date')->nullable();
-            $table->dateTime('end_date')->nullable();
-            $table->boolean('is_published')->default(true);
-            $table->foreignUuid('media_id')->unique()->constrained('media')->cascadeOnDelete();
+            $table->string('title', 200);
+            $table->string('slug', 200)->unique();
+            $table->longText('body_content');
+            $table->dateTime('event_date')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->index('media_id');
         });
     }
 

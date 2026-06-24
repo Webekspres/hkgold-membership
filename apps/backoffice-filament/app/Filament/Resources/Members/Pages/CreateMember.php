@@ -24,15 +24,14 @@ class CreateMember extends CreateRecord
         return DB::transaction(function () use ($data, $state): Member {
             $profilePhotoId = MemberFormSupport::storeProfilePhoto(
                 $state['profile_photo'] ?? null,
-                (string) $state['name'],
+                (string) $state['full_name'],
             );
 
             $user = User::query()->create([
-                'name' => $state['name'],
+                'full_name' => $state['full_name'],
                 'email' => $state['email'],
-                'phone' => MemberFormSupport::normalizePhone($state['phone'] ?? null),
                 'password' => $state['password'],
-                'role' => Role::Customer,
+                'role' => Role::Member,
                 'profile_photo_id' => $profilePhotoId,
                 'is_active' => $state['is_active'] ?? true,
             ]);
@@ -40,13 +39,14 @@ class CreateMember extends CreateRecord
             $addressId = MemberFormSupport::syncAddress($state);
 
             return Member::query()->create([
-                'id' => $user->id,
-                'member_code' => MemberFormSupport::generateMemberCode(),
+                'user_id' => $user->id,
+                'member_number' => MemberFormSupport::generateMemberNumber(),
+                'phone_number' => MemberFormSupport::normalizePhone($state['phone_number'] ?? null),
+                'registered_at_branch_id' => $data['registered_at_branch_id'],
                 'address_id' => $addressId,
-                'dob' => $data['dob'] ?? null,
-                'total_points' => $data['total_points'] ?? 0,
-                'tier' => $data['tier'],
-                'phone_change_pending' => $data['phone_change_pending'] ?? false,
+                'current_tier' => $data['current_tier'],
+                'point_balance' => (int) ($data['point_balance'] ?? 0),
+                'is_suspended' => $data['is_suspended'] ?? false,
             ]);
         });
     }

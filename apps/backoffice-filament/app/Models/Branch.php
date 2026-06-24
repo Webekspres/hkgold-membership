@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\BranchFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,34 +13,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Branch extends Model
 {
     /** @use HasFactory<BranchFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     protected $table = 'branches';
 
     protected $fillable = [
-        'address_id',
-        'code',
+        'branch_code',
         'name',
+        'address',
+        'address_id',
         'phone',
-        'latitude',
-        'longitude',
-        'is_active',
-        'open_time',
-        'close_time',
+        'is_online_warehouse',
     ];
 
     protected function casts(): array
     {
         return [
-            'latitude' => 'decimal:8',
-            'longitude' => 'decimal:8',
-            'is_active' => 'boolean',
+            'is_online_warehouse' => 'boolean',
         ];
     }
 
-    public function address(): BelongsTo
+    public function normalizedAddress(): BelongsTo
     {
-        return $this->belongsTo(Address::class);
+        return $this->belongsTo(Address::class, 'address_id');
     }
 
     public function staffs(): HasMany
@@ -49,14 +43,14 @@ class Branch extends Model
         return $this->hasMany(Staff::class);
     }
 
+    public function registeredMembers(): HasMany
+    {
+        return $this->hasMany(Member::class, 'registered_at_branch_id');
+    }
+
     public function rewardStocks(): HasMany
     {
         return $this->hasMany(BranchRewardStock::class);
-    }
-
-    public function pointBatches(): HasMany
-    {
-        return $this->hasMany(PointInjectionBatch::class);
     }
 
     public function pointMutations(): HasMany

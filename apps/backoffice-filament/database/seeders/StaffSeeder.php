@@ -39,11 +39,10 @@ class StaffSeeder extends Seeder
 
         foreach ($staffUsers as $index => $user) {
             Staff::query()->firstOrCreate(
-                ['id' => $user->id],
+                ['user_id' => $user->id],
                 [
                     'branch_id' => $branchIds[$index % count($branchIds)],
-                    'allowed_ip' => fake()->optional(0.5)->ipv4(),
-                    'is_device_approved' => $user->role !== Role::SuperAdmin,
+                    'employee_code' => 'EMP'.str_pad((string) ($index + 1), 5, '0', STR_PAD_LEFT),
                 ],
             );
         }

@@ -9,7 +9,6 @@ use Database\Factories\ContentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Content extends Model
 {
@@ -21,26 +20,18 @@ class Content extends Model
     protected $fillable = [
         'type',
         'title',
-        'body',
-        'location',
-        'start_date',
-        'end_date',
-        'is_published',
-        'media_id',
+        'slug',
+        'body_content',
+        'event_date',
+        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
             'type' => ContentType::class,
-            'start_date' => 'datetime',
-            'end_date' => 'datetime',
-            'is_published' => 'boolean',
+            'event_date' => 'datetime',
+            'is_active' => 'boolean',
         ];
-    }
-
-    public function image(): BelongsTo
-    {
-        return $this->belongsTo(Media::class, 'media_id');
     }
 }

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Address;
-use App\Models\PostalCode;
-use App\Models\Village;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AddressSeeder extends Seeder
 {
@@ -16,16 +16,16 @@ class AddressSeeder extends Seeder
 
     public function run(): void
     {
-        if (Village::query()->count() === 0) {
+        if (DB::table('villages')->count() === 0) {
             $this->call(LocationSeeder::class);
         }
 
-        if (PostalCode::query()->count() === 0) {
+        $villageId = DB::table('villages')->value('id');
+        $postalCodeId = DB::table('postal_codes')->value('id');
+
+        if ($villageId === null || $postalCodeId === null) {
             return;
         }
-
-        $villages = Village::query()->pluck('id')->all();
-        $postalCodes = PostalCode::query()->pluck('id')->all();
 
         $streets = [
             'Jl. Sudirman No. 45',
@@ -40,12 +40,13 @@ class AddressSeeder extends Seeder
             'Jl. Pahlawan No. 14',
         ];
 
-        foreach ($streets as $index => $street) {
+        foreach ($streets as $street) {
             Address::query()->firstOrCreate(
                 ['street' => $street],
                 [
-                    'village_id' => $villages[$index % count($villages)],
-                    'postal_code_id' => $postalCodes[$index % count($postalCodes)],
+                    'id' => (string) Str::uuid(),
+                    'village_id' => $villageId,
+                    'postal_code_id' => $postalCodeId,
                 ],
             );
         }

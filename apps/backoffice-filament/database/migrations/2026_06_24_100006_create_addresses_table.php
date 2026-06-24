@@ -12,8 +12,8 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignId('village_id')->constrained('villages');
-            $table->foreignId('postal_code_id')->constrained('postal_codes');
+            $table->foreignUuid('village_id')->constrained('villages');
+            $table->foreignUuid('postal_code_id')->constrained('postal_codes');
             $table->text('street');
             $table->timestamps();
 

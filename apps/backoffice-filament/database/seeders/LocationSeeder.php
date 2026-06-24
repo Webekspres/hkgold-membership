@@ -7,8 +7,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use RuntimeException;
+use Illuminate\Support\Str;
 
 class LocationSeeder extends Seeder
 {
@@ -16,37 +15,46 @@ class LocationSeeder extends Seeder
 
     public function run(): void
     {
-        if (DB::table('nations')->count() > 0) {
+        if (DB::table('provinces')->count() > 0) {
             $this->command?->info('Location data already seeded, skipping.');
 
             return;
         }
 
-        $path = database_path('alamat.sql');
+        $provinceId = (string) Str::uuid();
+        $regencyId = (string) Str::uuid();
+        $districtId = (string) Str::uuid();
+        $villageId = (string) Str::uuid();
+        $postalCodeId = (string) Str::uuid();
 
-        if (! File::exists($path)) {
-            throw new RuntimeException("Missing location SQL dump at [{$path}].");
-        }
+        DB::table('provinces')->insert([
+            'id' => $provinceId,
+            'name' => 'Kalimantan Barat',
+        ]);
 
-        $this->command?->info('Importing Indonesian location data from alamat.sql...');
+        DB::table('regencies')->insert([
+            'id' => $regencyId,
+            'province_id' => $provinceId,
+            'name' => 'Kota Pontianak',
+        ]);
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('districts')->insert([
+            'id' => $districtId,
+            'regency_id' => $regencyId,
+            'name' => 'Pontianak Kota',
+        ]);
 
-        $sql = File::get($path);
-        $statements = preg_split('/;\s*\R/', $sql);
+        DB::table('villages')->insert([
+            'id' => $villageId,
+            'district_id' => $districtId,
+            'name' => 'Darat Sekip',
+        ]);
 
-        foreach ($statements as $statement) {
-            $statement = trim($statement);
+        DB::table('postal_codes')->insert([
+            'id' => $postalCodeId,
+            'code' => '78113',
+        ]);
 
-            if ($statement === '') {
-                continue;
-            }
-
-            DB::unprepared($statement.';');
-        }
-
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
-
-        $this->command?->info('Location data imported successfully.');
+        $this->command?->info('Minimal location data seeded.');
     }
 }

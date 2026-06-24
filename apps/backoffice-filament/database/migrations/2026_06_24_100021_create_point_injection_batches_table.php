@@ -12,18 +12,15 @@ return new class extends Migration
     {
         Schema::create('point_injection_batches', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('branch_id')->constrained('branches');
-            $table->foreignUuid('uploaded_by_id')->constrained('staffs');
-            $table->string('filename', 255);
-            $table->text('file_url');
-            $table->string('status')->default('PENDING');
+            $table->foreignId('staff_id')->constrained('staffs');
+            $table->string('file_name', 255);
             $table->integer('total_rows')->default(0);
-            $table->integer('processed_rows')->default(0);
-            $table->longText('error_log')->nullable();
-            $table->timestamps();
+            $table->integer('successful_rows')->default(0);
+            $table->integer('failed_rows')->default(0);
+            $table->integer('total_points_injected')->default(0);
+            $table->dateTime('uploaded_at')->useCurrent();
 
-            $table->index('branch_id');
-            $table->index('uploaded_by_id');
+            $table->index('staff_id');
         });
     }
 

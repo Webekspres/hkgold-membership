@@ -67,7 +67,7 @@ class MemberResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['user.profilePhoto'])
+            ->with(['user.profilePhoto', 'registeredBranch'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
@@ -76,7 +76,12 @@ class MemberResource extends Resource
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
         return parent::getRecordRouteBindingEloquentQuery()
-            ->with(['user.profilePhoto', 'address.village.district.regency', 'address.postalCode'])
+            ->with([
+                'user.profilePhoto',
+                'registeredBranch',
+                'address.village.district.regency.province',
+                'address.postalCode',
+            ])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

@@ -20,14 +20,14 @@ class StaffFactory extends Factory
     public function configure(): static
     {
         return $this->afterMaking(function (Staff $staff): void {
-            if ($staff->id !== null) {
+            if ($staff->user_id !== null) {
                 return;
             }
 
             $user = User::factory()->staffRole(
                 fake()->randomElement([Role::StoreManager, Role::Marketing, Role::Executive])
             )->create();
-            $staff->setAttribute('id', $user->id);
+            $staff->setAttribute('user_id', $user->id);
         });
     }
 
@@ -36,10 +36,15 @@ class StaffFactory extends Factory
      */
     public function definition(): array
     {
+        static $employeeIndex = 100;
+
+        $employeeIndex++;
+
+        $branchId = Branch::query()->inRandomOrder()->value('id');
+
         return [
-            'branch_id' => Branch::factory(),
-            'allowed_ip' => fake()->optional(0.6)->ipv4(),
-            'is_device_approved' => fake()->boolean(70),
+            'branch_id' => $branchId ?? Branch::factory(),
+            'employee_code' => 'EMP'.str_pad((string) $employeeIndex, 5, '0', STR_PAD_LEFT),
         ];
     }
 }

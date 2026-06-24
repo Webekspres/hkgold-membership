@@ -27,7 +27,10 @@ class PointAnnualArchiveSeeder extends Seeder
                     'member_id' => $member->id,
                     'archive_year' => (int) date('Y') - 1,
                 ],
-                ['points_snapshot' => $member->total_points],
+                [
+                    'frozen_points_total' => $member->point_balance,
+                    'last_tier_position' => $member->current_tier->value,
+                ],
             );
         }
     }

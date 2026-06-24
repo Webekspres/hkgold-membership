@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Members\Tables;
 
 use App\Enums\TierStatus as EnumsTierStatus;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -16,15 +17,15 @@ class MembersTable
     {
         return $table
             ->columns([
-                TextColumn::make('member_code')
-                    ->label('Kode')
+                TextColumn::make('member_number')
+                    ->label('No. Member')
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->copyMessage('Kode member disalin')
+                    ->copyMessage('Nomor member disalin')
                     ->copyMessageDuration(1500),
 
-                TextColumn::make('user.name')
+                TextColumn::make('user.full_name')
                     ->label('Nama')
                     ->searchable()
                     ->sortable()
@@ -49,7 +50,7 @@ class MembersTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('user.phone')
+                TextColumn::make('phone_number')
                     ->label('No. HP')
                     ->searchable()
                     ->sortable()
@@ -57,12 +58,17 @@ class MembersTable
                         ? '+'.ltrim($state, '+')
                         : '—'),
 
-                TextColumn::make('total_points')
-                    ->label('Poin')
-                    ->numeric(decimalPlaces: 2)
+                TextColumn::make('registeredBranch.name')
+                    ->label('Cabang')
+                    ->searchable()
                     ->sortable(),
 
-                TextColumn::make('tier')
+                TextColumn::make('point_balance')
+                    ->label('Poin')
+                    ->numeric()
+                    ->sortable(),
+
+                TextColumn::make('current_tier')
                     ->label('Tier')
                     ->badge()
                     ->formatStateUsing(fn (EnumsTierStatus $state): string => match ($state) {
@@ -73,8 +79,16 @@ class MembersTable
                     })
                     ->sortable(),
 
+                IconColumn::make('user.is_active')
+                    ->label('Aktif')
+                    ->boolean(),
+
+                IconColumn::make('is_suspended')
+                    ->label('Suspend')
+                    ->boolean(),
+
                 TextColumn::make('created_at')
-                    ->label('Created at')
+                    ->label('Terdaftar')
                     ->dateTime()
                     ->sortable(),
             ])

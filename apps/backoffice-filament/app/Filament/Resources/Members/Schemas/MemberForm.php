@@ -6,14 +6,13 @@ namespace App\Filament\Resources\Members\Schemas;
 
 use App\Enums\TierStatus;
 use App\Filament\Resources\Members\Support\MemberFormSupport;
+use App\Models\Branch;
 use App\Models\District;
 use App\Models\Member;
 use App\Models\PostalCode;
 use App\Models\Province;
 use App\Models\Regency;
-use App\Models\User;
 use App\Models\Village;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -34,15 +33,15 @@ class MemberForm
             ->columns(3)
             ->components([
                 Section::make('Akun')
-                    ->description('Kredensial login member (role: Customer)')
+                    ->description('Kredensial login member (role: MEMBER)')
                     ->columnSpanFull()
                     ->columns(6)
                     ->collapsible()
                     ->schema([
-                        TextInput::make('name')
-                            ->label('Nama')
+                        TextInput::make('full_name')
+                            ->label('Nama lengkap')
                             ->required()
-                            ->maxLength(255)
+                            ->maxLength(150)
                             ->dehydrated(false)
                             ->columnSpan(3),
                         TextInput::make('email')
@@ -51,11 +50,11 @@ class MemberForm
                             ->required()
                             ->maxLength(255)
                             ->rules(fn (?Member $record): array => [
-                                Rule::unique('users', 'email')->ignore($record?->id),
+                                Rule::unique('users', 'email')->ignore($record?->user_id),
                             ])
                             ->dehydrated(false)
                             ->columnSpan(3),
-                        TextInput::make('phone')
+                        TextInput::make('phone_number')
                             ->label('Telepon')
                             ->tel()
                             ->prefix('+62')
@@ -67,8 +66,8 @@ class MemberForm
                                 function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
                                     $normalized = MemberFormSupport::normalizePhone(is_string($value) ? $value : null);
 
-                                    if (User::query()
-                                        ->where('phone', $normalized)
+                                    if (Member::query()
+                                        ->where('phone_number', $normalized)
                                         ->when(
                                             $record?->id,
                                             fn ($query, string $id) => $query->where('id', '!=', $id),
@@ -123,23 +122,27 @@ class MemberForm
                     ->columns(3)
                     ->collapsible()
                     ->schema([
-                        Select::make('tier')
+                        Select::make('registered_at_branch_id')
+                            ->label('Cabang pendaftaran')
+                            ->options(fn (): array => Branch::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->native(false),
+                        Select::make('current_tier')
                             ->label('Tier')
                             ->options(self::tierOptions())
                             ->default(TierStatus::Silver)
                             ->required()
                             ->native(false),
-                        DatePicker::make('dob')
-                            ->label('Tanggal lahir')
-                            ->native(false),
-                        TextInput::make('total_points')
-                            ->label('Total poin')
+                        TextInput::make('point_balance')
+                            ->label('Saldo poin')
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
-                            ->step(0.01),
-                        Toggle::make('phone_change_pending')
-                            ->label('Perubahan telepon tertunda')
+                            ->integer(),
+                        Toggle::make('is_suspended')
+                            ->label('Akun ditangguhkan')
                             ->default(false)
                             ->columnSpanFull(),
                     ]),
@@ -150,17 +153,17 @@ class MemberForm
                     ->schema([
                         Select::make('province_id')
                             ->label('Provinsi')
-                            ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
+                            ->options(fn (): array => Province::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
                             ->afterStateUpdated(function (Set $set): void {
-                                $set('city_id', null);
-                                $set('sub_district_id', null);
+                                $set('regency_id', null);
+                                $set('district_id', null);
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
                             }),
-                        Select::make('city_id')
+                        Select::make('regency_id')
                             ->label('Kota/Kabupaten')
                             ->options(fn (Get $get): array => Regency::query()
                                 ->when(
@@ -168,8 +171,8 @@ class MemberForm
                                     fn ($query) => $query->where('province_id', $get('province_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('nama')
-                                ->pluck('nama', 'id')
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
@@ -177,26 +180,26 @@ class MemberForm
                             ->required(fn (Get $get): bool => filled($get('province_id')))
                             ->disabled(fn (Get $get): bool => blank($get('province_id')))
                             ->afterStateUpdated(function (Set $set): void {
-                                $set('sub_district_id', null);
+                                $set('district_id', null);
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
                             }),
-                        Select::make('sub_district_id')
+                        Select::make('district_id')
                             ->label('Kecamatan')
                             ->options(fn (Get $get): array => District::query()
                                 ->when(
-                                    filled($get('city_id')),
-                                    fn ($query) => $query->where('city_id', $get('city_id')),
+                                    filled($get('regency_id')),
+                                    fn ($query) => $query->where('regency_id', $get('regency_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('nama')
-                                ->pluck('nama', 'id')
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
-                            ->required(fn (Get $get): bool => filled($get('city_id')))
-                            ->disabled(fn (Get $get): bool => blank($get('city_id')))
+                            ->required(fn (Get $get): bool => filled($get('regency_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('regency_id')))
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
@@ -205,40 +208,28 @@ class MemberForm
                             ->label('Kelurahan')
                             ->options(fn (Get $get): array => Village::query()
                                 ->when(
-                                    filled($get('sub_district_id')),
-                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
+                                    filled($get('district_id')),
+                                    fn ($query) => $query->where('district_id', $get('district_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('nama')
-                                ->pluck('nama', 'id')
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
-                            ->required(fn (Get $get): bool => filled($get('sub_district_id')))
-                            ->disabled(fn (Get $get): bool => blank($get('sub_district_id'))),
+                            ->required(fn (Get $get): bool => filled($get('district_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('district_id'))),
                         Select::make('postal_code_id')
                             ->label('Kode pos')
-                            ->options(fn (Get $get): array => PostalCode::query()
-                                ->when(
-                                    filled($get('city_id')),
-                                    fn ($query) => $query->where('city_id', $get('city_id')),
-                                )
-                                ->when(
-                                    filled($get('sub_district_id')),
-                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
-                                )
-                                ->when(
-                                    blank($get('city_id')) && blank($get('sub_district_id')),
-                                    fn ($query) => $query->whereRaw('1 = 0'),
-                                )
-                                ->orderBy('kodepos')
-                                ->pluck('kodepos', 'id')
+                            ->options(fn (): array => PostalCode::query()
+                                ->orderBy('code')
+                                ->pluck('code', 'id')
                                 ->all())
                             ->searchable()
                             ->dehydrated(false)
                             ->required(fn (Get $get): bool => filled($get('village_id')))
-                            ->disabled(fn (Get $get): bool => blank($get('city_id')) || blank($get('sub_district_id'))),
+                            ->disabled(fn (Get $get): bool => blank($get('village_id'))),
                         Textarea::make('street')
                             ->label('Alamat lengkap')
                             ->rows(3)

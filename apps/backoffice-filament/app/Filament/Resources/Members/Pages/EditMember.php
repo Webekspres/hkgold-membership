@@ -47,13 +47,17 @@ class EditMember extends EditRecord
 
         return [
             ...$data,
-            'name' => $this->record->user?->name,
+            'full_name' => $this->record->user?->full_name,
             'email' => $this->record->user?->email,
-            'phone' => MemberFormSupport::formatPhoneForDisplay($this->record->user?->phone),
+            'phone_number' => MemberFormSupport::formatPhoneForDisplay($this->record->phone_number),
             'is_active' => $this->record->user?->is_active ?? true,
+            'registered_at_branch_id' => $this->record->registered_at_branch_id,
+            'current_tier' => $this->record->current_tier,
+            'point_balance' => $this->record->point_balance,
+            'is_suspended' => $this->record->is_suspended,
             'province_id' => $regency?->province_id,
-            'city_id' => $district?->city_id,
-            'sub_district_id' => $village?->sub_district_id,
+            'regency_id' => $district?->regency_id,
+            'district_id' => $village?->district_id,
             'village_id' => $address?->village_id,
             'postal_code_id' => $address?->postal_code_id,
             'street' => $address?->street,
@@ -67,13 +71,12 @@ class EditMember extends EditRecord
         return DB::transaction(function () use ($record, $data, $state): Model {
             $profilePhotoId = MemberFormSupport::storeProfilePhoto(
                 $state['profile_photo'] ?? null,
-                (string) $state['name'],
+                (string) $state['full_name'],
             ) ?? $record->user?->profile_photo_id;
 
             $userData = [
-                'name' => $state['name'],
+                'full_name' => $state['full_name'],
                 'email' => $state['email'],
-                'phone' => MemberFormSupport::normalizePhone($state['phone'] ?? null),
                 'profile_photo_id' => $profilePhotoId,
                 'is_active' => $state['is_active'] ?? true,
             ];
@@ -87,11 +90,12 @@ class EditMember extends EditRecord
             $addressId = MemberFormSupport::syncAddress($state, $record->address);
 
             $record->update([
+                'phone_number' => MemberFormSupport::normalizePhone($state['phone_number'] ?? null),
+                'registered_at_branch_id' => $data['registered_at_branch_id'],
                 'address_id' => $addressId,
-                'dob' => $data['dob'] ?? null,
-                'total_points' => $data['total_points'] ?? 0,
-                'tier' => $data['tier'],
-                'phone_change_pending' => $data['phone_change_pending'] ?? false,
+                'current_tier' => $data['current_tier'],
+                'point_balance' => (int) ($data['point_balance'] ?? 0),
+                'is_suspended' => $data['is_suspended'] ?? false,
             ]);
 
             return $record->refresh();

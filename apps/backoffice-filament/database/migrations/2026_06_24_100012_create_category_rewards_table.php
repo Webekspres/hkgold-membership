@@ -11,8 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('category_rewards', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->string('name', 255);
+            $table->id();
+            $table->string('name', 100);
+            $table->string('slug', 100)->unique();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

@@ -11,13 +11,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staffs', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('branch_id')->nullable()->constrained('branches')->nullOnDelete();
-            $table->string('allowed_ip', 50)->nullable();
-            $table->boolean('is_device_approved')->default(false);
+            $table->id();
+            $table->foreignUuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('branch_id')->constrained('branches');
+            $table->string('employee_code', 20)->unique();
             $table->timestamps();
+            $table->softDeletes();
 
-            $table->foreign('id')->references('id')->on('users')->cascadeOnDelete();
             $table->index('branch_id');
         });
     }

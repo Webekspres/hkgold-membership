@@ -10,22 +10,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('phone_approvals', function (Blueprint $table): void {
+        Schema::create('member_anomalies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('member_id')->constrained('members')->cascadeOnDelete();
-            $table->string('old_phone', 50);
-            $table->string('new_phone', 50);
-            $table->string('status')->default('PENDING');
-            $table->foreignUuid('approved_by')->nullable()->constrained('staffs')->nullOnDelete();
-            $table->timestamps();
+            $table->dateTime('last_mutation_at');
+            $table->integer('hoarded_points');
+            $table->dateTime('detected_at')->useCurrent();
 
             $table->index('member_id');
-            $table->index('approved_by');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('phone_approvals');
+        Schema::dropIfExists('member_anomalies');
     }
 };

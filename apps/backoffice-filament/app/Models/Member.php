@@ -20,33 +20,36 @@ class Member extends Model
 
     protected $table = 'members';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
+        'user_id',
+        'registered_at_branch_id',
         'address_id',
-        'member_code',
-        'dob',
-        'total_points',
-        'tier',
-        'phone_change_pending',
+        'member_number',
+        'phone_number',
+        'current_tier',
+        'point_balance',
+        'last_activity_at',
+        'is_suspended',
     ];
 
     protected function casts(): array
     {
         return [
-            'dob' => 'date',
-            'total_points' => 'decimal:2',
-            'tier' => TierStatus::class,
-            'phone_change_pending' => 'boolean',
+            'current_tier' => TierStatus::class,
+            'point_balance' => 'integer',
+            'last_activity_at' => 'datetime',
+            'is_suspended' => 'boolean',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class);
+    }
+
+    public function registeredBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'registered_at_branch_id');
     }
 
     public function address(): BelongsTo
@@ -72,16 +75,6 @@ class Member extends Model
     public function inactivityLogs(): HasMany
     {
         return $this->hasMany(MemberAnomaly::class);
-    }
-
-    public function fraudSuspectsAsOne(): HasMany
-    {
-        return $this->hasMany(FraudSuspect::class, 'member_1_id');
-    }
-
-    public function fraudSuspectsAsTwo(): HasMany
-    {
-        return $this->hasMany(FraudSuspect::class, 'member_2_id');
     }
 
     public function annualArchives(): HasMany

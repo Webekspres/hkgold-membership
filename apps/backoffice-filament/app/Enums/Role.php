@@ -10,5 +10,6 @@ enum Role: string
     case Executive = 'EXECUTIVE';
     case StoreManager = 'STORE_MANAGER';
     case Marketing = 'MARKETING';
+    case Member = 'MEMBER';
     case Customer = 'CUSTOMER';
 }

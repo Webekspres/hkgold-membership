@@ -12,15 +12,17 @@ return new class extends Migration
     {
         Schema::create('rewards', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('category_reward_id')->constrained('category_rewards')->cascadeOnDelete();
-            $table->string('name', 255);
-            $table->text('description')->nullable();
-            $table->decimal('points_required', 15, 2);
-            $table->date('valid_until')->nullable();
+            $table->foreignId('category_id')->constrained('category_rewards');
+            $table->string('name', 150);
+            $table->string('sku', 50)->unique();
+            $table->text('description');
+            $table->integer('points_required');
             $table->boolean('is_active')->default(true);
+            $table->dateTime('start_at');
+            $table->dateTime('end_at');
             $table->timestamps();
 
-            $table->index('category_reward_id');
+            $table->index('category_id');
         });
     }
 

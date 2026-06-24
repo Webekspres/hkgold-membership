@@ -12,15 +12,12 @@ return new class extends Migration
     {
         Schema::create('fraud_suspects', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('member_1_id')->constrained('members')->cascadeOnDelete();
-            $table->foreignUuid('member_2_id')->constrained('members')->cascadeOnDelete();
-            $table->decimal('confidence_score', 5, 2);
-            $table->text('reason');
-            $table->boolean('is_resolved')->default(false);
+            $table->string('detected_name', 150);
+            $table->dateTime('detected_birth_date');
+            $table->json('suspect_member_ids');
+            $table->string('status')->default('PENDING_REVIEW');
+            $table->text('admin_notes')->nullable();
             $table->timestamps();
-
-            $table->index('member_1_id');
-            $table->index('member_2_id');
         });
     }
 

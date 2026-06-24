@@ -10,16 +10,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('loyalty_configs', function (Blueprint $table): void {
+        Schema::create('regencies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('tier')->unique();
-            $table->decimal('multiplier_cost', 15, 2);
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->foreignUuid('province_id')->constrained('provinces')->cascadeOnDelete();
+            $table->string('name', 150);
+
+            $table->index('province_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('loyalty_configs');
+        Schema::dropIfExists('regencies');
     }
 };

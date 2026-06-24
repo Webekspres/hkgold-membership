@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\BatchStatus;
-use App\Models\Branch;
 use App\Models\PointInjectionBatch;
 use App\Models\Staff;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,24 +20,18 @@ class PointInjectionBatchFactory extends Factory
      */
     public function definition(): array
     {
-        $status = fake()->randomElement(BatchStatus::cases());
         $totalRows = fake()->numberBetween(50, 500);
-        $processedRows = match ($status) {
-            BatchStatus::Completed => $totalRows,
-            BatchStatus::Processing => fake()->numberBetween(1, $totalRows - 1),
-            BatchStatus::Failed => fake()->numberBetween(0, (int) ($totalRows * 0.5)),
-            default => 0,
-        };
+        $successfulRows = fake()->numberBetween(0, $totalRows);
+        $failedRows = $totalRows - $successfulRows;
 
         return [
-            'branch_id' => Branch::factory(),
-            'uploaded_by_id' => Staff::factory(),
-            'filename' => 'inject-poin-'.fake()->date('Ymd').'.xlsx',
-            'file_url' => 'https://cdn.hkgoldvip.id/batches/'.fake()->uuid().'.xlsx',
-            'status' => $status,
+            'staff_id' => Staff::query()->inRandomOrder()->value('id') ?? Staff::factory(),
+            'file_name' => 'inject-poin-'.fake()->date('Ymd').'.xlsx',
             'total_rows' => $totalRows,
-            'processed_rows' => $processedRows,
-            'error_log' => $status === BatchStatus::Failed ? 'Baris 42: member_code tidak ditemukan' : null,
+            'successful_rows' => $successfulRows,
+            'failed_rows' => $failedRows,
+            'total_points_injected' => fake()->numberBetween(10_000, 500_000),
+            'uploaded_at' => fake()->dateTimeBetween('-3 months', 'now'),
         ];
     }
 }

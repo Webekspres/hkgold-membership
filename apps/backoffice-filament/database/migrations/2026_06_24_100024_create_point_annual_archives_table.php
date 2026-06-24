@@ -12,10 +12,11 @@ return new class extends Migration
     {
         Schema::create('point_annual_archives', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('member_id')->constrained('members')->cascadeOnDelete();
-            $table->decimal('points_snapshot', 15, 2);
+            $table->foreignUuid('member_id')->nullable()->constrained('members')->nullOnDelete();
             $table->integer('archive_year');
-            $table->timestamp('created_at')->useCurrent();
+            $table->integer('frozen_points_total');
+            $table->string('last_tier_position');
+            $table->dateTime('frozen_at')->useCurrent();
 
             $table->index('member_id');
         });

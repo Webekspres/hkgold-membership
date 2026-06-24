@@ -22,32 +22,29 @@ class BranchSeeder extends Seeder
         $addressIds = Address::query()->pluck('id')->all();
 
         $branches = [
-            ['HKG-PTK', 'HK Gold VIP Pontianak', -0.0263, 109.3425],
-            ['HKG-SMG', 'HK Gold VIP Semarang', -6.9667, 110.4167],
-            ['HKG-SLO', 'HK Gold VIP Solo', -7.5667, 110.8167],
-            ['HKG-YGY', 'HK Gold VIP Yogyakarta', -7.7956, 110.3695],
-            ['HKG-SBY', 'HK Gold VIP Surabaya', -7.2575, 112.7521],
-            ['HKG-BDG', 'HK Gold VIP Bandung', -6.9175, 107.6191],
-            ['HKG-JKT', 'HK Gold VIP Jakarta Pusat', -6.1751, 106.8650],
-            ['HKG-MDN', 'HK Gold VIP Medan', 3.5952, 98.6722],
-            ['HKG-PLB', 'HK Gold VIP Palembang', -2.9761, 104.7754],
-            ['HKG-MKS', 'HK Gold VIP Makassar', -5.1477, 119.4327],
-            ['HKG-BPN', 'HK Gold VIP Balikpapan', -1.2379, 116.8529],
-            ['HKG-DPS', 'HK Gold VIP Denpasar', -8.6705, 115.2126],
+            ['HK01', 'HK Gold VIP Pontianak', 'Jl. Gajah Mada No. 1, Pontianak'],
+            ['HK02', 'HK Gold VIP Semarang', 'Jl. Pemuda No. 10, Semarang'],
+            ['HK03', 'HK Gold VIP Solo', 'Jl. Slamet Riyadi No. 5, Solo'],
+            ['HK04', 'HK Gold VIP Yogyakarta', 'Jl. Malioboro No. 20, Yogyakarta'],
+            ['HK05', 'HK Gold VIP Surabaya', 'Jl. Tunjungan No. 8, Surabaya'],
+            ['HK06', 'HK Gold VIP Bandung', 'Jl. Asia Afrika No. 15, Bandung'],
+            ['HK07', 'HK Gold VIP Jakarta', 'Jl. Sudirman No. 45, Jakarta'],
+            ['HK08', 'HK Gold VIP Medan', 'Jl. Gatot Subroto No. 3, Medan'],
+            ['HK09', 'HK Gold VIP Palembang', 'Jl. Sudirman No. 12, Palembang'],
+            ['HK10', 'HK Gold VIP Makassar', 'Jl. Pengayoman No. 7, Makassar'],
+            ['HK11', 'HK Gold VIP Balikpapan', 'Jl. Jenderal Sudirman No. 2, Balikpapan'],
+            ['HK12', 'HK Gold VIP Denpasar', 'Jl. Gajah Mada No. 88, Denpasar'],
         ];
 
-        foreach ($branches as $index => [$code, $name, $lat, $lng]) {
+        foreach ($branches as $index => [$code, $name, $address]) {
             Branch::query()->firstOrCreate(
-                ['code' => $code],
+                ['branch_code' => $code],
                 [
                     'address_id' => $addressIds[$index % count($addressIds)],
                     'name' => $name,
+                    'address' => $address,
                     'phone' => '021'.str_pad((string) ($index + 1), 7, '0', STR_PAD_LEFT),
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                    'is_active' => true,
-                    'open_time' => '08:00',
-                    'close_time' => '17:00',
+                    'is_online_warehouse' => false,
                 ],
             );
         }

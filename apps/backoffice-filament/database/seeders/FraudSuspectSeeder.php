@@ -24,8 +24,7 @@ class FraudSuspectSeeder extends Seeder
         for ($i = 0; $i < 10; $i++) {
             $pair = fake()->randomElements($members, 2);
             FraudSuspect::factory()->create([
-                'member_1_id' => $pair[0],
-                'member_2_id' => $pair[1],
+                'suspect_member_ids' => array_values($pair),
             ]);
         }
     }

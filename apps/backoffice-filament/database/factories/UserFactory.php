@@ -22,9 +22,8 @@ class UserFactory extends Factory
     {
         return [
             'email' => fake()->unique()->safeEmail(),
-            'phone' => '08'.fake()->numerify('##########'),
             'password' => 'password123',
-            'name' => fake('id_ID')->name(),
+            'full_name' => fake('id_ID')->name(),
             'role' => Role::Customer,
             'profile_photo_id' => null,
             'is_active' => true,
@@ -35,9 +34,8 @@ class UserFactory extends Factory
     {
         return $this->state(fn (): array => [
             'role' => Role::SuperAdmin,
-            'name' => 'Admin HK Gold VIP',
+            'full_name' => 'Admin HK Gold VIP',
             'email' => 'admin@example.com',
-            'phone' => '081100000001',
         ]);
     }
 

@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LocationSeeder::class,
             AddressSeeder::class,
-            // Core loyalty domain
-            LoyaltyConfigSeeder::class,
+            TierMemberSeeder::class,
+            TransactionTypeSeeder::class,
             CategoryRewardSeeder::class,
             RewardSeeder::class,
             MediaSeeder::class,

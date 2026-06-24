@@ -12,16 +12,19 @@ return new class extends Migration
     {
         Schema::create('members', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('registered_at_branch_id')->constrained('branches');
             $table->foreignUuid('address_id')->nullable()->constrained('addresses')->nullOnDelete();
-            $table->string('member_code', 50)->unique();
-            $table->date('dob')->nullable();
-            $table->decimal('total_points', 15, 2)->default(0);
-            $table->string('tier')->default('SILVER');
-            $table->boolean('phone_change_pending')->default(false);
+            $table->string('member_number', 15)->unique();
+            $table->string('phone_number', 20)->unique();
+            $table->string('current_tier')->default('SILVER');
+            $table->integer('point_balance')->default(0);
+            $table->dateTime('last_activity_at')->useCurrent();
+            $table->boolean('is_suspended')->default(false);
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('id')->references('id')->on('users')->cascadeOnDelete();
+            $table->index('registered_at_branch_id');
             $table->index('address_id');
         });
     }

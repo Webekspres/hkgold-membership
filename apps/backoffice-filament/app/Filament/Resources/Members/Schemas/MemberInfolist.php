@@ -24,13 +24,13 @@ class MemberInfolist
                             ->label('Foto profil')
                             ->circular()
                             ->defaultImageUrl(fn (): string => 'https://ui-avatars.com/api/?name=Member&background=random'),
-                        TextEntry::make('user.name')
-                            ->label('Nama'),
-                        TextEntry::make('member_code')
-                            ->label('Kode member')
+                        TextEntry::make('user.full_name')
+                            ->label('Nama lengkap'),
+                        TextEntry::make('member_number')
+                            ->label('Nomor member')
                             ->copyable()
                             ->icon(Heroicon::OutlinedIdentification),
-                        TextEntry::make('tier')
+                        TextEntry::make('current_tier')
                             ->label('Tier')
                             ->badge()
                             ->formatStateUsing(fn (TierStatus $state): string => match ($state) {
@@ -47,31 +47,39 @@ class MemberInfolist
                             ->label('Email')
                             ->copyable()
                             ->icon(Heroicon::OutlinedEnvelope),
-                        TextEntry::make('user.phone')
+                        TextEntry::make('phone_number')
                             ->label('Telepon')
                             ->copyable()
-                            ->icon(Heroicon::OutlinedPhone),
+                            ->icon(Heroicon::OutlinedPhone)
+                            ->formatStateUsing(fn (?string $state): string => filled($state)
+                                ? '+'.ltrim($state, '+')
+                                : '—'),
                         TextEntry::make('user.is_active')
                             ->label('Status akun')
                             ->badge()
                             ->formatStateUsing(fn (bool $state): string => $state ? 'Aktif' : 'Nonaktif')
                             ->color(fn (bool $state): string => $state ? 'success' : 'danger'),
-                        TextEntry::make('phone_change_pending')
-                            ->label('Perubahan telepon tertunda')
-                            ->formatStateUsing(fn (bool $state): string => $state ? 'Ya' : 'Tidak'),
+                        TextEntry::make('is_suspended')
+                            ->label('Ditangguhkan')
+                            ->badge()
+                            ->formatStateUsing(fn (bool $state): string => $state ? 'Ya' : 'Tidak')
+                            ->color(fn (bool $state): string => $state ? 'danger' : 'success'),
                     ]),
                 Section::make('Keanggotaan')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('total_points')
-                            ->label('Total poin')
-                            ->numeric(decimalPlaces: 2),
-                        TextEntry::make('dob')
-                            ->label('Tanggal lahir')
-                            ->date(),
+                        TextEntry::make('point_balance')
+                            ->label('Saldo poin')
+                            ->numeric(),
+                        TextEntry::make('registeredBranch.name')
+                            ->label('Cabang pendaftaran')
+                            ->placeholder('—'),
                         TextEntry::make('address.street')
                             ->label('Alamat')
                             ->placeholder('—'),
+                        TextEntry::make('last_activity_at')
+                            ->label('Aktivitas terakhir')
+                            ->dateTime(),
                         TextEntry::make('created_at')
                             ->label('Terdaftar')
                             ->dateTime(),
