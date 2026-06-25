@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use Database\Factories\ContentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -24,7 +25,7 @@ class Content extends Model
         'slug',
         'body_content',
         'event_date',
-        'is_active',
+        'status',
     ];
 
     protected function casts(): array
@@ -32,7 +33,7 @@ class Content extends Model
         return [
             'type' => ContentType::class,
             'event_date' => 'datetime',
-            'is_active' => 'boolean',
+            'status' => ContentStatus::class,
         ];
     }
 

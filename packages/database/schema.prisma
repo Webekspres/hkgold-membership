@@ -64,6 +64,12 @@ enum ContentType {
   EVENT // Jadwal kalender pameran emas luar kota
 }
 
+enum ContentStatus {
+  DRAFT     @map("draft")
+  ARCHIVED  @map("archived")
+  PUBLISHED @map("published")
+}
+
 enum RedeemStatus {
   COMPLETED // Sukses diklaim dan diserahkan ke pelanggan
   REFUNDED  // Dibatalkan darurat oleh Store Manager (Poin balik, stok balik)
@@ -498,7 +504,7 @@ model Content {
   slug        String      @unique @map("slug") @db.VarChar(200)
   bodyContent String      @map("body_content") @db.LongText
   eventDate   DateTime?   @map("event_date")
-  isActive    Boolean     @default(true) @map("is_active")
+  status      ContentStatus @default(DRAFT) @map("status")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Contents\Pages;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Filament\Resources\Contents\ContentResource;
 use App\Filament\Resources\Contents\Support\ContentFormSupport;
@@ -50,18 +51,36 @@ class EditContent extends EditRecord
     {
         $state = ContentFormSupport::formState($this->form);
 
-        return DB::transaction(function () use ($record, $data, $state): Model {
+        return $this->persistRecord($record, $data, $state['cover_images'] ?? [], $data['status'] ?? ContentStatus::Draft->value);
+    }
+
+    public function autoSave(): void
+    {
+        $state = ContentFormSupport::formState($this->form);
+
+        $this->persistRecord($this->record, $state, $state['cover_images'] ?? [], ContentStatus::Draft->value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $coverImages
+     */
+    protected function persistRecord(Model $record, array $data, array $coverImages, string $status): Model
+    {
+        return DB::transaction(function () use ($record, $data, $coverImages, $status): Model {
+            $title = isset($data['title']) && filled($data['title']) ? (string) $data['title'] : 'Untitled Draft';
+
             $record->update([
-                'type' => $data['type'],
-                'title' => $data['title'],
-                'body_content' => $data['body_content'],
-                'event_date' => $data['type'] === ContentType::Event->value
+                'type' => $data['type'] ?? ContentType::News->value,
+                'title' => $title,
+                'body_content' => ContentFormSupport::normalizeBodyContent($data['body_content'] ?? null),
+                'event_date' => ($data['type'] ?? ContentType::News->value) === ContentType::Event->value
                     ? ($data['event_date'] ?? null)
                     : null,
-                'is_active' => $data['is_active'] ?? true,
+                'status' => $status,
             ]);
 
-            ContentFormSupport::syncCoverImages($record, $state['cover_images'] ?? []);
+            ContentFormSupport::syncCoverImages($record, $coverImages);
 
             return $record->refresh();
         });

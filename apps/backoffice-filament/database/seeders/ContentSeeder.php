@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Models\Content;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -35,7 +36,7 @@ class ContentSeeder extends Seeder
                     'title' => $title,
                     'body_content' => fake('id_ID')->paragraphs(2, true),
                     'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
-                    'is_active' => true,
+                    'status' => ContentStatus::Published,
                 ],
             );
         }

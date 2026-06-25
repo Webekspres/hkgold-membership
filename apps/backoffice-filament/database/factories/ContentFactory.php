@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Models\Content;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -38,7 +39,11 @@ class ContentFactory extends Factory
             'slug' => Str::slug($title).'-'.fake()->unique()->numerify('###'),
             'body_content' => fake('id_ID')->paragraphs(3, true),
             'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
-            'is_active' => true,
+            'status' => fake()->randomElement([
+                ContentStatus::Draft,
+                ContentStatus::Archived,
+                ContentStatus::Published,
+            ]),
         ];
     }
 }

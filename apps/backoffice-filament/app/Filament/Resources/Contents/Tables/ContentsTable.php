@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Contents\Tables;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Filament\Resources\Contents\Pages\ListContents;
 use App\Models\Content;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,9 +25,14 @@ class ContentsTable
                     ->searchable()
                     ->sortable(),
 
-                IconColumn::make('is_active')
-                    ->label('Aktif')
-                    ->boolean(),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (ContentStatus $state): string => match ($state) {
+                        ContentStatus::Draft => 'Draft',
+                        ContentStatus::Archived => 'Archived',
+                        ContentStatus::Published => 'Published',
+                    }),
 
                 TextColumn::make('tanggal')
                     ->label('Tanggal')

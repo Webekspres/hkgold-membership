@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('slug', 200)->unique();
             $table->longText('body_content');
             $table->dateTime('event_date')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->string('status', 20)->default('draft');
             $table->timestamps();
         });
     }
