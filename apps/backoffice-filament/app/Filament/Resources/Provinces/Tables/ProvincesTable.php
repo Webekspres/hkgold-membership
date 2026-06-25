@@ -21,9 +21,9 @@ class ProvincesTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('regencies_count')
+                TextColumn::make('cities_count')
                     ->label('Jumlah Kota/Kab.')
-                    ->counts('regencies')
+                    ->counts('cities')
                     ->sortable(),
             ])
             ->defaultSort('nama')

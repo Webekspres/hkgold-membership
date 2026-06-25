@@ -24,7 +24,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'password' => 'password123',
             'full_name' => fake('id_ID')->name(),
-            'role' => Role::Customer,
+            'role' => Role::Member,
             'profile_photo_id' => null,
             'is_active' => true,
         ];
@@ -46,10 +46,18 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function customer(): static
+    public function member(): static
     {
         return $this->state(fn (): array => [
-            'role' => Role::Customer,
+            'role' => Role::Member,
         ]);
+    }
+
+    /**
+     * @deprecated Use member() instead.
+     */
+    public function customer(): static
+    {
+        return $this->member();
     }
 }

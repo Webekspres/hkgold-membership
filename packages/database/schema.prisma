@@ -76,67 +76,111 @@ enum FraudStatus {
 }
 
 // =============================================================================
-// MASTER LOKASI (WILAYAH INDONESIA)
+// MASTER LOKASI (WILAYAH INDONESIA — sesuai alamat.sql)
 // =============================================================================
 
+model Nation {
+  id              Int      @id @default(autoincrement())
+  nationCode      Int      @map("nation_code") @db.UnsignedInt
+  iso2            String   @db.VarChar(2)
+  iso3            String   @db.VarChar(3)
+  nama            String   @db.VarChar(100)
+  mataUang        String   @map("mata_uang") @db.VarChar(50)
+  kodeMataUang    String   @map("kode_mata_uang") @db.VarChar(10)
+  simbolMataUang  String   @map("simbol_mata_uang") @db.VarChar(10)
+  satuanBerat     String   @map("satuan_berat") @db.VarChar(10)
+  satuanPanjang   String   @map("satuan_panjang") @db.VarChar(10)
+  latitude        Decimal? @db.Decimal(15, 11)
+  longitude       Decimal? @db.Decimal(15, 11)
+  isProvinsi      Boolean  @default(false) @map("is_provinsi")
+  isKabkota       Boolean  @default(false) @map("is_kabkota")
+  isKecamatan     Boolean  @default(false) @map("is_kecamatan")
+  isKelurahan     Boolean  @default(false) @map("is_kelurahan")
+  isKodepos       Boolean  @default(false) @map("is_kodepos")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  provinces Province[]
+
+  @@map("nations")
+}
+
 model Province {
-  id   String @id @default(uuid()) @db.Char(36)
-  name String @map("name") @db.VarChar(150)
+  id        Int      @id @default(autoincrement())
+  nationId  Int      @map("nation_id")
+  nama      String   @db.VarChar(150)
+  latitude  Decimal? @db.Decimal(15, 11)
+  longitude Decimal? @db.Decimal(15, 11)
 
-  regencies Regency[]
+  nation Nation @relation(fields: [nationId], references: [id], onDelete: Cascade)
+  cities City[]
 
+  @@index([nationId])
   @@map("provinces")
 }
 
-model Regency {
-  id         String @id @default(uuid()) @db.Char(36)
-  provinceId String @map("province_id") @db.Char(36)
-  name       String @map("name") @db.VarChar(150)
+model City {
+  id         Int      @id @default(autoincrement())
+  provinceId Int      @map("province_id")
+  nama       String   @db.VarChar(150)
+  latitude   Decimal? @db.Decimal(15, 11)
+  longitude  Decimal? @db.Decimal(15, 11)
 
-  province  Province   @relation(fields: [provinceId], references: [id], onDelete: Cascade)
-  districts District[]
+  province     Province      @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  subDistricts SubDistrict[]
+  postalCodes  PostalCode[]
 
   @@index([provinceId])
-  @@map("regencies")
+  @@map("cities")
 }
 
-model District {
-  id        String @id @default(uuid()) @db.Char(36)
-  regencyId String @map("regency_id") @db.Char(36)
-  name      String @map("name") @db.VarChar(150)
+model SubDistrict {
+  id        Int      @id @default(autoincrement())
+  cityId    Int      @map("city_id")
+  nama      String   @db.VarChar(150)
+  latitude  Decimal? @db.Decimal(15, 11)
+  longitude Decimal? @db.Decimal(15, 11)
 
-  regency  Regency   @relation(fields: [regencyId], references: [id], onDelete: Cascade)
-  villages Village[]
+  city        City         @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  villages    Village[]
+  postalCodes PostalCode[]
 
-  @@index([regencyId])
-  @@map("districts")
+  @@index([cityId])
+  @@map("sub_districts")
 }
 
 model Village {
-  id         String @id @default(uuid()) @db.Char(36)
-  districtId String @map("district_id") @db.Char(36)
-  name       String @map("name") @db.VarChar(150)
+  id            Int      @id @default(autoincrement())
+  subDistrictId Int      @map("sub_district_id")
+  nama          String   @db.VarChar(150)
+  latitude      Decimal? @db.Decimal(15, 11)
+  longitude     Decimal? @db.Decimal(15, 11)
 
-  district  District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
-  addresses Address[]
+  subDistrict SubDistrict @relation(fields: [subDistrictId], references: [id], onDelete: Cascade)
+  addresses   Address[]
 
-  @@index([districtId])
+  @@index([subDistrictId])
   @@map("villages")
 }
 
 model PostalCode {
-  id   String @id @default(uuid()) @db.Char(36)
-  code String @unique @map("code") @db.VarChar(20)
+  id            Int    @id @default(autoincrement())
+  cityId        Int    @map("city_id")
+  subDistrictId Int    @map("sub_district_id")
+  kodepos       String @db.VarChar(20)
 
-  addresses Address[]
+  city        City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  subDistrict SubDistrict @relation(fields: [subDistrictId], references: [id], onDelete: Cascade)
+  addresses   Address[]
 
+  @@index([cityId, subDistrictId])
+  @@index([kodepos])
   @@map("postal_codes")
 }
 
 model Address {
   id           String @id @default(uuid()) @db.Char(36)
-  villageId    String @map("village_id") @db.Char(36)
-  postalCodeId String @map("postal_code_id") @db.Char(36)
+  villageId    Int    @map("village_id")
+  postalCodeId Int    @map("postal_code_id")
   street       String @map("street") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -252,7 +296,7 @@ model Staff {
 model Member {
   id                   String     @id @default(uuid()) @db.Char(36)
   userId               String     @unique @map("user_id") @db.Char(36)
-  registeredAtBranchId Int        @map("registered_at_branch_id")
+  registeredAtBranchId Int?       @map("registered_at_branch_id")
   addressId            String?    @map("address_id") @db.Char(36)
   memberNumber         String     @unique @map("member_number") @db.VarChar(15)
   phoneNumber          String     @unique @map("phone_number") @db.VarChar(20)
@@ -265,7 +309,7 @@ model Member {
   deletedAt            DateTime?  @map("deleted_at")
 
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  registeredBranch   Branch               @relation("BranchRegistration", fields: [registeredAtBranchId], references: [id])
+  registeredBranch   Branch?              @relation("BranchRegistration", fields: [registeredAtBranchId], references: [id], onDelete: SetNull)
   domicileAddress    Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
   pointMutations     PointMutation[]
   pointAnnualArchives PointAnnualArchive[]

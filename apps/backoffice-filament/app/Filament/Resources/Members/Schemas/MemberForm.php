@@ -7,11 +7,11 @@ namespace App\Filament\Resources\Members\Schemas;
 use App\Enums\TierStatus;
 use App\Filament\Resources\Members\Support\MemberFormSupport;
 use App\Models\Branch;
-use App\Models\District;
+use App\Models\City;
 use App\Models\Member;
 use App\Models\PostalCode;
 use App\Models\Province;
-use App\Models\Regency;
+use App\Models\SubDistrict;
 use App\Models\Village;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -122,12 +122,19 @@ class MemberForm
                     ->columns(3)
                     ->collapsible()
                     ->schema([
+                        TextInput::make('member_number')
+                            ->label('Nomor member')
+                            ->required()
+                            ->maxLength(15)
+                            ->default(fn (): string => MemberFormSupport::generateMemberNumber())
+                            ->rules(fn (?Member $record): array => [
+                                Rule::unique('members', 'member_number')->ignore($record?->id),
+                            ]),
                         Select::make('registered_at_branch_id')
                             ->label('Cabang pendaftaran')
                             ->options(fn (): array => Branch::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->native(false),
                         Select::make('current_tier')
                             ->label('Tier')
@@ -135,12 +142,6 @@ class MemberForm
                             ->default(TierStatus::Silver)
                             ->required()
                             ->native(false),
-                        TextInput::make('point_balance')
-                            ->label('Saldo poin')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0)
-                            ->integer(),
                         Toggle::make('is_suspended')
                             ->label('Akun ditangguhkan')
                             ->default(false)
@@ -153,26 +154,26 @@ class MemberForm
                     ->schema([
                         Select::make('province_id')
                             ->label('Provinsi')
-                            ->options(fn (): array => Province::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
                             ->afterStateUpdated(function (Set $set): void {
-                                $set('regency_id', null);
-                                $set('district_id', null);
+                                $set('city_id', null);
+                                $set('sub_district_id', null);
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
                             }),
-                        Select::make('regency_id')
+                        Select::make('city_id')
                             ->label('Kota/Kabupaten')
-                            ->options(fn (Get $get): array => Regency::query()
+                            ->options(fn (Get $get): array => City::query()
                                 ->when(
                                     filled($get('province_id')),
                                     fn ($query) => $query->where('province_id', $get('province_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
@@ -180,26 +181,26 @@ class MemberForm
                             ->required(fn (Get $get): bool => filled($get('province_id')))
                             ->disabled(fn (Get $get): bool => blank($get('province_id')))
                             ->afterStateUpdated(function (Set $set): void {
-                                $set('district_id', null);
+                                $set('sub_district_id', null);
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
                             }),
-                        Select::make('district_id')
+                        Select::make('sub_district_id')
                             ->label('Kecamatan')
-                            ->options(fn (Get $get): array => District::query()
+                            ->options(fn (Get $get): array => SubDistrict::query()
                                 ->when(
-                                    filled($get('regency_id')),
-                                    fn ($query) => $query->where('regency_id', $get('regency_id')),
+                                    filled($get('city_id')),
+                                    fn ($query) => $query->where('city_id', $get('city_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
-                            ->required(fn (Get $get): bool => filled($get('regency_id')))
-                            ->disabled(fn (Get $get): bool => blank($get('regency_id')))
+                            ->required(fn (Get $get): bool => filled($get('city_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('city_id')))
                             ->afterStateUpdated(function (Set $set): void {
                                 $set('village_id', null);
                                 $set('postal_code_id', null);
@@ -208,23 +209,32 @@ class MemberForm
                             ->label('Kelurahan')
                             ->options(fn (Get $get): array => Village::query()
                                 ->when(
-                                    filled($get('district_id')),
-                                    fn ($query) => $query->where('district_id', $get('district_id')),
+                                    filled($get('sub_district_id')),
+                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
                                     fn ($query) => $query->whereRaw('1 = 0'),
                                 )
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
                                 ->all())
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
-                            ->required(fn (Get $get): bool => filled($get('district_id')))
-                            ->disabled(fn (Get $get): bool => blank($get('district_id'))),
+                            ->required(fn (Get $get): bool => filled($get('sub_district_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('sub_district_id'))),
                         Select::make('postal_code_id')
                             ->label('Kode pos')
-                            ->options(fn (): array => PostalCode::query()
-                                ->orderBy('code')
-                                ->pluck('code', 'id')
+                            ->options(fn (Get $get): array => PostalCode::query()
+                                ->when(
+                                    filled($get('sub_district_id')),
+                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
+                                    fn ($query) => $query->when(
+                                        filled($get('city_id')),
+                                        fn ($query) => $query->where('city_id', $get('city_id')),
+                                        fn ($query) => $query->whereRaw('1 = 0'),
+                                    ),
+                                )
+                                ->orderBy('kodepos')
+                                ->pluck('kodepos', 'id')
                                 ->all())
                             ->searchable()
                             ->dehydrated(false)
@@ -244,7 +254,7 @@ class MemberForm
     /**
      * @return array<string, string>
      */
-    protected static function tierOptions(): array
+    public static function tierOptions(): array
     {
         return [
             TierStatus::Silver->value => 'Silver',

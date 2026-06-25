@@ -22,12 +22,12 @@ class PostalCodesTable
                     ->sortable()
                     ->copyable(),
 
-                TextColumn::make('regency.nama')
+                TextColumn::make('city.nama')
                     ->label('Kota/Kabupaten')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.nama')
+                TextColumn::make('subDistrict.nama')
                     ->label('Kecamatan')
                     ->searchable()
                     ->sortable(),

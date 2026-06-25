@@ -14,9 +14,9 @@ class VillageForm
     {
         return $schema
             ->components([
-                Select::make('district_id')
+                Select::make('sub_district_id')
                     ->label('Kecamatan')
-                    ->relationship('district', 'nama')
+                    ->relationship('subDistrict', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),

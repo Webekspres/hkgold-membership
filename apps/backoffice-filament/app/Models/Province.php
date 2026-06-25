@@ -5,30 +5,42 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\ProvinceFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Province extends Model
 {
     /** @use HasFactory<ProvinceFactory> */
-    use HasFactory, HasUuids;
-
-    public $incrementing = false;
-
-    protected $keyType = 'string';
+    use HasFactory;
 
     public $timestamps = false;
 
     protected $table = 'provinces';
 
     protected $fillable = [
-        'name',
+        'nation_id',
+        'nama',
+        'latitude',
+        'longitude',
     ];
 
-    public function regencies(): HasMany
+    protected function casts(): array
     {
-        return $this->hasMany(Regency::class);
+        return [
+            'latitude' => 'decimal:11',
+            'longitude' => 'decimal:11',
+        ];
+    }
+
+    public function nation(): BelongsTo
+    {
+        return $this->belongsTo(Nation::class);
+    }
+
+    public function cities(): HasMany
+    {
+        return $this->hasMany(City::class);
     }
 }

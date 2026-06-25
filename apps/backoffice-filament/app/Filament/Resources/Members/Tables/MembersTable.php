@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Members\Tables;
 
-use App\Enums\TierStatus as EnumsTierStatus;
+use App\Enums\TierStatus;
+use App\Filament\Resources\Members\Schemas\MemberForm;
+use App\Models\Branch;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class MembersTable
@@ -29,26 +33,13 @@ class MembersTable
                     ->label('Nama')
                     ->searchable()
                     ->sortable()
-                    ->html()
-                    ->formatStateUsing(function ($record, $state): string {
-                        $name = e($state ?? '');
-                        $avatarUrl = e(
-                            $record->user?->profilePhoto?->file_url
-                            ?? 'https://ui-avatars.com/api/?name='.urlencode($state ?? 'Member').'&background=random'
-                        );
-
-                        return <<<HTML
-                            <div class="flex items-center gap-3">
-                                <img src="{$avatarUrl}" class="h-10 w-10 shrink-0 rounded-full border border-gray-200 object-cover" alt="Avatar">
-                                <span class="font-semibold">{$name}</span>
-                            </div>
-                            HTML;
-                    }),
+                    ->toggleable(),
 
                 TextColumn::make('user.email')
                     ->label('Email')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('phone_number')
                     ->label('No. HP')
@@ -56,46 +47,67 @@ class MembersTable
                     ->sortable()
                     ->formatStateUsing(fn (?string $state): string => filled($state)
                         ? '+'.ltrim($state, '+')
-                        : '—'),
+                        : '—')
+                    ->toggleable(),
 
                 TextColumn::make('registeredBranch.name')
                     ->label('Cabang')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—')
+                    ->toggleable(),
 
                 TextColumn::make('point_balance')
                     ->label('Poin')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('current_tier')
                     ->label('Tier')
                     ->badge()
-                    ->formatStateUsing(fn (EnumsTierStatus $state): string => match ($state) {
-                        EnumsTierStatus::Silver => 'Silver',
-                        EnumsTierStatus::Gold => 'Gold',
-                        EnumsTierStatus::Platinum => 'Platinum',
-                        EnumsTierStatus::Sapphire => 'Sapphire',
+                    ->formatStateUsing(fn (TierStatus $state): string => match ($state) {
+                        TierStatus::Silver => 'Silver',
+                        TierStatus::Gold => 'Gold',
+                        TierStatus::Platinum => 'Platinum',
+                        TierStatus::Sapphire => 'Sapphire',
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 IconColumn::make('user.is_active')
                     ->label('Aktif')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(),
 
                 IconColumn::make('is_suspended')
                     ->label('Suspend')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                TrashedFilter::make(),
+                SelectFilter::make('current_tier')
+                    ->label('Tier')
+                    ->options(MemberForm::tierOptions()),
+                SelectFilter::make('registered_at_branch_id')
+                    ->label('Cabang')
+                    ->options(fn (): array => Branch::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->preload(),
+                TernaryFilter::make('is_suspended')
+                    ->label('Ditangguhkan')
+                    ->placeholder('Semua')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak'),
             ])
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
             ->recordActions([
                 ViewAction::make(),
             ]);

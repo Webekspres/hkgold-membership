@@ -32,7 +32,11 @@ class MemberResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Pengguna';
+
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'member_number';
 
     public static function form(Schema $schema): Schema
     {
@@ -79,7 +83,7 @@ class MemberResource extends Resource
             ->with([
                 'user.profilePhoto',
                 'registeredBranch',
-                'address.village.district.regency.province',
+                'address.village.subDistrict.city.province',
                 'address.postalCode',
             ])
             ->withoutGlobalScopes([

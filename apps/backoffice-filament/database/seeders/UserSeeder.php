@@ -43,13 +43,13 @@ class UserSeeder extends Seeder
             $usedProfilePhotoIds[] = $superAdminPhotoId;
         }
 
+        User::factory()->count(1)->staffRole(Role::Administrator)->create();
         User::factory()->count(3)->staffRole(Role::StoreManager)->create();
         User::factory()->count(2)->staffRole(Role::Marketing)->create();
-        User::factory()->count(2)->staffRole(Role::Executive)->create();
 
         User::factory()
             ->count(12)
-            ->customer()
+            ->member()
             ->create(function () use ($mediaIds, &$usedProfilePhotoIds): array {
                 $profilePhotoId = null;
 

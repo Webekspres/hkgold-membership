@@ -7,7 +7,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use RuntimeException;
 
 class LocationSeeder extends Seeder
 {
@@ -15,46 +16,37 @@ class LocationSeeder extends Seeder
 
     public function run(): void
     {
-        if (DB::table('provinces')->count() > 0) {
+        if (DB::table('nations')->count() > 0) {
             $this->command?->info('Location data already seeded, skipping.');
 
             return;
         }
 
-        $provinceId = (string) Str::uuid();
-        $regencyId = (string) Str::uuid();
-        $districtId = (string) Str::uuid();
-        $villageId = (string) Str::uuid();
-        $postalCodeId = (string) Str::uuid();
+        $path = database_path('alamat.sql');
 
-        DB::table('provinces')->insert([
-            'id' => $provinceId,
-            'name' => 'Kalimantan Barat',
-        ]);
+        if (! File::exists($path)) {
+            throw new RuntimeException("Missing location SQL dump at [{$path}].");
+        }
 
-        DB::table('regencies')->insert([
-            'id' => $regencyId,
-            'province_id' => $provinceId,
-            'name' => 'Kota Pontianak',
-        ]);
+        $this->command?->info('Importing Indonesian location data from alamat.sql...');
 
-        DB::table('districts')->insert([
-            'id' => $districtId,
-            'regency_id' => $regencyId,
-            'name' => 'Pontianak Kota',
-        ]);
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-        DB::table('villages')->insert([
-            'id' => $villageId,
-            'district_id' => $districtId,
-            'name' => 'Darat Sekip',
-        ]);
+        $sql = File::get($path);
+        $statements = preg_split('/;\s*\R/', $sql);
 
-        DB::table('postal_codes')->insert([
-            'id' => $postalCodeId,
-            'code' => '78113',
-        ]);
+        foreach ($statements as $statement) {
+            $statement = trim($statement);
 
-        $this->command?->info('Minimal location data seeded.');
+            if ($statement === '') {
+                continue;
+            }
+
+            DB::unprepared($statement.';');
+        }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        $this->command?->info('Location data imported successfully.');
     }
 }

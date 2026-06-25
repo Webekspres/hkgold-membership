@@ -57,6 +57,6 @@ class VillageResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['district.regency.province']);
+        return parent::getEloquentQuery()->with(['subDistrict.city.province']);
     }
 }

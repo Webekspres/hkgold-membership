@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('members', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
-            $table->foreignId('registered_at_branch_id')->constrained('branches');
+            $table->foreignId('registered_at_branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignUuid('address_id')->nullable()->constrained('addresses')->nullOnDelete();
             $table->string('member_number', 15)->unique();
             $table->string('phone_number', 20)->unique();

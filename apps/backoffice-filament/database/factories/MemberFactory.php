@@ -24,7 +24,7 @@ class MemberFactory extends Factory
                 return;
             }
 
-            $user = User::factory()->customer()->create();
+            $user = User::factory()->member()->create();
             $member->setAttribute('user_id', $user->id);
         });
     }
@@ -45,7 +45,7 @@ class MemberFactory extends Factory
         $branchId = Branch::query()->inRandomOrder()->value('id');
 
         return [
-            'registered_at_branch_id' => $branchId ?? Branch::factory(),
+            'registered_at_branch_id' => fake()->boolean(80) ? $branchId : null,
             'address_id' => null,
             'member_number' => 'HK'.fake()->unique()->regexify('[A-Z]{1}[0-9]{7}'),
             'phone_number' => '08'.fake()->unique()->numerify('##########'),

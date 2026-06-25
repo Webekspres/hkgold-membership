@@ -25,7 +25,11 @@ class StaffFactory extends Factory
             }
 
             $user = User::factory()->staffRole(
-                fake()->randomElement([Role::StoreManager, Role::Marketing, Role::Executive])
+                fake()->randomElement([
+                    Role::Administrator,
+                    Role::Marketing,
+                    Role::StoreManager,
+                ])
             )->create();
             $staff->setAttribute('user_id', $user->id);
         });

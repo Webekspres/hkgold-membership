@@ -23,7 +23,7 @@ class MemberInfolist
                         ImageEntry::make('user.profilePhoto.file_url')
                             ->label('Foto profil')
                             ->circular()
-                            ->defaultImageUrl(fn (): string => 'https://ui-avatars.com/api/?name=Member&background=random'),
+                            ->defaultImageUrl(fn ($record): string => 'https://ui-avatars.com/api/?name='.urlencode($record->user?->full_name ?? 'Member').'&background=random'),
                         TextEntry::make('user.full_name')
                             ->label('Nama lengkap'),
                         TextEntry::make('member_number')
@@ -76,6 +76,13 @@ class MemberInfolist
                             ->placeholder('—'),
                         TextEntry::make('address.street')
                             ->label('Alamat')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
+                        TextEntry::make('address.village.nama')
+                            ->label('Kelurahan')
+                            ->placeholder('—'),
+                        TextEntry::make('address.postalCode.kodepos')
+                            ->label('Kode pos')
                             ->placeholder('—'),
                         TextEntry::make('last_activity_at')
                             ->label('Aktivitas terakhir')

@@ -9,6 +9,7 @@ use Database\Factories\ContentFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Content extends Model
 {
@@ -33,5 +34,10 @@ class Content extends Model
             'event_date' => 'datetime',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function contentCoverImages(): HasMany
+    {
+        return $this->hasMany(ContentCoverImage::class)->orderBy('sort_order');
     }
 }

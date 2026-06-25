@@ -40,12 +40,14 @@ class CreateMember extends CreateRecord
 
             return Member::query()->create([
                 'user_id' => $user->id,
-                'member_number' => MemberFormSupport::generateMemberNumber(),
+                'member_number' => $data['member_number'],
                 'phone_number' => MemberFormSupport::normalizePhone($state['phone_number'] ?? null),
-                'registered_at_branch_id' => $data['registered_at_branch_id'],
+                'registered_at_branch_id' => filled($data['registered_at_branch_id'] ?? null)
+                    ? $data['registered_at_branch_id']
+                    : null,
                 'address_id' => $addressId,
                 'current_tier' => $data['current_tier'],
-                'point_balance' => (int) ($data['point_balance'] ?? 0),
+                'point_balance' => 0,
                 'is_suspended' => $data['is_suspended'] ?? false,
             ]);
         });

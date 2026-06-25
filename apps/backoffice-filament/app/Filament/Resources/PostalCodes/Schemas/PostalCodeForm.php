@@ -18,14 +18,14 @@ class PostalCodeForm
             ->components([
                 Select::make('city_id')
                     ->label('Kota/Kabupaten')
-                    ->relationship('regency', 'nama')
+                    ->relationship('city', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),
 
                 Select::make('sub_district_id')
                     ->label('Kecamatan')
-                    ->relationship('district', 'nama')
+                    ->relationship('subDistrict', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),

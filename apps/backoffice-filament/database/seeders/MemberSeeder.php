@@ -30,14 +30,14 @@ class MemberSeeder extends Seeder
         $branchIds = Branch::query()->pluck('id')->all();
 
         $customerUsers = User::query()
-            ->where('role', Role::Customer)
+            ->where('role', Role::Member)
             ->whereDoesntHave('member')
             ->get();
 
         if ($customerUsers->isEmpty()) {
             $this->call(UserSeeder::class);
             $customerUsers = User::query()
-                ->where('role', Role::Customer)
+                ->where('role', Role::Member)
                 ->whereDoesntHave('member')
                 ->get();
         }
