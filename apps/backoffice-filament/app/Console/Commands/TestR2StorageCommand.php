@@ -17,7 +17,7 @@ class TestR2StorageCommand extends Command
     public function handle(): int
     {
         $disk = Storage::disk('r2');
-        $testKey = 'content-banners/temp/r2-healthcheck-'.now()->format('YmdHis').'.txt';
+        $testKey = 'temp/r2-healthcheck-'.now()->format('YmdHis').'.txt';
 
         $this->info('Bucket: '.(string) config('filesystems.disks.r2.bucket'));
         $this->info('Endpoint: '.(string) config('filesystems.disks.r2.endpoint'));

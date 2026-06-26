@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R2 Wipe on migrate:fresh --seed
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, all objects in the R2 bucket are deleted automatically
+    | after `php artisan migrate:fresh --seed` (before seeding runs).
+    |
+    */
+
+    'wipe_r2_on_fresh_seed' => env('R2_WIPE_ON_FRESH_SEED', env('APP_ENV') === 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

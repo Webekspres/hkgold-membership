@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Contents\Support;
 use App\Models\Content;
 use App\Models\ContentCoverImage;
 use App\Models\Media;
+use App\Models\PromotionBanner;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
@@ -81,7 +82,7 @@ class ContentFormSupport
             return ltrim(substr($media->file_url, strlen($publicBaseUrl)), '/');
         }
 
-        return 'content-banners/contents/'.$media->file_name;
+        return 'contents/'.$media->file_name;
     }
 
     public static function storeCoverImage(string $path, string $contentTitle): ?string
@@ -152,7 +153,7 @@ class ContentFormSupport
             return null;
         }
 
-        $r2TempPath = 'content-banners/temp/'.basename($stagingPath);
+        $r2TempPath = 'temp/'.basename($stagingPath);
 
         $r2->put($r2TempPath, $staging->get($stagingPath), [
             'ContentType' => self::mimeTypeForPath($stagingPath),
@@ -258,6 +259,10 @@ class ContentFormSupport
             return true;
         }
 
+        if (PromotionBanner::query()->where('media_id', $mediaId)->exists()) {
+            return true;
+        }
+
         return Media::query()
             ->whereKey($mediaId)
             ->whereHas('user')
@@ -269,11 +274,11 @@ class ContentFormSupport
      */
     private static function moveFromTempToPermanent(FilesystemAdapter $disk, string $path): string
     {
-        if (! str_starts_with($path, 'content-banners/temp/')) {
+        if (! str_starts_with($path, 'temp/')) {
             return $path;
         }
 
-        $permanentPath = 'content-banners/contents/'.basename($path);
+        $permanentPath = 'contents/'.basename($path);
 
         if ($disk->exists($path)) {
             $disk->move($path, $permanentPath);

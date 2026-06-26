@@ -75,7 +75,7 @@ class ContentForm
                             ->multiple()
                             ->reorderable()
                             ->disk(fn ($livewire): string => filled($livewire->getRecord()?->getKey()) ? 'r2' : 'content_staging')
-                            ->directory(fn ($livewire): string => filled($livewire->getRecord()?->getKey()) ? 'content-banners/temp' : 'temp')
+                            ->directory('temp')
                             ->maxSize(512)
                             ->maxFiles(10)
                             ->dehydrated(false)
