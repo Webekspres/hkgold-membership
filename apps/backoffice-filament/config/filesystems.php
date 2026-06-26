@@ -38,6 +38,13 @@ return [
             'report' => false,
         ],
 
+        'content_staging' => [
+            'driver' => 'local',
+            'root' => storage_path('app/content-staging'),
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -64,15 +71,16 @@ return [
             'driver' => 's3',
             'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
             'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
-            'region' => env('CLOUDFLARE_R2_REGION', 'apac'),
-            'bucket' => env('CLOUDFLARE_R2_BUCKET', 'mala-emas-media'),
+            'region' => env('CLOUDFLARE_R2_REGION', 'auto'),
+            'bucket' => env('CLOUDFLARE_R2_BUCKET'),
             'url' => env('CLOUDFLARE_R2_PUBLIC_URL'),
             'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
             'use_path_style_endpoint' => true,
-            'throw' => false,
-            'report' => false,
+            'throw' => true,
+            'options' => [
+                'SignatureVersion' => 'v4',
+            ],
         ],
-
     ],
 
     /*

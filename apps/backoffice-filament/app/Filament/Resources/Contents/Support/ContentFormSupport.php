@@ -81,23 +81,35 @@ class ContentFormSupport
             return ltrim(substr($media->file_url, strlen($publicBaseUrl)), '/');
         }
 
-        return 'contents/'.$media->file_name;
+        return 'content-banners/contents/'.$media->file_name;
     }
 
-    public static function storeCoverImage(mixed $uploadedPath, string $contentTitle): ?string
+    public static function storeCoverImage(string $path, string $contentTitle): ?string
     {
-        $path = is_array($uploadedPath) ? ($uploadedPath[array_key_first($uploadedPath)] ?? null) : $uploadedPath;
-
         if (blank($path)) {
+            return null;
+        }
+
+        $path = self::resolveCoverImagePath($path);
+
+        if ($path === null) {
             return null;
         }
 
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('r2');
 
-        if (! $disk->exists($path)) {
-            return null;
+        if (! str_ends_with(strtolower($path), '.webp')) {
+            $convertedPath = self::convertR2ObjectToWebp($disk, $path);
+
+            if ($convertedPath === null) {
+                return null;
+            }
+
+            $path = $convertedPath;
         }
+
+        $path = self::moveFromTempToPermanent($disk, $path);
 
         $fileUrl = $disk->url($path);
 
@@ -110,7 +122,7 @@ class ContentFormSupport
         $media = Media::query()->create([
             'caption' => 'content-cover_'.Str::slug($contentTitle, '_'),
             'file_name' => basename($path),
-            'file_type' => $disk->mimeType($path) ?? 'image/jpeg',
+            'file_type' => 'image/webp',
             'file_url' => $fileUrl,
             'file_size' => $disk->size($path),
         ]);
@@ -119,9 +131,52 @@ class ContentFormSupport
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $items
+     * Upload local staging files to R2, or return existing R2 paths.
+     *
+     * @return non-empty-string|null
      */
-    public static function syncCoverImages(Content $content, array $items): void
+    private static function resolveCoverImagePath(string $path): ?string
+    {
+        /** @var FilesystemAdapter $r2 */
+        $r2 = Storage::disk('r2');
+        /** @var FilesystemAdapter $staging */
+        $staging = Storage::disk('content_staging');
+
+        if ($r2->exists($path)) {
+            return $path;
+        }
+
+        $stagingPath = str_starts_with($path, 'temp/') ? $path : 'temp/'.ltrim($path, '/');
+
+        if (! $staging->exists($stagingPath)) {
+            return null;
+        }
+
+        $r2TempPath = 'content-banners/temp/'.basename($stagingPath);
+
+        $r2->put($r2TempPath, $staging->get($stagingPath), [
+            'ContentType' => self::mimeTypeForPath($stagingPath),
+        ]);
+
+        $staging->delete($stagingPath);
+
+        return $r2TempPath;
+    }
+
+    private static function mimeTypeForPath(string $path): string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'webp' => 'image/webp',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            default => 'image/jpeg',
+        };
+    }
+
+    /**
+     * @param  array<int, string>  $paths
+     */
+    public static function syncCoverImages(Content $content, array $paths): void
     {
         $previousMediaIds = $content->contentCoverImages()->pluck('media_id')->all();
 
@@ -129,12 +184,12 @@ class ContentFormSupport
 
         $retainedMediaIds = [];
 
-        foreach (array_values($items) as $sortOrder => $item) {
-            $mediaId = self::resolveCoverMediaId(
-                $item['image'] ?? null,
-                $content->title,
-                isset($item['media_id']) ? (string) $item['media_id'] : null,
-            );
+        foreach (array_values($paths) as $sortOrder => $path) {
+            if (! is_string($path) || blank($path)) {
+                continue;
+            }
+
+            $mediaId = self::storeCoverImage($path, $content->title);
 
             if ($mediaId === null) {
                 continue;
@@ -152,86 +207,54 @@ class ContentFormSupport
         $orphanedMediaIds = array_diff($previousMediaIds, $retainedMediaIds);
 
         foreach ($orphanedMediaIds as $mediaId) {
-            if (! self::isMediaInUse((string) $mediaId)) {
-                Media::query()->whereKey($mediaId)->delete();
-            }
+            self::purgeUnusedMedia((string) $mediaId);
         }
     }
 
-    public static function resolveCoverMediaId(mixed $uploadedPath, string $contentTitle, ?string $existingMediaId = null): ?string
+    public static function purgeUnusedMedia(string $mediaId): void
     {
-        if (is_array($uploadedPath) && isset($uploadedPath['public_url'])) {
-            return self::storeCoverImageFromMetadata($uploadedPath, $contentTitle);
+        if (self::isMediaInUse($mediaId)) {
+            return;
         }
 
-        $path = is_array($uploadedPath) ? ($uploadedPath[array_key_first($uploadedPath)] ?? null) : $uploadedPath;
+        $media = Media::query()->find($mediaId);
 
-        if (blank($path) && filled($existingMediaId)) {
-            return $existingMediaId;
+        if ($media === null) {
+            return;
         }
 
-        if (blank($path)) {
-            return null;
-        }
-
-        if ($existingMediaId !== null) {
-            $media = Media::query()->find($existingMediaId);
-
-            if ($media !== null && self::mediaToUploadPath($media) === $path) {
-                return $existingMediaId;
-            }
-        }
-
-        return self::storeCoverImage($path, $contentTitle);
+        self::deleteMediaFileFromStorage($media);
+        $media->delete();
     }
 
-    /**
-     * @param  array<string, mixed>  $uploadedPath
-     */
-    public static function storeCoverImageFromMetadata(array $uploadedPath, string $contentTitle): ?string
+    public static function deleteMediaFileFromStorage(Media $media): void
     {
-        $publicUrl = isset($uploadedPath['public_url']) ? (string) $uploadedPath['public_url'] : null;
+        $r2BaseUrl = rtrim((string) config('filesystems.disks.r2.url'), '/');
 
-        if (blank($publicUrl)) {
-            return null;
+        if (filled($r2BaseUrl) && str_starts_with($media->file_url, $r2BaseUrl.'/')) {
+            Storage::disk('r2')->delete(self::mediaToUploadPath($media));
+
+            return;
         }
 
-        $fileName = isset($uploadedPath['file_name']) && filled($uploadedPath['file_name'])
-            ? (string) $uploadedPath['file_name']
-            : basename((string) parse_url($publicUrl, PHP_URL_PATH));
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+        $publicBaseUrl = $publicDisk->url('');
 
-        $media = Media::query()->firstOrCreate(
-            ['file_url' => $publicUrl],
-            [
-                'caption' => 'content-cover_'.Str::slug($contentTitle, '_'),
-                'file_name' => $fileName,
-                'file_type' => (string) ($uploadedPath['file_type'] ?? 'image/webp'),
-                'file_size' => (int) ($uploadedPath['file_size'] ?? 0),
-            ],
-        );
-
-        return $media->id;
+        if (str_starts_with($media->file_url, $publicBaseUrl)) {
+            $publicDisk->delete(self::mediaToUploadPath($media));
+        }
     }
 
-    /**
-     * @return array{key: string, public_url: string, file_name: string, file_size: int, file_type: string}
-     */
-    public static function mediaToUploaderState(Media $media): array
+    public static function isMediaInUse(string $mediaId, ?string $exceptContentId = null): bool
     {
-        $path = ltrim((string) parse_url($media->file_url, PHP_URL_PATH), '/');
-
-        return [
-            'key' => $path,
-            'public_url' => $media->file_url,
-            'file_name' => $media->file_name,
-            'file_size' => (int) $media->file_size,
-            'file_type' => $media->file_type ?: 'image/webp',
-        ];
-    }
-
-    public static function isMediaInUse(string $mediaId): bool
-    {
-        if (ContentCoverImage::query()->where('media_id', $mediaId)->exists()) {
+        if (ContentCoverImage::query()
+            ->where('media_id', $mediaId)
+            ->when(
+                $exceptContentId !== null,
+                fn ($query) => $query->where('content_id', '!=', $exceptContentId),
+            )
+            ->exists()) {
             return true;
         }
 
@@ -239,5 +262,85 @@ class ContentFormSupport
             ->whereKey($mediaId)
             ->whereHas('user')
             ->exists();
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private static function moveFromTempToPermanent(FilesystemAdapter $disk, string $path): string
+    {
+        if (! str_starts_with($path, 'content-banners/temp/')) {
+            return $path;
+        }
+
+        $permanentPath = 'content-banners/contents/'.basename($path);
+
+        if ($disk->exists($path)) {
+            $disk->move($path, $permanentPath);
+        }
+
+        return $permanentPath;
+    }
+
+    /**
+     * @return non-empty-string|null
+     */
+    public static function convertR2ObjectToWebp(FilesystemAdapter $disk, string $path): ?string
+    {
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagewebp')) {
+            return null;
+        }
+
+        $contents = $disk->get($path);
+        $source = @imagecreatefromstring($contents);
+
+        if (! $source instanceof \GdImage) {
+            return null;
+        }
+
+        $width = imagesx($source);
+        $height = imagesy($source);
+
+        if ($width <= 0 || $height <= 0) {
+            imagedestroy($source);
+
+            return null;
+        }
+
+        $targetWidth = min($width, 1200);
+        $targetHeight = max(1, (int) round($height * ($targetWidth / $width)));
+
+        $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        if ($canvas === false) {
+            imagedestroy($source);
+
+            return null;
+        }
+
+        imagealphablending($canvas, true);
+        imagesavealpha($canvas, true);
+        imagecopyresampled($canvas, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+        imagedestroy($source);
+
+        ob_start();
+        imagewebp($canvas, null, 82);
+        $webpContents = ob_get_clean();
+        imagedestroy($canvas);
+
+        if (! is_string($webpContents) || $webpContents === '') {
+            return null;
+        }
+
+        $directory = dirname($path);
+        $newPath = ($directory !== '.' ? $directory.'/' : '').Str::uuid()->toString().'.webp';
+
+        $disk->put($newPath, $webpContents, [
+            'ContentType' => 'image/webp',
+        ]);
+
+        $disk->delete($path);
+
+        return $newPath;
     }
 }
