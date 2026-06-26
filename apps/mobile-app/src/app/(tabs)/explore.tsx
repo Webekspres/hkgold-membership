@@ -52,11 +52,12 @@ export default function TabTwoScreen() {
         <View className="gap-8 px-6 pt-4">
           <Collapsible title="File-based routing">
             <Text variant="small">
-              This app has two screens: <Text variant="code">src/app/index.tsx</Text> and{' '}
-              <Text variant="code">src/app/explore.tsx</Text>
+              This app has two screens: <Text variant="code">src/app/(tabs)/index.tsx</Text> and{' '}
+              <Text variant="code">src/app/(tabs)/explore.tsx</Text>
             </Text>
             <Text variant="small">
-              The layout file in <Text variant="code">src/app/_layout.tsx</Text> sets up the tab
+              The layout file in <Text variant="code">src/app/_layout.tsx</Text> sets up the stack
+              navigator, and <Text variant="code">src/app/(tabs)/_layout.tsx</Text> sets up the tab
               navigator.
             </Text>
             <ExternalLink href="https://docs.expo.dev/router/introduction">

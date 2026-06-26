@@ -1,12 +1,14 @@
 import * as Device from 'expo-device';
+import { router } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedIcon } from '@/components/animated-icon';
 import { HintRow } from '@/components/hint-row';
+import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { BottomTabInset } from '@/constants/theme';
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -39,6 +41,10 @@ export default function HomeScreen() {
             Welcome to&nbsp;Expo
           </Text>
         </View>
+
+        <Button className="self-stretch" onPress={() => router.push('/login')}>
+          <Text>Masuk</Text>
+        </Button>
 
         <Text variant="code" className="uppercase">
           get started
