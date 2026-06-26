@@ -44,6 +44,7 @@ class ContentFactory extends Factory
                 ContentStatus::Archived,
                 ContentStatus::Published,
             ]),
+            'is_staged' => false,
         ];
     }
 }

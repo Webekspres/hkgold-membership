@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('name', 150);
             $table->foreignUuid('media_id')->constrained('media')->restrictOnDelete();
             $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
 
             $table->index('media_id');

@@ -11,46 +11,71 @@ use App\Filament\Resources\Contents\Support\ContentFormSupport;
 use App\Models\Content;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Renderless;
 
 class CreateContent extends CreateRecord
 {
+    private const DRAFT_TEXT_FIELDS = [
+        'type',
+        'status',
+        'title',
+        'body_content',
+        'event_date',
+    ];
+
     protected static string $resource = ContentResource::class;
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->js('window.dispatchEvent(new CustomEvent("content-draft-restore"))');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    #[Renderless]
+    public function getDraftSnapshot(): array
+    {
+        return Arr::only(ContentFormSupport::formState($this->form), self::DRAFT_TEXT_FIELDS);
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    public function restoreDraftSnapshot(array $state): void
+    {
+        $this->form->fill(Arr::only($state, self::DRAFT_TEXT_FIELDS));
+    }
 
     protected function handleRecordCreation(array $data): Model
     {
         $state = ContentFormSupport::formState($this->form);
 
-        return $this->persistDraft($data, $state['cover_images'] ?? [], $data['status'] ?? ContentStatus::Draft->value);
+        return $this->persistDraft(
+            $data,
+            self::normalizeCoverImagePaths($state['cover_images'] ?? []),
+            $data['status'] ?? ContentStatus::Draft->value,
+        );
     }
 
-    public function autoSave(): void
+    protected function afterCreate(): void
     {
-        $state = ContentFormSupport::formState($this->form);
-        $title = isset($state['title']) ? trim((string) $state['title']) : '';
-
-        if ($title === '') {
-            return;
-        }
-
-        $content = $this->persistDraft(
-            $state,
-            $state['cover_images'] ?? [],
-            ContentStatus::Draft->value,
-        );
-
-        $this->redirect(ContentResource::getUrl('edit', ['record' => $content]));
+        $this->js("localStorage.removeItem('hkgold-content-draft')");
     }
 
     /**
      * @param  array<string, mixed>  $data
-     * @param  array<int, array<string, mixed>>  $coverImages
+     * @param  array<int, string>  $coverImagePaths
      */
-    protected function persistDraft(array $data, array $coverImages, string $status): Content
+    protected function persistDraft(array $data, array $coverImagePaths, string $status): Content
     {
         $title = isset($data['title']) && filled($data['title']) ? (string) $data['title'] : 'Untitled Draft';
 
-        return DB::transaction(function () use ($data, $coverImages, $status, $title): Content {
+        return DB::transaction(function () use ($data, $coverImagePaths, $status, $title): Content {
             $content = Content::query()->create([
                 'type' => $data['type'] ?? ContentType::News->value,
                 'title' => $title,
@@ -62,9 +87,18 @@ class CreateContent extends CreateRecord
                 'status' => $status,
             ]);
 
-            ContentFormSupport::syncCoverImages($content, $coverImages);
+            ContentFormSupport::syncCoverImages($content, $coverImagePaths);
 
             return $content;
         });
+    }
+
+    /**
+     * @param  array<int, mixed>  $paths
+     * @return array<int, string>
+     */
+    private static function normalizeCoverImagePaths(array $paths): array
+    {
+        return array_values(array_filter($paths, fn (mixed $path): bool => is_string($path) && filled($path)));
     }
 }
