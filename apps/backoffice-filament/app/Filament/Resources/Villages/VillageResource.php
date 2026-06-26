@@ -31,7 +31,7 @@ class VillageResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $recordTitleAttribute = 'nama';
 
     public static function form(Schema $schema): Schema
     {
@@ -57,6 +57,6 @@ class VillageResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['district.regency.province']);
+        return parent::getEloquentQuery()->with(['subDistrict.city.province']);
     }
 }

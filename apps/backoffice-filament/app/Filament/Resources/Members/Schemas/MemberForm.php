@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Members\Schemas;
 
 use App\Enums\TierStatus;
-use App\Models\Address;
-use App\Models\Media;
+use App\Filament\Resources\Members\Support\MemberFormSupport;
+use App\Models\Branch;
+use App\Models\City;
 use App\Models\Member;
-use Filament\Forms\Components\DatePicker;
+use App\Models\PostalCode;
+use App\Models\Province;
+use App\Models\SubDistrict;
+use App\Models\Village;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -22,101 +30,223 @@ class MemberForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(3)
             ->components([
                 Section::make('Akun')
-                    ->description('Kredensial login member (role: Customer)')
-                    ->columns(2)
+                    ->description('Kredensial login member (role: MEMBER)')
+                    ->columnSpanFull()
+                    ->columns(6)
+                    ->collapsible()
                     ->schema([
-                        TextInput::make('name')
-                            ->label('Nama')
+                        TextInput::make('full_name')
+                            ->label('Nama lengkap')
                             ->required()
-                            ->maxLength(255)
+                            ->maxLength(150)
                             ->dehydrated(false)
-                            ->columnSpanFull(),
+                            ->columnSpan(3),
                         TextInput::make('email')
                             ->label('Email')
                             ->email()
                             ->required()
                             ->maxLength(255)
                             ->rules(fn (?Member $record): array => [
-                                Rule::unique('users', 'email')->ignore($record?->id),
+                                Rule::unique('users', 'email')->ignore($record?->user_id),
                             ])
-                            ->dehydrated(false),
-                        TextInput::make('phone')
+                            ->dehydrated(false)
+                            ->columnSpan(3),
+                        TextInput::make('phone_number')
                             ->label('Telepon')
                             ->tel()
+                            ->prefix('+62')
+                            ->placeholder('81234567890')
+                            ->helperText('Masukkan nomor tanpa awalan 0.')
                             ->required()
-                            ->maxLength(50)
+                            ->maxLength(15)
                             ->rules(fn (?Member $record): array => [
-                                Rule::unique('users', 'phone')->ignore($record?->id),
+                                function (string $attribute, mixed $value, \Closure $fail) use ($record): void {
+                                    $normalized = MemberFormSupport::normalizePhone(is_string($value) ? $value : null);
+
+                                    if (Member::query()
+                                        ->where('phone_number', $normalized)
+                                        ->when(
+                                            $record?->id,
+                                            fn ($query, string $id) => $query->where('id', '!=', $id),
+                                        )
+                                        ->exists()) {
+                                        $fail('Nomor telepon sudah terdaftar.');
+                                    }
+                                },
                             ])
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            ->columnSpan(2),
                         TextInput::make('password')
                             ->label('Password')
                             ->password()
                             ->revealable()
                             ->rule(Password::default())
+                            ->confirmed()
                             ->dehydrated(false)
-                            ->required(fn (string $operation): bool => $operation === 'create'),
-                        Select::make('profile_photo_id')
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->columnSpan(2),
+                        TextInput::make('password_confirmation')
+                            ->label('Konfirmasi password')
+                            ->password()
+                            ->revealable()
+                            ->dehydrated(false)
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->columnSpan(2),
+                        FileUpload::make('profile_photo')
                             ->label('Foto profil')
-                            ->searchable()
-                            ->preload()
-                            ->options(fn (?string $state): array => Media::query()
-                                ->when(
-                                    filled($state),
-                                    fn ($query) => $query->where(function ($query) use ($state): void {
-                                        $query->whereDoesntHave('user')
-                                            ->orWhere('id', $state);
-                                    }),
-                                    fn ($query) => $query->whereDoesntHave('user'),
-                                )
-                                ->orderBy('file_name')
-                                ->pluck('file_name', 'id')
-                                ->all())
-                            ->dehydrated(false),
+                            ->avatar()
+                            ->imageEditor()
+                            ->imageEditorAspectRatios(['1:1'])
+                            ->imageAspectRatio('1:1')
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesToWidth('720')
+                            ->automaticallyResizeImagesToHeight('720')
+                            ->automaticallyUpscaleImagesWhenResizing(false)
+                            ->disk('public')
+                            ->directory('profile-photos')
+                            ->visibility('public')
+                            ->maxSize(5_120)
+                            ->dehydrated(false)
+                            ->columnSpan(6),
                         Toggle::make('is_active')
                             ->label('Akun aktif')
                             ->default(true)
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            ->columnSpan(2),
                     ]),
                 Section::make('Data Member')
-                    ->columns(2)
+                    ->columnSpanFull()
+                    ->columns(3)
+                    ->collapsible()
                     ->schema([
-                        TextInput::make('member_code')
-                            ->label('Kode member')
+                        TextInput::make('member_number')
+                            ->label('Nomor member')
                             ->required()
-                            ->maxLength(50)
-                            ->unique(ignoreRecord: true),
-                        Select::make('tier')
+                            ->maxLength(15)
+                            ->default(fn (): string => MemberFormSupport::generateMemberNumber())
+                            ->rules(fn (?Member $record): array => [
+                                Rule::unique('members', 'member_number')->ignore($record?->id),
+                            ]),
+                        Select::make('registered_at_branch_id')
+                            ->label('Cabang pendaftaran')
+                            ->options(fn (): array => Branch::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->preload()
+                            ->native(false),
+                        Select::make('current_tier')
                             ->label('Tier')
                             ->options(self::tierOptions())
                             ->default(TierStatus::Silver)
                             ->required()
                             ->native(false),
-                        DatePicker::make('dob')
-                            ->label('Tanggal lahir')
-                            ->native(false),
-                        TextInput::make('total_points')
-                            ->label('Total poin')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0)
-                            ->step(0.01),
-                        Select::make('address_id')
-                            ->label('Alamat')
+                        Toggle::make('is_suspended')
+                            ->label('Akun ditangguhkan')
+                            ->default(false)
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Alamat')
+                    ->columnSpanFull()
+                    ->columns(3)
+                    ->collapsible()
+                    ->schema([
+                        Select::make('province_id')
+                            ->label('Provinsi')
+                            ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
                             ->searchable()
-                            ->preload()
-                            ->options(fn (): array => Address::query()
-                                ->orderBy('street')
-                                ->get()
-                                ->mapWithKeys(fn (Address $address): array => [
-                                    $address->id => $address->street ?: "Alamat #{$address->id}",
-                                ])
-                                ->all()),
-                        Toggle::make('phone_change_pending')
-                            ->label('Perubahan telepon tertunda')
-                            ->default(false),
+                            ->live()
+                            ->dehydrated(false)
+                            ->afterStateUpdated(function (Set $set): void {
+                                $set('city_id', null);
+                                $set('sub_district_id', null);
+                                $set('village_id', null);
+                                $set('postal_code_id', null);
+                            }),
+                        Select::make('city_id')
+                            ->label('Kota/Kabupaten')
+                            ->options(fn (Get $get): array => City::query()
+                                ->when(
+                                    filled($get('province_id')),
+                                    fn ($query) => $query->where('province_id', $get('province_id')),
+                                    fn ($query) => $query->whereRaw('1 = 0'),
+                                )
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
+                                ->all())
+                            ->searchable()
+                            ->live()
+                            ->dehydrated(false)
+                            ->required(fn (Get $get): bool => filled($get('province_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('province_id')))
+                            ->afterStateUpdated(function (Set $set): void {
+                                $set('sub_district_id', null);
+                                $set('village_id', null);
+                                $set('postal_code_id', null);
+                            }),
+                        Select::make('sub_district_id')
+                            ->label('Kecamatan')
+                            ->options(fn (Get $get): array => SubDistrict::query()
+                                ->when(
+                                    filled($get('city_id')),
+                                    fn ($query) => $query->where('city_id', $get('city_id')),
+                                    fn ($query) => $query->whereRaw('1 = 0'),
+                                )
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
+                                ->all())
+                            ->searchable()
+                            ->live()
+                            ->dehydrated(false)
+                            ->required(fn (Get $get): bool => filled($get('city_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('city_id')))
+                            ->afterStateUpdated(function (Set $set): void {
+                                $set('village_id', null);
+                                $set('postal_code_id', null);
+                            }),
+                        Select::make('village_id')
+                            ->label('Kelurahan')
+                            ->options(fn (Get $get): array => Village::query()
+                                ->when(
+                                    filled($get('sub_district_id')),
+                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
+                                    fn ($query) => $query->whereRaw('1 = 0'),
+                                )
+                                ->orderBy('nama')
+                                ->pluck('nama', 'id')
+                                ->all())
+                            ->searchable()
+                            ->live()
+                            ->dehydrated(false)
+                            ->required(fn (Get $get): bool => filled($get('sub_district_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('sub_district_id'))),
+                        Select::make('postal_code_id')
+                            ->label('Kode pos')
+                            ->options(fn (Get $get): array => PostalCode::query()
+                                ->when(
+                                    filled($get('sub_district_id')),
+                                    fn ($query) => $query->where('sub_district_id', $get('sub_district_id')),
+                                    fn ($query) => $query->when(
+                                        filled($get('city_id')),
+                                        fn ($query) => $query->where('city_id', $get('city_id')),
+                                        fn ($query) => $query->whereRaw('1 = 0'),
+                                    ),
+                                )
+                                ->orderBy('kodepos')
+                                ->pluck('kodepos', 'id')
+                                ->all())
+                            ->searchable()
+                            ->dehydrated(false)
+                            ->required(fn (Get $get): bool => filled($get('village_id')))
+                            ->disabled(fn (Get $get): bool => blank($get('village_id'))),
+                        Textarea::make('street')
+                            ->label('Alamat lengkap')
+                            ->rows(3)
+                            ->maxLength(65535)
+                            ->dehydrated(false)
+                            ->required(fn (Get $get): bool => filled($get('province_id')))
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -124,7 +254,7 @@ class MemberForm
     /**
      * @return array<string, string>
      */
-    protected static function tierOptions(): array
+    public static function tierOptions(): array
     {
         return [
             TierStatus::Silver->value => 'Silver',

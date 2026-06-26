@@ -8,7 +8,7 @@ use Database\Factories\MediaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Media extends Model
@@ -19,7 +19,6 @@ class Media extends Model
     protected $table = 'media';
 
     protected $fillable = [
-        'reward_id',
         'caption',
         'file_name',
         'file_type',
@@ -27,9 +26,11 @@ class Media extends Model
         'file_size',
     ];
 
-    public function reward(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(Reward::class);
+        return [
+            'file_size' => 'integer',
+        ];
     }
 
     public function user(): HasOne
@@ -37,8 +38,8 @@ class Media extends Model
         return $this->hasOne(User::class, 'profile_photo_id');
     }
 
-    public function content(): HasOne
+    public function contentCoverImages(): HasMany
     {
-        return $this->hasOne(Content::class);
+        return $this->hasMany(ContentCoverImage::class);
     }
 }

@@ -49,9 +49,9 @@ class MemberTierDistributionChartWidget extends ChartWidget
     protected function getData(): array
     {
         $counts = Member::query()
-            ->selectRaw('tier, COUNT(*) as total')
-            ->groupBy('tier')
-            ->pluck('total', 'tier');
+            ->selectRaw('current_tier, COUNT(*) as total')
+            ->groupBy('current_tier')
+            ->pluck('total', 'current_tier');
 
         $total = (int) $counts->sum();
 

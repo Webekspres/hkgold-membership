@@ -16,17 +16,17 @@ class ProvincesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Provinsi')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('regencies_count')
+                TextColumn::make('cities_count')
                     ->label('Jumlah Kota/Kab.')
-                    ->counts('regencies')
+                    ->counts('cities')
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([])
             ->recordActions([
                 ActionGroup::make([

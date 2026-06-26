@@ -1,12 +1,17 @@
-version: '3.8'
-
-# Mode FlyEnv (disarankan): nginx + PHP-FPM di PC, hanya infra di Docker
-#   docker compose up -d db redis
-#   http://hkgoldadmin.test:8011  (document root → apps/backoffice-filament/public)
-#   Matikan MySQL/Redis FlyEnv agar port 3306/6379 tidak bentrok dengan container
+# HK Gold Membership — Docker infra (port non-default agar tidak bentrok)
 #
-# Mode full-docker: Laravel juga di container
+# Jalankan infra:
+#   docker compose up -d
+#
+# Akses:
+#   MySQL (dari host)     → 127.0.0.1:33068
+#   Redis (dari host)     → 127.0.0.1:6381
+#   phpMyAdmin            → http://localhost:8088
+#   Laravel (lokal)       → cd apps/backoffice-filament && php artisan serve --port=8800
+#
+# Mode full-docker (Laravel di container):
 #   docker compose --profile full up -d
+#   http://localhost:8811
 
 networks:
   hkgold-network:
@@ -17,7 +22,6 @@ volumes:
   redis-data:
 
 services:
-  # MySQL — dipakai oleh Laravel lokal (127.0.0.1:3306) atau container lain di network
   db:
     image: mysql:8.0
     container_name: hkgold-mysql
@@ -26,7 +30,7 @@ services:
       MYSQL_ROOT_PASSWORD: root_password_super_secure
       MYSQL_DATABASE: hkgold_backoffice_filament
     ports:
-      - "3306:3306"
+      - "33068:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -44,7 +48,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
-      - "6379:6379"
+      - "6381:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -55,8 +59,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # Opsional: jalankan Laravel di Docker (profile full)
-  # docker compose --profile full up -d
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    container_name: hkgold-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_password_super_secure
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hkgold-network
+
   backoffice:
     profiles: ["full"]
     image: webdevops/php-nginx:8.3-alpine
@@ -67,7 +87,7 @@ services:
       - ./apps/backoffice-filament:/app
       - ./apps/backoffice-filament/.env.docker:/app/.env:ro
     ports:
-      - "8000:80"
+      - "8811:80"
     environment:
       WEB_DOCUMENT_ROOT: /app/public
       PHP_MEMORY_LIMIT: 512M

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\District;
+use App\Models\SubDistrict;
 use App\Models\Village;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,8 +23,10 @@ class VillageFactory extends Factory
         $prefix = fake()->randomElement(['Kelurahan', 'Desa']);
 
         return [
-            'district_id' => District::factory(),
-            'name' => $prefix.' '.fake()->lastName(),
+            'sub_district_id' => SubDistrict::factory(),
+            'nama' => $prefix.' '.fake()->lastName(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

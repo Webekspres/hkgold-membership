@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Nation;
 use App\Models\Province;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,21 +20,11 @@ class ProvinceFactory extends Factory
      */
     public function definition(): array
     {
-        $provinces = [
-            'Jawa Tengah',
-            'Jawa Timur',
-            'DKI Jakarta',
-            'Jawa Barat',
-            'DI Yogyakarta',
-            'Kalimantan Barat',
-            'Sumatera Utara',
-            'Bali',
-            'Sulawesi Selatan',
-            'Banten',
-        ];
-
         return [
-            'name' => fake()->randomElement($provinces),
+            'nation_id' => Nation::query()->value('id') ?? Nation::factory(),
+            'nama' => fake()->unique()->state(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

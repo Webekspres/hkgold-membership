@@ -26,20 +26,19 @@ class RewardFactory extends Factory
             ['name' => 'Voucher Belanja Rp 500.000', 'points' => 45000],
             ['name' => 'Gelang Emas 1 gram', 'points' => 65000],
             ['name' => 'Layanan Cuci Emas Premium', 'points' => 15000],
-            ['name' => 'Liontin Bulan Sabit 0.5 gram', 'points' => 38000],
-            ['name' => 'Tas Merchandise HK Gold VIP', 'points' => 25000],
-            ['name' => 'Paket Tabungan Emas 0.25 gram', 'points' => 32000],
         ];
 
         $reward = fake()->randomElement($rewards);
 
         return [
-            'category_reward_id' => CategoryReward::factory(),
+            'category_id' => CategoryReward::factory(),
             'name' => $reward['name'],
+            'sku' => 'RW-'.fake()->unique()->regexify('[A-Z0-9]{8}'),
             'description' => 'Hadiah loyalitas HK GOLD VIP untuk member setia. '.fake('id_ID')->sentence(),
             'points_required' => $reward['points'],
-            'valid_until' => fake()->optional(0.7)->dateTimeBetween('+1 month', '+1 year')?->format('Y-m-d'),
             'is_active' => true,
+            'start_at' => now()->subMonth(),
+            'end_at' => now()->addYear(),
         ];
     }
 }

@@ -10,7 +10,7 @@ use App\Filament\Resources\Members\Pages\ListMembers;
 use App\Filament\Resources\Members\Pages\ViewMember;
 use App\Filament\Resources\Members\Schemas\MemberForm;
 use App\Filament\Resources\Members\Schemas\MemberInfolist;
-use App\Filament\Tables\MembersTable;
+use App\Filament\Resources\Members\Tables\MembersTable;
 use App\Models\Member;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -32,7 +32,11 @@ class MemberResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Pengguna';
+
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'member_number';
 
     public static function form(Schema $schema): Schema
     {
@@ -67,7 +71,7 @@ class MemberResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['user.profilePhoto'])
+            ->with(['user.profilePhoto', 'registeredBranch'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
@@ -76,7 +80,12 @@ class MemberResource extends Resource
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
         return parent::getRecordRouteBindingEloquentQuery()
-            ->with(['user.profilePhoto', 'address'])
+            ->with([
+                'user.profilePhoto',
+                'registeredBranch',
+                'address.village.subDistrict.city.province',
+                'address.postalCode',
+            ])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

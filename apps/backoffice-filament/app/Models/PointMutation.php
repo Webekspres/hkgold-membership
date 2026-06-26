@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\MutationType;
 use Database\Factories\PointMutationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,30 +17,30 @@ class PointMutation extends Model
 
     protected $table = 'point_mutations';
 
-    public const CREATED_AT = null;
+    public $timestamps = false;
 
     protected $fillable = [
         'member_id',
         'branch_id',
-        'batch_id',
-        'type',
-        'points',
+        'reference_id',
+        'transaction_type_id',
+        'purchase_nominal',
+        'points_issued',
+        'points_redeemed',
+        'balance_snapshot',
         'transaction_date',
-        'description',
-        'transaction_amount',
-        'invoice_reference',
-        'upload_date',
+        'uploaded_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'type' => MutationType::class,
-            'points' => 'decimal:2',
-            'transaction_amount' => 'decimal:2',
+            'purchase_nominal' => 'decimal:2',
+            'points_issued' => 'integer',
+            'points_redeemed' => 'integer',
+            'balance_snapshot' => 'integer',
             'transaction_date' => 'datetime',
-            'upload_date' => 'datetime',
-            'updated_at' => 'datetime',
+            'uploaded_at' => 'datetime',
         ];
     }
 
@@ -53,10 +52,5 @@ class PointMutation extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
-    }
-
-    public function batch(): BelongsTo
-    {
-        return $this->belongsTo(PointInjectionBatch::class, 'batch_id');
     }
 }

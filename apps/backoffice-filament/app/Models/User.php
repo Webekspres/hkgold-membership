@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Models\Role as SpatieRole;
@@ -21,15 +22,14 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUuids, Notifiable;
+    use HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
 
     protected $table = 'users';
 
     protected $fillable = [
         'email',
-        'phone',
         'password',
-        'name',
+        'full_name',
         'role',
         'profile_photo_id',
         'is_active',
@@ -51,12 +51,12 @@ class User extends Authenticatable implements FilamentUser
 
     public function staff(): HasOne
     {
-        return $this->hasOne(Staff::class, 'id');
+        return $this->hasOne(Staff::class, 'user_id');
     }
 
     public function member(): HasOne
     {
-        return $this->hasOne(Member::class, 'id');
+        return $this->hasOne(Member::class, 'user_id');
     }
 
     public function profilePhoto(): BelongsTo
@@ -66,7 +66,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if (! $this->is_active || $this->role === Role::Customer) {
+        if (! $this->is_active || in_array($this->role, [Role::Member], true)) {
             return false;
         }
 
@@ -76,5 +76,15 @@ class User extends Authenticatable implements FilamentUser
 
         return $this->hasRole(Utils::getSuperAdminName())
             || $this->hasRole(Utils::getPanelUserRoleName());
+    }
+
+    public function getFilamentName(): string
+    {
+        return (string) ($this->full_name ?? $this->email ?? 'User');
+    }
+
+    public function getNameAttribute(): string
+    {
+        return (string) ($this->full_name ?? '');
     }
 }
