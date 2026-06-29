@@ -57,8 +57,8 @@ class BranchResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RewardStocksRelationManager::class,
-            RedeemInvoicesRelationManager::class,
+            'reward-stocks' => RewardStocksRelationManager::class,
+            'redeem-invoices' => RedeemInvoicesRelationManager::class,
         ];
     }
 

@@ -155,3 +155,129 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+---
+
+# HK Gold Backoffice — Project Guidelines
+
+Guidelines below are specific to this app (`apps/backoffice-filament`). They extend (not replace) the Laravel Boost rules above.
+
+## Project Context
+
+- **Product:** HK Gold VIP — integrated membership & loyalty platform for luxury gold retail (Mala Emas).
+- **This app:** Filament v5 admin backoffice for staff operations.
+- **Monorepo:** `hkgold-membership` — shared schema in `packages/database/schema.prisma`, ElysiaJS API backend, Laravel backoffice here.
+- **Active branch:** `backoffice` for Filament work.
+
+## Monorepo & Environment
+
+- **Schema source of truth:** Always read `packages/database/schema.prisma` **before** writing migrations, models, or Filament resources. Laravel migrations and Eloquent models must stay in sync with Prisma (`@@map`, column names, types, relations).
+- **Prisma → Laravel mapping:** Follow `.cursor/rules/make-resource.mdc` for UUID keys, `HasUuids`, `@@map` table names, soft deletes only when Prisma has `deletedAt`, and realistic Indonesian faker context.
+- **Local stack:** Docker provides MySQL (`33068`), Redis (`6381`), MinIO (`9002` API / `9003` console). Object storage uses disk name `r2` — MinIO locally, Cloudflare R2 in production (env-only difference).
+- **Dev server:** `php artisan serve --port=8800` from `apps/backoffice-filament/`.
+- **R2 wipe on fresh seed:** `migrate:fresh --seed` may wipe the `r2` bucket when `wipe_r2_on_fresh_seed` is enabled (local default).
+
+## Git Workflow
+
+- Do **not** commit or push unless the user explicitly asks.
+- Do **not** create documentation files unless requested.
+- Keep changes scoped — avoid unrelated refactors in the same task.
+
+## UI Language & Navigation
+
+- All Filament labels use **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, section headings, notifications, empty states.
+- Follow existing `navigationGroup` conventions:
+  - `Manajemen Pengguna` — Member, Staff, Cabang
+  - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
+  - `CMS` — Konten, Banner Promosi
+  - `Katalog Reward` — Kategori Reward, dll.
+- Reuse `Heroicon::Outlined*` icons consistent with sibling resources.
+
+## Filament Architecture
+
+Use the **split structure** already in this codebase — do not inline large schemas in the Resource class:
+
+```
+app/Filament/
+├── Resources/{Name}/
+│   ├── {Name}Resource.php      # thin: model, labels, delegates form/table/infolist
+│   ├── Schemas/                # {Name}Form.php, {Name}Infolist.php
+│   ├── Tables/                 # {Name}sTable.php
+│   ├── Support/                # {Name}FormSupport.php — business logic, normalization
+│   ├── Pages/                  # List, Create, Edit, View
+│   ├── RelationManagers/       # when needed on View/Edit
+│   └── Widgets/                # stats/charts on List pages
+└── Pages/                      # custom Pages (non-standard CRUD)
+    └── Support/
+```
+
+- Every new PHP file: `declare(strict_types=1);`
+- Resource class stays thin — wire `Form::configure()`, `Table::configure()`, `Infolist::configure()`.
+- Put save/mutate logic in **Page** classes (`mutateFormDataBeforeCreate`, `afterCreate`, `handleRecordUpdate`) or **Support** classes, not in schema classes.
+- **Page vs Resource:** If unsure whether a feature should be a Filament Resource or custom Page, **ask the user first**. Default assumption: standard entity CRUD → Resource; singleton/settings/repeater-without-entity → Page (e.g. `PromotionBannerPage`).
+
+## Domain Conventions
+
+### Members & Staff
+
+- Member number format: `HK` + letter + 7 digits — use `MemberFormSupport::generateMemberNumber()`.
+- Tier/status fields use existing enums (`TierStatus`, etc.).
+
+### Branches (Cabang)
+
+- Branch code: `HK01`, `HK02`, … — use `BranchFormSupport::generateBranchCode()`. Disable `branch_code` on edit.
+- `is_online_warehouse` for online warehouse flag.
+- `address` (text) for display; `address_id` → normalized `Address` model.
+
+### Points, Redeem, Rewards
+
+- Respect loyalty/point business rules from Prisma models (`PointMutation`, `RedeemInvoice`, `RewardBranchStock`, etc.).
+- Use realistic Indonesian retail amounts in factories/seeders (not generic single-digit values).
+
+## Data Normalization
+
+### Phone numbers
+
+- UI prefix: `+62` on `TextInput`.
+- Display: `MemberFormSupport::formatPhoneForDisplay()`.
+- Persist: `MemberFormSupport::normalizePhone()` → stored as `62xxxxxxxxxx` (no `+`).
+- Reuse this for Member, Branch, Staff — do not duplicate phone logic.
+
+### Address (cascading selects)
+
+- Flow: `province_id` → `city_id` → `sub_district_id` → `village_id` → `postal_code_id` → `street`.
+- Persist via `MemberFormSupport::syncAddress()`; load via resource-specific `addressState()` helpers.
+- Build display string via `buildAddressString()` pattern in `BranchFormSupport`.
+- When adding new resources with addresses, **extract shared form fields** into a reusable component/trait rather than copy-pasting — goal is DRY across Member, Branch, and future forms.
+
+### Slugs & codes
+
+- Content slugs: `ContentFormSupport::generateSlug()`.
+- Follow existing auto-generation patterns; don't invent new formats without asking.
+
+## Media & File Upload (disk `r2`)
+
+- Always use disk `r2` for CMS/banner media (not `public` for new features).
+- **Staging pattern:** FileUpload `directory('temp/')` → on save, move from `temp/` to final folder (`contents/`, `banners/`, etc.) and create/update `Media` record.
+- Reference implementations: `ContentFormSupport`, `PromotionBannerSupport`.
+- Clean up orphaned `temp/` files and old `Media` records when replacing images.
+- On `migrate:fresh --seed`, R2 bucket may be wiped — do not rely on orphaned files persisting locally.
+
+## Testing
+
+- Pest tests are **not required by default** — only write/update tests when the user explicitly requests them.
+- When tests are requested, use `php artisan make:test --pest {Name}` and run `php artisan test --compact`.
+
+## Reference Resources
+
+Copy patterns from these when building new features:
+
+| Feature type | Reference |
+|---|---|
+| Full CRUD + View + Infolist | `Members/MemberResource` |
+| Branch + RelationManagers + Stats widget | `Branches/BranchResource` |
+| CMS + R2 media + RichEditor | `Contents/ContentResource` |
+| Custom Page + repeater | `Pages/PromotionBannerPage` |
+| Read-only master data | `Provinces/ProvinceResource` |
+| List-only with chart widgets | `Members/` widgets |
+

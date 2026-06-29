@@ -54,6 +54,7 @@ class BranchForm
                         Toggle::make('is_online_warehouse')
                             ->label('Gudang online')
                             ->default(false)
+                            ->live()
                             ->inline(false)
                             ->columnSpan(1),
                         TextInput::make('name')
@@ -67,6 +68,13 @@ class BranchForm
                     ->columns(3)
                     ->collapsible()
                     ->schema([
+                        TextInput::make('location_url')
+                            ->label('Link Google Maps')
+                            ->url()
+                            ->maxLength(500)
+                            ->placeholder('https://maps.google.com/...')
+                            ->required(fn (Get $get): bool => ! (bool) ($get('is_online_warehouse') ?? false))
+                            ->columnSpanFull(),
                         Select::make('province_id')
                             ->label('Provinsi')
                             ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())

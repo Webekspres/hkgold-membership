@@ -53,4 +53,9 @@ class PointMutation extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function transactionType(): BelongsTo
+    {
+        return $this->belongsTo(TransactionType::class, 'transaction_type_id');
+    }
 }

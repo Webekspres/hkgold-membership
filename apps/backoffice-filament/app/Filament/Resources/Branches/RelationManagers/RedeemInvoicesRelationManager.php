@@ -17,6 +17,7 @@ class RedeemInvoicesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading(null)
             ->columns([
                 TextColumn::make('invoice_number')
                     ->label('No. Invoice')

@@ -18,6 +18,7 @@ class RewardStocksRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading(null)
             ->columns([
                 TextColumn::make('reward.name')
                     ->label('Reward')

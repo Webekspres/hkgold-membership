@@ -36,10 +36,10 @@ class MemberFactory extends Factory
     {
         $tier = fake()->randomElement(TierStatus::cases());
         $pointsByTier = [
-            TierStatus::Silver->value => fake()->numberBetween(0, 49_999),
-            TierStatus::Gold->value => fake()->numberBetween(50_000, 199_999),
-            TierStatus::Platinum->value => fake()->numberBetween(200_000, 499_999),
-            TierStatus::Sapphire->value => fake()->numberBetween(500_000, 2_000_000),
+            TierStatus::Silver->value => fake()->numberBetween(0, 49),
+            TierStatus::Gold->value => fake()->numberBetween(50, 199),
+            TierStatus::Platinum->value => fake()->numberBetween(200, 499),
+            TierStatus::Sapphire->value => fake()->numberBetween(500, 2000),
         ];
 
         $branchId = Branch::query()->inRandomOrder()->value('id');

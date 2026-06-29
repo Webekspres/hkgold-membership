@@ -23,6 +23,7 @@ class Branch extends Model
         'address',
         'address_id',
         'phone',
+        'location_url',
         'is_online_warehouse',
     ];
 

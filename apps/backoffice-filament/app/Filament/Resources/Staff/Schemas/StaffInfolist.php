@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Staff\Schemas;
 
 use App\Enums\Role;
+use App\Filament\Resources\Staff\Support\StaffRoleSupport;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -33,7 +34,8 @@ class StaffInfolist
                         TextEntry::make('user.role')
                             ->label('Role')
                             ->badge()
-                            ->formatStateUsing(fn (Role $state): string => self::roleLabel($state)),
+                            ->formatStateUsing(fn (Role $state): string => StaffRoleSupport::label($state))
+                            ->color(fn (Role $state): string => StaffRoleSupport::color($state)),
                     ]),
                 Section::make('Kontak & Akun')
                     ->columns(2)
@@ -69,16 +71,5 @@ class StaffInfolist
                             ->dateTime(),
                     ]),
             ]);
-    }
-
-    public static function roleLabel(Role $role): string
-    {
-        return match ($role) {
-            Role::Administrator => 'Administrator',
-            Role::SuperAdmin => 'Super Admin',
-            Role::Marketing => 'Marketing',
-            Role::StoreManager => 'Store Manager',
-            Role::Member => 'Member',
-        };
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Branches\Schemas;
 
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -17,16 +17,12 @@ class BranchInfolist
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Data Cabang')
+                Section::make()
                     ->columnSpanFull()
                     ->columns(3)
                     ->schema([
-                        TextEntry::make('branch_code')
-                            ->label('Kode cabang')
-                            ->copyable()
-                            ->icon(Heroicon::OutlinedIdentification),
-                        TextEntry::make('name')
-                            ->label('Nama cabang'),
+                        View::make('filament.resources.branches.partials.branch-view-header')
+                            ->columnSpanFull(),
                         TextEntry::make('phone')
                             ->label('Telepon')
                             ->placeholder('—')
@@ -35,13 +31,6 @@ class BranchInfolist
                             ->formatStateUsing(fn (?string $state): string => filled($state)
                                 ? '+'.ltrim($state, '+')
                                 : '—'),
-                        IconEntry::make('is_online_warehouse')
-                            ->label('Gudang online')
-                            ->boolean(),
-                        TextEntry::make('normalizedAddress.street')
-                            ->label('Alamat jalan')
-                            ->placeholder('—')
-                            ->columnSpanFull(),
                         TextEntry::make('normalizedAddress.village.nama')
                             ->label('Kelurahan')
                             ->placeholder('—'),
@@ -57,6 +46,10 @@ class BranchInfolist
                         TextEntry::make('normalizedAddress.postalCode.kodepos')
                             ->label('Kode pos')
                             ->placeholder('—'),
+                        TextEntry::make('normalizedAddress.street')
+                            ->label('Alamat')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

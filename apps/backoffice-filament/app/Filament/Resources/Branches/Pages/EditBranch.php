@@ -65,6 +65,7 @@ class EditBranch extends EditRecord
                     ? MemberFormSupport::normalizePhone($data['phone'])
                     : null,
                 'is_online_warehouse' => $data['is_online_warehouse'] ?? false,
+                'location_url' => $data['location_url'] ?? null,
                 'address_id' => $addressId,
                 'address' => BranchFormSupport::buildAddressString($state),
             ]);
