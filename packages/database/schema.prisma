@@ -635,8 +635,8 @@ model PointInjectionDetail {
 
 model PointMutation {
   id                String   @id @default(uuid()) @db.Char(36)
-  memberId          String?  @map("member_id") @db.Char(36)
-  branchId          Int      @map("branch_id")
+  memberId          String   @map("member_id") @db.Char(36)
+  branchId          Int?     @map("branch_id")
   referenceId       String?  @map("reference_id") @db.VarChar(100)
   transactionTypeId Int?     @map("transaction_type_id")
   purchaseNominal   Decimal  @default(0.00) @map("purchase_nominal") @db.Decimal(15, 2)
@@ -646,8 +646,8 @@ model PointMutation {
   transactionDate   DateTime @map("transaction_date")
   uploadedAt        DateTime @default(now()) @map("uploaded_at")
 
-  member          Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  branch          Branch           @relation(fields: [branchId], references: [id])
+  member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
   transactionType TransactionType? @relation(fields: [transactionTypeId], references: [id], onDelete: Restrict)
 
   @@index([memberId])
