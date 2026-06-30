@@ -8,6 +8,7 @@ use App\Filament\Resources\Rewards\Pages\CreateReward;
 use App\Filament\Resources\Rewards\Pages\EditReward;
 use App\Filament\Resources\Rewards\Pages\ListRewards;
 use App\Filament\Resources\Rewards\Pages\ViewReward;
+use App\Filament\Resources\Rewards\RelationManagers\BranchStocksRelationManager;
 use App\Filament\Resources\Rewards\Schemas\RewardForm;
 use App\Filament\Resources\Rewards\Schemas\RewardInfolist;
 use App\Filament\Resources\Rewards\Tables\RewardsTable;
@@ -54,7 +55,9 @@ class RewardResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            BranchStocksRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -70,7 +73,7 @@ class RewardResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['categoryReward'])
+            ->with(['categoryReward', 'rewardImages.media'])
             ->withSum('branchStocks', 'actual_stock')
             ->withSum('branchStocks', 'held_stock');
     }
