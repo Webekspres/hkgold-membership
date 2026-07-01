@@ -3,8 +3,54 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+.fi-resource-point-mutations .fi-ta-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fi-resource-point-mutations .fi-ta-filters-above-content-ctn {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fi-resource-point-mutations .fi-ta-filters-above-content-ctn.fi-open {
+    flex: 1 1 100%;
+    width: 100%;
+}
+
+.fi-resource-point-mutations .fi-ta-filters-above-content-ctn.fi-open .fi-ta-filters {
+    width: 100%;
+}
+
+.fi-resource-point-mutations .fi-ta-filters-above-content-ctn:not(.fi-open) {
+    order: 1;
+}
+
+.fi-resource-point-mutations .fi-ta-header-toolbar {
+    order: 2;
+    flex: 1 1 auto;
+}
+
+.fi-resource-point-mutations .fi-ta-header-toolbar > div:has(> .fi-ta-search-field) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.fi-resource-point-mutations .fi-ta-search-field {
+    flex: 1;
+    min-width: 12rem;
 }

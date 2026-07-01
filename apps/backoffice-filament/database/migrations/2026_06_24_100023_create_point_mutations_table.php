@@ -12,8 +12,8 @@ return new class extends Migration
     {
         Schema::create('point_mutations', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('member_id')->nullable()->constrained('members')->nullOnDelete();
-            $table->foreignId('branch_id')->constrained('branches');
+            $table->foreignUuid('member_id')->constrained('members')->restrictOnDelete();
+            $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->string('reference_id', 100)->nullable();
             $table->foreignId('transaction_type_id')->nullable()->constrained('transaction_types')->restrictOnDelete();
             $table->decimal('purchase_nominal', 15, 2)->default(0);

@@ -155,3 +155,155 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+---
+
+# HK Gold Backoffice — Project Guidelines
+
+Guidelines below are specific to this app (`apps/backoffice-filament`). They extend (not replace) the Laravel Boost rules above.
+
+## Project Context
+
+- **Product:** HK Gold VIP — integrated membership & loyalty platform for luxury gold retail (Mala Emas).
+- **This app:** Filament v5 admin backoffice for staff operations.
+- **Monorepo:** `hkgold-membership` — shared schema in `packages/database/schema.prisma`, ElysiaJS API backend, Laravel backoffice here.
+- **Active branch:** `backoffice` for Filament work.
+
+## Monorepo & Environment
+
+- **Schema source of truth:** Always read `packages/database/schema.prisma` **before** writing migrations, models, or Filament resources. Laravel migrations and Eloquent models must stay in sync with Prisma (`@@map`, column names, types, relations).
+- **Prisma → Laravel mapping:** Follow `.cursor/rules/make-resource.mdc` for UUID keys, `HasUuids`, `@@map` table names, soft deletes only when Prisma has `deletedAt`, and realistic Indonesian faker context.
+- **Local stack:** Docker provides MySQL (`33068`), Redis (`6381`), MinIO (`9002` API / `9003` console). Object storage uses disk name `r2` — MinIO locally, Cloudflare R2 in production (env-only difference).
+- **Dev server:** `php artisan serve --port=8800` from `apps/backoffice-filament/`.
+- **R2 wipe on fresh seed:** `migrate:fresh --seed` may wipe the `r2` bucket when `wipe_r2_on_fresh_seed` is enabled (local default).
+
+## Git Workflow
+
+- Do **not** commit or push unless the user explicitly asks.
+- Do **not** create documentation files unless requested.
+- Keep changes scoped — avoid unrelated refactors in the same task.
+
+## RTK (Rust Token Killer)
+
+Prefix perintah terminal dengan `rtk` untuk output ringkas (`rtk git status`, `rtk php artisan test --compact`). Boost MCP tools tetap prioritas; jika `rtk` gagal, jalankan perintah biasa. Setup: `rtk init --global --agent cursor`.
+
+## UI Language & Navigation
+
+- Semua label Filament dalam **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, heading section, notifikasi, empty state.
+- Ikuti konvensi `navigationGroup` yang sudah ada:
+  - `Manajemen Pengguna` — Member, Staff, Cabang
+  - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
+  - `CMS` — Konten, Banner Promosi
+  - `Katalog Reward` — Kategori Reward, Katalog (Reward)
+  - `Konfigurasi` — Manajemen Tier (+ aturan konversi inline)
+  - `Loyalty Point` — Mutasi Poin
+- Reuse ikon `Heroicon::Outlined*` konsisten dengan resource sejenis.
+
+## Filament Architecture
+
+Use the **split structure** already in this codebase — do not inline large schemas in the Resource class:
+
+```
+app/Filament/
+├── Resources/{Name}/
+│   ├── {Name}Resource.php      # tipis: model, label, delegasi form/table/infolist
+│   ├── Schemas/                # {Name}Form.php, {Name}Infolist.php
+│   ├── Tables/                 # {Name}sTable.php
+│   ├── Support/                # {Name}FormSupport.php — normalisasi & helper UI
+│   ├── Actions/                # aksi non-CRUD (modal wizard, inject, approve)
+│   ├── Pages/                  # List, Create, Edit, View
+│   ├── RelationManagers/       # bila perlu di View/Edit
+│   └── Widgets/                # stat/chart di halaman List
+├── Pages/                      # custom Page (non-CRUD standar)
+│   └── Support/
+app/Services/                   # logic bisnis reusable (prioritas untuk modul kompleks)
+app/Data/                       # DTO readonly (payload/result)
+app/Exceptions/                 # domain exception + error code
+```
+
+- Setiap file PHP baru: `declare(strict_types=1);`
+- Class Resource tetap tipis — wire `Form::configure()`, `Table::configure()`, `Infolist::configure()`.
+- Logic simpan/mutasi di **Page** (`mutateFormDataBeforeCreate`, `handleRecordCreation`, dll.) atau **Support** — bukan di class schema.
+- **Mutasi non-CRUD** (contoh: suntik poin manual): standarkan di `Actions/` + panggil dari `Tables/*Table.php` → `headerActions()` atau `Pages/*` → `getHeaderActions()`. Jangan aktifkan `canCreate()` hanya untuk menambah aksi tulis.
+- **Service layer:** fleksibel — ikuti pola file terdekat. Untuk modul kompleks (loyalty, transaksi ACID), ekstrak ke `app/Services/{Domain}/` agar bisa dipakai ulang API nanti; Filament hanya orchestrasi UI.
+- **Page vs Resource:** Jika ragu fitur harus Resource atau custom Page, **tanya user dulu**. Default: CRUD entity → Resource; singleton/settings/repeater tanpa entity → Page (contoh: `PromotionBannerPage`).
+
+## Domain Conventions
+
+### Members & Staff
+
+- Format nomor member: `HK` + huruf + 7 digit — gunakan `MemberFormSupport::generateMemberNumber()`.
+- Field tier/status memakai enum yang ada (`TierStatus`, dll.).
+- `Member` punya `point_balance`, `highest_point`, `current_tier` — jangan asumsikan hanya `point_balance`.
+
+### Branches (Cabang)
+
+- Branch code: `HK01`, `HK02`, … — use `BranchFormSupport::generateBranchCode()`. Disable `branch_code` on edit.
+- `is_online_warehouse` for online warehouse flag.
+- `address` (text) for display; `address_id` → normalized `Address` model.
+
+### Points, Redeem, Rewards
+
+- Hormati aturan bisnis dari model Prisma (`PointMutation`, `RedeemInvoice`, `RewardBranchStock`, `ConversionRule`, `TierMember`, dll.).
+- Gunakan nominal retail Indonesia yang realistis di factory/seeder (bukan angka generik satu digit).
+- **Ringkasan loyalty (implementasi saat ini):**
+  - Poin dihitung `floor(nominal / conversion_nominal)` — gunakan `bcmath`, hindari `float` untuk Rupiah.
+  - Konversi memakai `current_tier` member **sebelum** poin ditambah.
+  - Setelah suntik poin: tier hanya **naik** otomatis (tidak turun).
+  - Suntik manual: transaksi ACID (insert `PointMutation`, update `Member`, tulis `ActivityLog`) via `ManualPointInjectionService`.
+  - `ActivityLog.user_id` → `users` (bukan `staff_id`). Before/after JSON di `before_json` / `after_json`.
+  - Nomor struk (`reference_id`) unik global per `transaction_type_id`; boleh kosong (null).
+  - `PointMutation`: `member_id` wajib, `branch_id` nullable.
+- Detail implementasi: lihat `app/Services/Loyalty/` dan `tests/Feature/Loyalty/`.
+
+## Data Normalization
+
+### Phone numbers
+
+- UI prefix: `+62` on `TextInput`.
+- Display: `MemberFormSupport::formatPhoneForDisplay()`.
+- Persist: `MemberFormSupport::normalizePhone()` → stored as `62xxxxxxxxxx` (no `+`).
+- Reuse this for Member, Branch, Staff — do not duplicate phone logic.
+
+### Address (cascading selects)
+
+- Flow: `province_id` → `city_id` → `sub_district_id` → `village_id` → `postal_code_id` → `street`.
+- Persist via `MemberFormSupport::syncAddress()`; load via resource-specific `addressState()` helpers.
+- Build display string via `buildAddressString()` pattern in `BranchFormSupport`.
+- When adding new resources with addresses, **extract shared form fields** into a reusable component/trait rather than copy-pasting — goal is DRY across Member, Branch, and future forms.
+
+### Slugs & codes
+
+- Content slugs: `ContentFormSupport::generateSlug()`.
+- Follow existing auto-generation patterns; don't invent new formats without asking.
+
+## Media & File Upload (disk `r2`)
+
+- Always use disk `r2` for CMS/banner media (not `public` for new features).
+- **Staging pattern:** FileUpload `directory('temp/')` → on save, move from `temp/` to final folder (`contents/`, `banners/`, etc.) and create/update `Media` record.
+- Reference implementations: `ContentFormSupport`, `PromotionBannerSupport`.
+- Clean up orphaned `temp/` files and old `Media` records when replacing images.
+- On `migrate:fresh --seed`, R2 bucket may be wiped — do not rely on orphaned files persisting locally.
+
+## Testing
+
+- Pest **tidak wajib by default** — tulis/update test hanya jika user meminta.
+- Bila diminta: `php artisan make:test --pest {Name}` lalu `php artisan test --compact`.
+- Catatan: `phpunit.xml` memakai SQLite in-memory; beberapa migration MySQL-specific bisa gagal di test suite — prefer MySQL lokal atau `DatabaseTransactions` bila perlu.
+
+## Reference Resources
+
+Salin pola dari resource berikut saat membangun fitur baru:
+
+| Jenis fitur | Referensi |
+|---|---|
+| Full CRUD + View + Infolist | `Members/MemberResource` |
+| Cabang + RelationManagers + widget stat | `Branches/BranchResource` |
+| CMS + media R2 + RichEditor | `Contents/ContentResource` |
+| Custom Page + repeater | `Pages/PromotionBannerPage` |
+| Master data read-only (modal) | `Provinces/ProvinceResource` |
+| List + chart widgets | `Members/` widgets |
+| List read-only + filter + stat cards | `PointMutations/PointMutationResource` |
+| Aksi non-CRUD (wizard modal) | `PointMutations/Actions/InjectManualPointAction` |
+| Konfigurasi tier + konversi inline | `TierMembers/TierMemberResource` |
+

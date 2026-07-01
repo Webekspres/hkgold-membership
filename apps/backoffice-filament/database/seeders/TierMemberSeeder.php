@@ -16,10 +16,10 @@ class TierMemberSeeder extends Seeder
     public function run(): void
     {
         $tiers = [
-            [TierStatus::Silver, 0, 49_999],
-            [TierStatus::Gold, 50_000, 199_999],
-            [TierStatus::Platinum, 200_000, 499_999],
-            [TierStatus::Sapphire, 500_000, 9_999_999],
+            [TierStatus::Silver, 0, 1000],
+            [TierStatus::Gold, 1001, 2000],
+            [TierStatus::Platinum, 2001, 4000],
+            [TierStatus::Sapphire, 4001, 99999],
         ];
 
         foreach ($tiers as [$tier, $minPoints, $maxPoints]) {

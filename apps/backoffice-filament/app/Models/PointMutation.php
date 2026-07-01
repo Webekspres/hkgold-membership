@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $member_id
+ * @property int|null $branch_id
+ */
 class PointMutation extends Model
 {
     /** @use HasFactory<PointMutationFactory> */
@@ -52,5 +56,10 @@ class PointMutation extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function transactionType(): BelongsTo
+    {
+        return $this->belongsTo(TransactionType::class, 'transaction_type_id');
     }
 }

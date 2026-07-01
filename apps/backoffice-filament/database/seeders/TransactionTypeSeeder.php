@@ -15,10 +15,8 @@ class TransactionTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['PURCHASE_GOLD', 'Pembelian Emas'],
-            ['PURCHASE_JEWELRY', 'Pembelian Perhiasan'],
-            ['REDEEM_REWARD', 'Penukaran Hadiah'],
-            ['POINT_ADJUSTMENT', 'Koreksi Poin'],
+            ['PERHIASAN', 'Perhiasan'],
+            ['BERLIAN',   'Berlian'],
         ];
 
         foreach ($types as [$typeKey, $displayName]) {
@@ -26,8 +24,8 @@ class TransactionTypeSeeder extends Seeder
                 ['type_key' => $typeKey],
                 [
                     'display_name' => $displayName,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ],
             );
         }

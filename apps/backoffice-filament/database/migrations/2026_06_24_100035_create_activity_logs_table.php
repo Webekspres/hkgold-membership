@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignId('staff_id')->nullable()->constrained('staffs')->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action', 100);
             $table->text('description');
             $table->string('auditable_type', 100);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('ip_address', 45);
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index('staff_id');
+            $table->index('user_id');
             $table->index(['auditable_type', 'auditable_id']);
         });
     }
