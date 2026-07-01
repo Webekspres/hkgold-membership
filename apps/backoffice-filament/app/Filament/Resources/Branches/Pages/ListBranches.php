@@ -17,7 +17,8 @@ class ListBranches extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah Cabang'),
+                ->label('Tambah Cabang')
+                ->goldStyle(),
         ];
     }
 

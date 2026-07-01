@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PointInjectionBatch extends Model
 {
@@ -21,7 +22,7 @@ class PointInjectionBatch extends Model
 
     protected $fillable = [
         'staff_id',
-        'file_name',
+        'media_id',
         'total_rows',
         'successful_rows',
         'failed_rows',
@@ -43,5 +44,15 @@ class PointInjectionBatch extends Model
     public function staff(): BelongsTo
     {
         return $this->belongsTo(Staff::class);
+    }
+
+    public function media(): BelongsTo
+    {
+        return $this->belongsTo(Media::class);
+    }
+
+    public function pointMutations(): HasMany
+    {
+        return $this->hasMany(PointMutation::class, 'source_id');
     }
 }

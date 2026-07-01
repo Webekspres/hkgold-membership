@@ -220,6 +220,7 @@ model Media {
   rewardImages        RewardImage[]
   contentCoverImages  ContentCoverImage[]
   promotionBanners    PromotionBanner[]
+  pointInjectionBatch PointInjectionBatch?
 
   @@map("media")
 }
@@ -598,7 +599,7 @@ model ConversionRule {
 model PointInjectionBatch {
   id                  String   @id @default(uuid()) @db.Char(36)
   staffId             Int      @map("staff_id")
-  fileName            String   @map("file_name") @db.VarChar(255)
+  mediaId             String   @unique @map("media_id") @db.Char(36)
   totalRows           Int      @default(0) @map("total_rows")
   successfulRows      Int      @default(0) @map("successful_rows")
   failedRows          Int      @default(0) @map("failed_rows")
@@ -606,6 +607,7 @@ model PointInjectionBatch {
   uploadedAt          DateTime @default(now()) @map("uploaded_at")
 
   staff   Staff                  @relation(fields: [staffId], references: [id])
+  media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   details PointInjectionDetail[]
 
   @@index([staffId])

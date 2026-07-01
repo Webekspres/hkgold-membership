@@ -1,10 +1,5 @@
-# commit
-
 ---
-
 description: This instruction provides guidelines for generating Git commit messages based on code changes following the Conventional Commits specification.
-globs: *
-
 ---
 
 # Role

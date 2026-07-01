@@ -106,8 +106,8 @@ class ManualPointInjectionFormSupport
             ? sprintf('<li>Cabang: <strong>%s</strong></li>', e($preview['branch_name']))
             : '<li>Cabang: <em>—</em></li>';
 
-        $referenceLine = filled($preview['reference_id'] ?? null)
-            ? sprintf('<li>Nomor struk: <strong>%s</strong></li>', e($preview['reference_id']))
+        $referenceLine = filled($preview['receipt_number'] ?? null)
+            ? sprintf('<li>Nomor struk: <strong>%s</strong></li>', e($preview['receipt_number']))
             : '<li>Nomor struk: <em>—</em></li>';
 
         return <<<HTML

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('status')->default('PENDING');
             $table->text('error_message')->nullable();
             $table->dateTime('processed_at')->nullable();
+            $table->string('receipt_number', 100)->nullable();
 
             $table->index('batch_id');
             $table->index('transaction_type_id');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Media;
 use App\Models\PointInjectionBatch;
 use App\Models\Staff;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,7 +27,7 @@ class PointInjectionBatchFactory extends Factory
 
         return [
             'staff_id' => Staff::query()->inRandomOrder()->value('id') ?? Staff::factory(),
-            'file_name' => 'inject-poin-'.fake()->date('Ymd').'.xlsx',
+            'media_id' => Media::factory()->spreadsheet(),
             'total_rows' => $totalRows,
             'successful_rows' => $successfulRows,
             'failed_rows' => $failedRows,

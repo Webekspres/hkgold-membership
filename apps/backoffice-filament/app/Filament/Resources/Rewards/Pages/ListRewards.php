@@ -16,7 +16,8 @@ class ListRewards extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah reward'),
+                ->label('Tambah reward')
+                ->goldStyle(),
         ];
     }
 }
