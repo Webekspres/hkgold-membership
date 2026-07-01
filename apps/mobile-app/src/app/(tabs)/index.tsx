@@ -1,65 +1,61 @@
-import * as Device from 'expo-device';
-import { router } from 'expo-router';
-import { Platform, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from "expo-router";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <Text variant="small">use browser devtools</Text>;
-  }
-  if (Device.isDevice) {
-    return (
-      <Text variant="small">
-        shake device or press <Text variant="code">m</Text> in terminal
-      </Text>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <Text variant="small">
-      press <Text variant="code">{shortcut}</Text>
-    </Text>
-  );
-}
+import { MemberWalletCard } from "@/components/member-wallet-card";
+import { HomeShortcutGrid } from "@/components/home-shortcut-grid";
+import { LatestNewsSection } from "@/components/latest-news-section";
+import { PromotionBannerSlider } from "@/components/promotion-banner-slider";
+import { UpcomingEventsSection } from "@/components/upcoming-events-section";
+import { RewardCatalogSection } from "@/components/reward-catalog-section";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { MOCK_PROMOTION_BANNERS } from "@/constants/mock-banners";
+import { MOCK_UPCOMING_EVENTS } from "@/constants/mock-events";
+import { MOCK_LATEST_NEWS } from "@/constants/mock-news";
+import { MOCK_REWARD_CATALOG } from "@/constants/mock-rewards";
+import { BottomTabInset } from "@/constants/theme";
+import { MOCK_MEMBER } from "@/constants/mock-member";
 
 export default function HomeScreen() {
   return (
-    <View className="flex-1 flex-row justify-center bg-background">
-      <SafeAreaView
-        className="max-w-[800px] flex-1 items-center gap-4 px-6"
-        style={{ paddingBottom: BottomTabInset + 16 }}>
-        <View className="flex-1 items-center justify-center gap-6 px-6">
-          <AnimatedIcon />
-          <Text variant="h1" className="text-center text-5xl font-semibold leading-[52px]">
-            Welcome to&nbsp;Expo
-          </Text>
-        </View>
+    <View className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ paddingBottom: 16 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-6 pb-6 pt-4"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="gap-1 px-4">
+            <Text variant="h3" className="text-stone-900">
+              Halo, {MOCK_MEMBER.fullName.split(" ")[0]}
+            </Text>
+            <Text variant="muted">Selamat datang di HK Gold VIP</Text>
+          </View>
 
-        <Button className="self-stretch" onPress={() => router.push('/login')}>
-          <Text>Masuk</Text>
-        </Button>
+          <View className="px-4">
+            <MemberWalletCard {...MOCK_MEMBER} />
+          </View>
 
-        <Text variant="code" className="uppercase">
-          get started
-        </Text>
+          <HomeShortcutGrid />
+          <PromotionBannerSlider banners={MOCK_PROMOTION_BANNERS} />
 
-        <View className="gap-4 self-stretch rounded-3xl bg-muted px-4 py-6">
-          <HintRow title="Try editing" hint={<Text variant="code">src/app/index.tsx</Text>} />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<Text variant="code">npm run reset-project</Text>}
-          />
-        </View>
+          <UpcomingEventsSection events={MOCK_UPCOMING_EVENTS} />
 
-        {Platform.OS === 'web' && <WebBadge />}
+          <LatestNewsSection articles={MOCK_LATEST_NEWS} />
+
+          <View className="px-4">
+            <Button
+              variant="outline"
+              className="self-stretch"
+              onPress={() => router.push("/login")}
+            >
+              <Text>Masuk</Text>
+            </Button>
+          </View>
+
+          <RewardCatalogSection categories={MOCK_REWARD_CATALOG} />
+        </ScrollView>
       </SafeAreaView>
     </View>
   );

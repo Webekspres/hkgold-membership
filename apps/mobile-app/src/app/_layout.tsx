@@ -2,7 +2,6 @@ import '@/global.css';
 
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme as useNativeColorScheme } from 'react-native';
 import { useEffect } from 'react';
 import { useColorScheme } from 'nativewind';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,18 +10,15 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { NAV_THEME } from '@/lib/theme';
 
 export default function RootLayout() {
-  const nativeColorScheme = useNativeColorScheme();
-  const { colorScheme, setColorScheme } = useColorScheme();
+  const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
-    setColorScheme(nativeColorScheme ?? 'light');
-  }, [nativeColorScheme, setColorScheme]);
-
-  const scheme = colorScheme ?? 'light';
+    setColorScheme('light');
+  }, [setColorScheme]);
 
   return (
     <GestureHandlerRootView className="flex-1">
-      <ThemeProvider value={NAV_THEME[scheme]}>
+      <ThemeProvider value={NAV_THEME.light}>
         <AnimatedSplashOverlay />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
@@ -30,6 +26,15 @@ export default function RootLayout() {
             name="login"
             options={{ contentStyle: { backgroundColor: 'transparent' } }}
           />
+          <Stack.Screen
+            name="register"
+            options={{ contentStyle: { backgroundColor: 'transparent' } }}
+          />
+          <Stack.Screen name="cms" />
+          <Stack.Screen name="events" />
+          <Stack.Screen name="berita/[slug]" />
+          <Stack.Screen name="event/[slug]" />
+          <Stack.Screen name="reward/[sku]" />
         </Stack>
         <PortalHost />
       </ThemeProvider>
