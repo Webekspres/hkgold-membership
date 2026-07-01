@@ -51,6 +51,11 @@ class PointInjectionBatch extends Model
         return $this->belongsTo(Media::class);
     }
 
+    public function details(): HasMany
+    {
+        return $this->hasMany(PointInjectionDetail::class, 'batch_id');
+    }
+
     public function pointMutations(): HasMany
     {
         return $this->hasMany(PointMutation::class, 'source_id');

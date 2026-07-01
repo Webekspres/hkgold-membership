@@ -47,6 +47,7 @@ class PointInjectionBatchResource extends Resource
     {
         return [
             'index' => Pages\ListPointInjectionBatches::route('/'),
+            'view' => Pages\ViewPointInjectionBatch::route('/{record}'),
         ];
     }
 

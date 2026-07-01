@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PointInjectionBatches\Tables;
 
+use App\Filament\Resources\PointInjectionBatches\PointInjectionBatchResource;
 use App\Models\PointInjectionBatch;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -59,16 +57,8 @@ class PointInjectionBatchesTable
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
-                    ->action(fn (PointInjectionBatch $record) => Notification::make()
-                        ->title('Detail Batch')
-                        ->body("Melihat detail batch ID: {$record->id}")
-                        ->info()
-                        ->send()),
+                    ->url(fn (PointInjectionBatch $record): string => PointInjectionBatchResource::getUrl('view', ['record' => $record->id])),
             ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 }
