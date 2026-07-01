@@ -1,1 +1,1 @@
-import './components/cover-image-uploader';
+import './components/content-draft-storage';

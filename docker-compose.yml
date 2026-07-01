@@ -6,6 +6,8 @@
 # Akses:
 #   MySQL (dari host)     → 127.0.0.1:33068
 #   Redis (dari host)     → 127.0.0.1:6381
+#   MinIO API             → http://127.0.0.1:9002
+#   MinIO Console         → http://127.0.0.1:9003
 #   phpMyAdmin            → http://localhost:8088
 #   Laravel (lokal)       → cd apps/backoffice-filament && php artisan serve --port=8800
 #
@@ -20,6 +22,7 @@ networks:
 volumes:
   mysql-data:
   redis-data:
+  minio-data:
 
 services:
   db:
@@ -59,6 +62,47 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    container_name: hkgold-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: hkgold_minio
+      MINIO_ROOT_PASSWORD: hkgold_minio_secret
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - hkgold-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: hkgold-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ALIAS: local
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: hkgold_minio
+      MINIO_ROOT_PASSWORD: hkgold_minio_secret
+      MINIO_BUCKET: mala-emas-media
+    volumes:
+      - ./docker/minio/init-bucket.sh:/init-bucket.sh:ro
+    entrypoint: ["/bin/sh", "/init-bucket.sh"]
+    networks:
+      - hkgold-network
+    restart: "no"
+
   phpmyadmin:
     image: phpmyadmin:5-apache
     container_name: hkgold-phpmyadmin
@@ -95,6 +139,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - hkgold-network

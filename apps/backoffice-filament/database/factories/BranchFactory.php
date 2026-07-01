@@ -39,6 +39,7 @@ class BranchFactory extends Factory
             'name' => $branch['name'],
             'address' => $branch['address'],
             'phone' => '021'.fake()->numerify('#######'),
+            'location_url' => fake()->optional(0.8)->url(),
             'is_online_warehouse' => false,
         ];
     }

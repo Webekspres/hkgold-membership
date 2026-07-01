@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Staff\Schemas;
 
 use App\Enums\Role;
 use App\Filament\Resources\Staff\Support\StaffFormSupport;
+use App\Filament\Resources\Staff\Support\StaffRoleSupport;
 use App\Models\Branch;
 use App\Models\Staff;
 use Filament\Forms\Components\FileUpload;
@@ -64,7 +65,7 @@ class StaffForm
                             ->columnSpan(2),
                         Select::make('role')
                             ->label('Role')
-                            ->options(self::roleOptions())
+                            ->options(StaffRoleSupport::staffRoleOptions())
                             ->default(Role::StoreManager->value)
                             ->required()
                             ->native(false)
@@ -114,18 +115,5 @@ class StaffForm
                             ]),
                     ]),
             ]);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function roleOptions(): array
-    {
-        return [
-            Role::Administrator->value => 'Administrator',
-            Role::SuperAdmin->value => 'Super Admin',
-            Role::Marketing->value => 'Marketing',
-            Role::StoreManager->value => 'Store Manager',
-        ];
     }
 }

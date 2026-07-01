@@ -6,17 +6,13 @@ namespace App\Filament\Resources\Contents\Schemas;
 
 use App\Enums\ContentStatus;
 use App\Enums\ContentType;
-use App\Filament\Resources\Contents\Support\ContentFormSupport;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
@@ -56,17 +52,6 @@ class ContentForm
                             ->label('Judul')
                             ->required()
                             ->maxLength(200)
-                            ->columnSpanFull()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function (Set $set, ?string $state, string $operation): void {
-                                if ($operation === 'create' && filled($state)) {
-                                    $set('slug', ContentFormSupport::generateSlug($state));
-                                }
-                            }),
-                        TextInput::make('slug')
-                            ->label('Slug')
-                            ->disabled()
-                            ->dehydrated(false)
                             ->columnSpanFull(),
                         RichEditor::make('body_content')
                             ->label('Konten')
@@ -77,25 +62,22 @@ class ContentForm
                 Section::make('Gambar Cover')
                     ->columnSpanFull()
                     ->schema([
-                        Repeater::make('cover_images')
-                            ->label('Gambar')
-                            ->schema([
-                                Hidden::make('media_id'),
-                                FileUpload::make('image')
-                                    ->label('Gambar cover')
-                                    ->disk('r2')
-                                    ->directory('contents')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->imageAspectRatio('4:3')
-                                    ->automaticallyOpenImageEditorForAspectRatio()
-                                    ->imageEditorAspectRatioOptions(['4:3'])
-                                    ->imageEditorViewportWidth(1200)
-                                    ->imageEditorViewportHeight(900)
-                                    ->maxSize(300)
-                                    ->required(),
-                            ])
+                        FileUpload::make('cover_images')
+                            ->label('Gambar Cover')
+                            ->image()
+                            ->imageEditor()
+                            ->imageEditorAspectRatios(['16:9'])
+                            ->imageAspectRatio('16:9')
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesToWidth('1200')
+                            ->automaticallyResizeImagesToHeight('675')
+                            ->automaticallyUpscaleImagesWhenResizing(false)
+                            ->multiple()
                             ->reorderable()
+                            ->disk(fn ($livewire): string => filled($livewire->getRecord()?->getKey()) ? 'r2' : 'content_staging')
+                            ->directory('temp')
+                            ->maxSize(512)
+                            ->maxFiles(10)
                             ->dehydrated(false)
                             ->columnSpanFull(),
                     ]),

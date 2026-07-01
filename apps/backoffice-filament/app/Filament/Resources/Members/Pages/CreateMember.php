@@ -48,6 +48,7 @@ class CreateMember extends CreateRecord
                 'address_id' => $addressId,
                 'current_tier' => $data['current_tier'],
                 'point_balance' => 0,
+                'highest_point' => 0,
                 'is_suspended' => $data['is_suspended'] ?? false,
             ]);
         });

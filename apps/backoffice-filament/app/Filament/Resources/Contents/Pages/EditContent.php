@@ -34,14 +34,11 @@ class EditContent extends EditRecord
 
         return [
             ...$data,
-            'slug' => $this->record->slug,
             'cover_images' => $this->record->contentCoverImages
-                ->map(fn ($coverImage): array => [
-                    'media_id' => $coverImage->media_id,
-                    'image' => $coverImage->media !== null
-                        ? ContentFormSupport::mediaToUploadPath($coverImage->media)
-                        : null,
-                ])
+                ->map(fn ($coverImage) => $coverImage->media !== null
+                    ? ContentFormSupport::mediaToUploadPath($coverImage->media)
+                    : null)
+                ->filter()
                 ->values()
                 ->all(),
         ];
@@ -51,28 +48,27 @@ class EditContent extends EditRecord
     {
         $state = ContentFormSupport::formState($this->form);
 
-        return $this->persistRecord($record, $data, $state['cover_images'] ?? [], $data['status'] ?? ContentStatus::Draft->value);
-    }
-
-    public function autoSave(): void
-    {
-        $state = ContentFormSupport::formState($this->form);
-
-        $this->persistRecord($this->record, $state, $state['cover_images'] ?? [], ContentStatus::Draft->value);
+        return $this->persistRecord(
+            $record,
+            $data,
+            self::normalizeCoverImagePaths($state['cover_images'] ?? []),
+            $data['status'] ?? ContentStatus::Draft->value,
+        );
     }
 
     /**
      * @param  array<string, mixed>  $data
-     * @param  array<int, array<string, mixed>>  $coverImages
+     * @param  array<int, string>  $coverImagePaths
      */
-    protected function persistRecord(Model $record, array $data, array $coverImages, string $status): Model
+    protected function persistRecord(Model $record, array $data, array $coverImagePaths, string $status): Model
     {
-        return DB::transaction(function () use ($record, $data, $coverImages, $status): Model {
+        return DB::transaction(function () use ($record, $data, $coverImagePaths, $status): Model {
             $title = isset($data['title']) && filled($data['title']) ? (string) $data['title'] : 'Untitled Draft';
 
             $record->update([
                 'type' => $data['type'] ?? ContentType::News->value,
                 'title' => $title,
+                'slug' => ContentFormSupport::generateSlug($title, $record->id),
                 'body_content' => ContentFormSupport::normalizeBodyContent($data['body_content'] ?? null),
                 'event_date' => ($data['type'] ?? ContentType::News->value) === ContentType::Event->value
                     ? ($data['event_date'] ?? null)
@@ -80,9 +76,18 @@ class EditContent extends EditRecord
                 'status' => $status,
             ]);
 
-            ContentFormSupport::syncCoverImages($record, $coverImages);
+            ContentFormSupport::syncCoverImages($record, $coverImagePaths);
 
             return $record->refresh();
         });
+    }
+
+    /**
+     * @param  array<int, mixed>  $paths
+     * @return array<int, string>
+     */
+    private static function normalizeCoverImagePaths(array $paths): array
+    {
+        return array_values(array_filter($paths, fn (mixed $path): bool => is_string($path) && filled($path)));
     }
 }

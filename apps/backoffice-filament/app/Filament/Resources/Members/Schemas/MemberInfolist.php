@@ -71,6 +71,9 @@ class MemberInfolist
                         TextEntry::make('point_balance')
                             ->label('Saldo poin')
                             ->numeric(),
+                        TextEntry::make('highest_point')
+                            ->label('Poin tertinggi')
+                            ->numeric(),
                         TextEntry::make('registeredBranch.name')
                             ->label('Cabang pendaftaran')
                             ->placeholder('—'),

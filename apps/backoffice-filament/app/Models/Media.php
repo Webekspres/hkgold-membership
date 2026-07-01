@@ -42,4 +42,14 @@ class Media extends Model
     {
         return $this->hasMany(ContentCoverImage::class);
     }
+
+    public function rewardImages(): HasMany
+    {
+        return $this->hasMany(RewardImage::class);
+    }
+
+    public function promotionBanners(): HasMany
+    {
+        return $this->hasMany(PromotionBanner::class);
+    }
 }

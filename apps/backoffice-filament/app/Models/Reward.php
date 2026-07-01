@@ -44,6 +44,11 @@ class Reward extends Model
         return $this->belongsTo(CategoryReward::class, 'category_id');
     }
 
+    public function rewardImages(): HasMany
+    {
+        return $this->hasMany(RewardImage::class)->orderBy('sort_order');
+    }
+
     public function branchStocks(): HasMany
     {
         return $this->hasMany(BranchRewardStock::class);

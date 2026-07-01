@@ -14,9 +14,10 @@ return new class extends Migration
             $table->id();
             $table->string('branch_code', 10)->unique();
             $table->string('name', 100);
-            $table->text('address');
+            $table->text('address')->nullable();
             $table->foreignUuid('address_id')->nullable()->constrained('addresses')->nullOnDelete();
             $table->string('phone', 20)->nullable();
+            $table->string('location_url', 500)->nullable();
             $table->boolean('is_online_warehouse')->default(false);
             $table->timestamps();
 

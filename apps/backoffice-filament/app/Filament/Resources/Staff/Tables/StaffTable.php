@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Staff\Tables;
 
 use App\Enums\Role;
-use App\Filament\Resources\Staff\Schemas\StaffForm;
-use App\Filament\Resources\Staff\Schemas\StaffInfolist;
+use App\Filament\Resources\Staff\Support\StaffRoleSupport;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -50,7 +49,8 @@ class StaffTable
                 TextColumn::make('user.role')
                     ->label('Role')
                     ->badge()
-                    ->formatStateUsing(fn (Role $state): string => StaffInfolist::roleLabel($state))
+                    ->formatStateUsing(fn (Role $state): string => StaffRoleSupport::label($state))
+                    ->color(fn (Role $state): string => StaffRoleSupport::color($state))
                     ->sortable()
                     ->toggleable(),
 
@@ -64,7 +64,7 @@ class StaffTable
             ->filters([
                 SelectFilter::make('role')
                     ->label('Role')
-                    ->options(StaffForm::roleOptions())
+                    ->options(StaffRoleSupport::staffRoleOptions())
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
                         fn (Builder $query): Builder => $query->whereHas(
