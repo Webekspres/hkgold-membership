@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Resources\PointMutations\Pages;
 
 use App\Filament\Resources\PointMutations\PointMutationResource;
+use App\Filament\Resources\PointMutations\Actions\InjectManualPointAction;
+
 use App\Filament\Resources\PointMutations\Widgets\PointMutationStatsOverviewWidget;
 use Filament\Resources\Pages\ListRecords;
 
@@ -14,7 +16,7 @@ class ListPointMutations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [];
+        return [InjectManualPointAction::make()];
     }
 
     /**
@@ -26,6 +28,8 @@ class ListPointMutations extends ListRecords
             PointMutationStatsOverviewWidget::class,
         ];
     }
+
+    
 
     /**
      * @return int|array<string, int|null>

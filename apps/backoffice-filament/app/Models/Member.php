@@ -28,6 +28,7 @@ class Member extends Model
         'phone_number',
         'current_tier',
         'point_balance',
+        'highest_point',
         'last_activity_at',
         'is_suspended',
     ];
@@ -37,6 +38,7 @@ class Member extends Model
         return [
             'current_tier' => TierStatus::class,
             'point_balance' => 'integer',
+            'highest_point' => 'integer',
             'last_activity_at' => 'datetime',
             'is_suspended' => 'boolean',
         ];

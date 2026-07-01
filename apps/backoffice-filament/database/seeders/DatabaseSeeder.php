@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             AddressSeeder::class,
             TierMemberSeeder::class,
             TransactionTypeSeeder::class,
+            ConversionRuleSeeder::class,
             CategoryRewardSeeder::class,
             RewardSeeder::class,
             MediaSeeder::class,

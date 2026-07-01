@@ -29,6 +29,7 @@ class PointAnnualArchiveSeeder extends Seeder
                 ],
                 [
                     'frozen_points_total' => $member->point_balance,
+                    'highest_point' => max($member->highest_point, $member->point_balance),
                     'last_tier_position' => $member->current_tier->value,
                 ],
             );

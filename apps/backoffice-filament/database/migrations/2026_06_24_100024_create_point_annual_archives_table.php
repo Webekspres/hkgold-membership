@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignUuid('member_id')->nullable()->constrained('members')->nullOnDelete();
             $table->integer('archive_year');
             $table->integer('frozen_points_total');
+            $table->integer('highest_point');
             $table->string('last_tier_position');
             $table->dateTime('frozen_at')->useCurrent();
 

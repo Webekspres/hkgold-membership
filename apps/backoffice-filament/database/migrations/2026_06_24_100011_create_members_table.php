@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('phone_number', 20)->unique();
             $table->string('current_tier')->default('SILVER');
             $table->integer('point_balance')->default(0);
+            $table->integer('highest_point')->default(0);
             $table->dateTime('last_activity_at')->useCurrent();
             $table->boolean('is_suspended')->default(false);
             $table->timestamps();

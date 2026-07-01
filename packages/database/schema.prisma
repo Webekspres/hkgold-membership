@@ -274,6 +274,7 @@ model User {
   member         Member?
   trustedDevices TrustedDevice[]
   notifications  Notification[]
+  activityLogs   ActivityLog[]
 
   @@map("users")
 }
@@ -294,7 +295,6 @@ model Staff {
   processedRedeemInvoices RedeemInvoice[]
   changePhoneRequests   ChangePhoneApproval[] @relation("RequestChangePhone")
   changePhoneApprovals  ChangePhoneApproval[] @relation("ApproveChangePhone")
-  activityLogs          ActivityLog[]
 
   @@index([branchId])
   @@map("staffs")
@@ -309,6 +309,7 @@ model Member {
   phoneNumber          String     @unique @map("phone_number") @db.VarChar(20)
   currentTier          MemberTier @default(SILVER) @map("current_tier")
   pointBalance         Int        @default(0) @map("point_balance") // Single Wallet Terpusat
+  highestPoint         Int        @default(0) @map("highest_point")
   lastActivityAt       DateTime   @default(now()) @map("last_activity_at")
   isSuspended          Boolean    @default(false) @map("is_suspended")
   createdAt            DateTime   @default(now()) @map("created_at")
@@ -661,6 +662,7 @@ model PointAnnualArchive {
   memberId          String?    @map("member_id") @db.Char(36)
   archiveYear       Int        @map("archive_year")
   frozenPointsTotal Int        @map("frozen_points_total")
+  highestPoint      Int        @map("highest_point")
   lastTierPosition  MemberTier @map("last_tier_position")
   frozenAt          DateTime   @default(now()) @map("frozen_at")
 
@@ -752,7 +754,7 @@ model FraudSuspect {
 
 model ActivityLog {
   id            String   @id @default(uuid()) @db.Char(36)
-  staffId       Int?     @map("staff_id")
+  userId        String?  @map("user_id") @db.Char(36)
   action        String   @map("action") @db.VarChar(100)
   description   String   @map("description") @db.Text
   auditableType String   @map("auditable_type") @db.VarChar(100)
@@ -762,9 +764,9 @@ model ActivityLog {
   ipAddress     String   @map("ip_address") @db.VarChar(45)
   createdAt     DateTime @default(now()) @map("created_at")
 
-  staff Staff? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@index([staffId])
+  @@index([userId])
   @@index([auditableType, auditableId])
   @@map("activity_logs")
 }

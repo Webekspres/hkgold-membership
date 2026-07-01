@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PointMutations\Tables;
 
+use App\Filament\Resources\PointMutations\Actions\InjectManualPointAction;
 use App\Filament\Resources\PointMutations\Support\PointMutationSupport;
 use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\Branch;
@@ -41,8 +42,7 @@ class PointMutationsTable
                                 ->orWhereHas('user', fn (Builder $query): Builder => $query->where('full_name', 'like', "%{$search}%"));
                         });
                     })
-                    ->sortable()
-                    ->placeholder('—'),
+                    ->sortable(),
 
                 TextColumn::make('branch.name')
                     ->label('Cabang')
@@ -148,14 +148,16 @@ class PointMutationsTable
             ])
             ->filtersFormColumns(1)
             ->filtersFormWidth(Width::Full)
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersLayout(FiltersLayout::Modal)
             ->filtersTriggerAction(
                 fn (Action $action): Action => $action
                     ->iconButton()
                     ->icon('heroicon-o-funnel'),
             )
             ->recordActions([])
-            ->headerActions([])
+            // ->headerActions([
+            //     InjectManualPointAction::make(),
+            // ])
             ->paginated([10, 25, 50]);
     }
 }

@@ -183,15 +183,21 @@ Guidelines below are specific to this app (`apps/backoffice-filament`). They ext
 - Do **not** create documentation files unless requested.
 - Keep changes scoped — avoid unrelated refactors in the same task.
 
+## RTK (Rust Token Killer)
+
+Prefix perintah terminal dengan `rtk` untuk output ringkas (`rtk git status`, `rtk php artisan test --compact`). Boost MCP tools tetap prioritas; jika `rtk` gagal, jalankan perintah biasa. Setup: `rtk init --global --agent cursor`.
+
 ## UI Language & Navigation
 
-- All Filament labels use **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, section headings, notifications, empty states.
-- Follow existing `navigationGroup` conventions:
+- Semua label Filament dalam **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, heading section, notifikasi, empty state.
+- Ikuti konvensi `navigationGroup` yang sudah ada:
   - `Manajemen Pengguna` — Member, Staff, Cabang
   - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
   - `CMS` — Konten, Banner Promosi
-  - `Katalog Reward` — Kategori Reward, dll.
-- Reuse `Heroicon::Outlined*` icons consistent with sibling resources.
+  - `Katalog Reward` — Kategori Reward, Katalog (Reward)
+  - `Konfigurasi` — Manajemen Tier (+ aturan konversi inline)
+  - `Loyalty Point` — Mutasi Poin
+- Reuse ikon `Heroicon::Outlined*` konsisten dengan resource sejenis.
 
 ## Filament Architecture
 
@@ -200,28 +206,35 @@ Use the **split structure** already in this codebase — do not inline large sch
 ```
 app/Filament/
 ├── Resources/{Name}/
-│   ├── {Name}Resource.php      # thin: model, labels, delegates form/table/infolist
+│   ├── {Name}Resource.php      # tipis: model, label, delegasi form/table/infolist
 │   ├── Schemas/                # {Name}Form.php, {Name}Infolist.php
 │   ├── Tables/                 # {Name}sTable.php
-│   ├── Support/                # {Name}FormSupport.php — business logic, normalization
+│   ├── Support/                # {Name}FormSupport.php — normalisasi & helper UI
+│   ├── Actions/                # aksi non-CRUD (modal wizard, inject, approve)
 │   ├── Pages/                  # List, Create, Edit, View
-│   ├── RelationManagers/       # when needed on View/Edit
-│   └── Widgets/                # stats/charts on List pages
-└── Pages/                      # custom Pages (non-standard CRUD)
-    └── Support/
+│   ├── RelationManagers/       # bila perlu di View/Edit
+│   └── Widgets/                # stat/chart di halaman List
+├── Pages/                      # custom Page (non-CRUD standar)
+│   └── Support/
+app/Services/                   # logic bisnis reusable (prioritas untuk modul kompleks)
+app/Data/                       # DTO readonly (payload/result)
+app/Exceptions/                 # domain exception + error code
 ```
 
-- Every new PHP file: `declare(strict_types=1);`
-- Resource class stays thin — wire `Form::configure()`, `Table::configure()`, `Infolist::configure()`.
-- Put save/mutate logic in **Page** classes (`mutateFormDataBeforeCreate`, `afterCreate`, `handleRecordUpdate`) or **Support** classes, not in schema classes.
-- **Page vs Resource:** If unsure whether a feature should be a Filament Resource or custom Page, **ask the user first**. Default assumption: standard entity CRUD → Resource; singleton/settings/repeater-without-entity → Page (e.g. `PromotionBannerPage`).
+- Setiap file PHP baru: `declare(strict_types=1);`
+- Class Resource tetap tipis — wire `Form::configure()`, `Table::configure()`, `Infolist::configure()`.
+- Logic simpan/mutasi di **Page** (`mutateFormDataBeforeCreate`, `handleRecordCreation`, dll.) atau **Support** — bukan di class schema.
+- **Mutasi non-CRUD** (contoh: suntik poin manual): standarkan di `Actions/` + panggil dari `Tables/*Table.php` → `headerActions()` atau `Pages/*` → `getHeaderActions()`. Jangan aktifkan `canCreate()` hanya untuk menambah aksi tulis.
+- **Service layer:** fleksibel — ikuti pola file terdekat. Untuk modul kompleks (loyalty, transaksi ACID), ekstrak ke `app/Services/{Domain}/` agar bisa dipakai ulang API nanti; Filament hanya orchestrasi UI.
+- **Page vs Resource:** Jika ragu fitur harus Resource atau custom Page, **tanya user dulu**. Default: CRUD entity → Resource; singleton/settings/repeater tanpa entity → Page (contoh: `PromotionBannerPage`).
 
 ## Domain Conventions
 
 ### Members & Staff
 
-- Member number format: `HK` + letter + 7 digits — use `MemberFormSupport::generateMemberNumber()`.
-- Tier/status fields use existing enums (`TierStatus`, etc.).
+- Format nomor member: `HK` + huruf + 7 digit — gunakan `MemberFormSupport::generateMemberNumber()`.
+- Field tier/status memakai enum yang ada (`TierStatus`, dll.).
+- `Member` punya `point_balance`, `highest_point`, `current_tier` — jangan asumsikan hanya `point_balance`.
 
 ### Branches (Cabang)
 
@@ -231,8 +244,17 @@ app/Filament/
 
 ### Points, Redeem, Rewards
 
-- Respect loyalty/point business rules from Prisma models (`PointMutation`, `RedeemInvoice`, `RewardBranchStock`, etc.).
-- Use realistic Indonesian retail amounts in factories/seeders (not generic single-digit values).
+- Hormati aturan bisnis dari model Prisma (`PointMutation`, `RedeemInvoice`, `RewardBranchStock`, `ConversionRule`, `TierMember`, dll.).
+- Gunakan nominal retail Indonesia yang realistis di factory/seeder (bukan angka generik satu digit).
+- **Ringkasan loyalty (implementasi saat ini):**
+  - Poin dihitung `floor(nominal / conversion_nominal)` — gunakan `bcmath`, hindari `float` untuk Rupiah.
+  - Konversi memakai `current_tier` member **sebelum** poin ditambah.
+  - Setelah suntik poin: tier hanya **naik** otomatis (tidak turun).
+  - Suntik manual: transaksi ACID (insert `PointMutation`, update `Member`, tulis `ActivityLog`) via `ManualPointInjectionService`.
+  - `ActivityLog.user_id` → `users` (bukan `staff_id`). Before/after JSON di `before_json` / `after_json`.
+  - Nomor struk (`reference_id`) unik global per `transaction_type_id`; boleh kosong (null).
+  - `PointMutation`: `member_id` wajib, `branch_id` nullable.
+- Detail implementasi: lihat `app/Services/Loyalty/` dan `tests/Feature/Loyalty/`.
 
 ## Data Normalization
 
@@ -265,19 +287,23 @@ app/Filament/
 
 ## Testing
 
-- Pest tests are **not required by default** — only write/update tests when the user explicitly requests them.
-- When tests are requested, use `php artisan make:test --pest {Name}` and run `php artisan test --compact`.
+- Pest **tidak wajib by default** — tulis/update test hanya jika user meminta.
+- Bila diminta: `php artisan make:test --pest {Name}` lalu `php artisan test --compact`.
+- Catatan: `phpunit.xml` memakai SQLite in-memory; beberapa migration MySQL-specific bisa gagal di test suite — prefer MySQL lokal atau `DatabaseTransactions` bila perlu.
 
 ## Reference Resources
 
-Copy patterns from these when building new features:
+Salin pola dari resource berikut saat membangun fitur baru:
 
-| Feature type | Reference |
+| Jenis fitur | Referensi |
 |---|---|
 | Full CRUD + View + Infolist | `Members/MemberResource` |
-| Branch + RelationManagers + Stats widget | `Branches/BranchResource` |
-| CMS + R2 media + RichEditor | `Contents/ContentResource` |
+| Cabang + RelationManagers + widget stat | `Branches/BranchResource` |
+| CMS + media R2 + RichEditor | `Contents/ContentResource` |
 | Custom Page + repeater | `Pages/PromotionBannerPage` |
-| Read-only master data | `Provinces/ProvinceResource` |
-| List-only with chart widgets | `Members/` widgets |
+| Master data read-only (modal) | `Provinces/ProvinceResource` |
+| List + chart widgets | `Members/` widgets |
+| List read-only + filter + stat cards | `PointMutations/PointMutationResource` |
+| Aksi non-CRUD (wizard modal) | `PointMutations/Actions/InjectManualPointAction` |
+| Konfigurasi tier + konversi inline | `TierMembers/TierMemberResource` |
 

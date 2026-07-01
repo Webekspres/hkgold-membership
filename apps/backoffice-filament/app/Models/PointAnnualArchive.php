@@ -24,6 +24,7 @@ class PointAnnualArchive extends Model
         'member_id',
         'archive_year',
         'frozen_points_total',
+        'highest_point',
         'last_tier_position',
         'frozen_at',
     ];
@@ -33,6 +34,7 @@ class PointAnnualArchive extends Model
         return [
             'archive_year' => 'integer',
             'frozen_points_total' => 'integer',
+            'highest_point' => 'integer',
             'last_tier_position' => TierStatus::class,
             'frozen_at' => 'datetime',
         ];

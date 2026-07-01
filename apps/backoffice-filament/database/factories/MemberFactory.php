@@ -42,6 +42,11 @@ class MemberFactory extends Factory
             TierStatus::Sapphire->value => fake()->numberBetween(500, 2000),
         ];
 
+        $pointBalance = $pointsByTier[$tier->value];
+        $highestPoint = fake()->boolean(70)
+            ? $pointBalance
+            : fake()->numberBetween($pointBalance, $pointBalance + 10_000);
+
         $branchId = Branch::query()->inRandomOrder()->value('id');
 
         return [
@@ -50,7 +55,8 @@ class MemberFactory extends Factory
             'member_number' => 'HK'.fake()->unique()->regexify('[A-Z]{1}[0-9]{7}'),
             'phone_number' => '08'.fake()->unique()->numerify('##########'),
             'current_tier' => $tier,
-            'point_balance' => $pointsByTier[$tier->value],
+            'point_balance' => $pointBalance,
+            'highest_point' => $highestPoint,
             'last_activity_at' => now(),
             'is_suspended' => false,
         ];

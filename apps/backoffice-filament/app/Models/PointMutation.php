@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $member_id
+ * @property int|null $branch_id
+ */
 class PointMutation extends Model
 {
     /** @use HasFactory<PointMutationFactory> */
