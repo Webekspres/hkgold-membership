@@ -6,6 +6,9 @@
 @source '../views/**/*.blade.php';
 @source '../../app/**/*.php';
 
+@source "../../resources/views/filament/**/*.blade.php";
+@source "../../app/Filament/**/*.php";
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
@@ -43,7 +46,7 @@
     flex: 1 1 auto;
 }
 
-.fi-resource-point-mutations .fi-ta-header-toolbar > div:has(> .fi-ta-search-field) {
+.fi-resource-point-mutations .fi-ta-header-toolbar>div:has(> .fi-ta-search-field) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -55,45 +58,3 @@
     flex: 1;
     min-width: 12rem;
 }
-
-/* Stats card icon containers — PointInjectionBatch view page */
-.stat-icon-gold {
-    background-color: rgb(254 243 199); /* amber-100 */
-}
-.stat-icon-gold svg {
-    color: rgb(217 119 6); /* amber-600 */
-}
-.stat-icon-green {
-    background-color: rgb(209 250 229); /* emerald-100 */
-}
-.stat-icon-green svg {
-    color: rgb(5 150 105); /* emerald-600 */
-}
-.stat-icon-blue {
-    background-color: rgb(219 234 254); /* blue-100 */
-}
-.stat-icon-blue svg {
-    color: rgb(37 99 235); /* blue-600 */
-}
-
-@media (prefers-color-scheme: dark) {
-    .stat-icon-gold {
-        background-color: rgb(120 53 15 / 0.3); /* amber-900/30 */
-    }
-    .stat-icon-gold svg {
-        color: rgb(251 191 36); /* amber-400 */
-    }
-    .stat-icon-green {
-        background-color: rgb(6 78 59 / 0.3); /* emerald-900/30 */
-    }
-    .stat-icon-green svg {
-        color: rgb(52 211 153); /* emerald-400 */
-    }
-    .stat-icon-blue {
-        background-color: rgb(30 58 138 / 0.3); /* blue-900/30 */
-    }
-    .stat-icon-blue svg {
-        color: rgb(96 165 250); /* blue-400 */
-    }
-}
-

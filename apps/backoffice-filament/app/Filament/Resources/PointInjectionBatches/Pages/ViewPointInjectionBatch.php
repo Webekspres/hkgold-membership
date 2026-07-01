@@ -44,7 +44,9 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
         return PointInjectionDetailsTable::configure($table)
             ->query(fn () => PointInjectionDetail::query()
                 ->where('batch_id', $record->id)
-                ->with(['transactionType', 'member.user']));
+                ->with(['transactionType', 'member.user']))
+            ->heading('Daftar Baris Injeksi')
+            ->description('Detail setiap baris dalam batch upload ini.');
     }
 
     /**
