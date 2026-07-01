@@ -1,17 +1,16 @@
 import '@/global.css';
 
 import { PortalHost } from '@rn-primitives/portal';
-import { ThemeProvider } from 'expo-router';
+import { Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme as useNativeColorScheme } from 'react-native';
 import { useEffect } from 'react';
 import { useColorScheme } from 'nativewind';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
 import { NAV_THEME } from '@/lib/theme';
 
-export default function TabLayout() {
+export default function RootLayout() {
   const nativeColorScheme = useNativeColorScheme();
   const { colorScheme, setColorScheme } = useColorScheme();
 
@@ -25,7 +24,13 @@ export default function TabLayout() {
     <GestureHandlerRootView className="flex-1">
       <ThemeProvider value={NAV_THEME[scheme]}>
         <AnimatedSplashOverlay />
-        <AppTabs />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="login"
+            options={{ contentStyle: { backgroundColor: 'transparent' } }}
+          />
+        </Stack>
         <PortalHost />
       </ThemeProvider>
     </GestureHandlerRootView>
