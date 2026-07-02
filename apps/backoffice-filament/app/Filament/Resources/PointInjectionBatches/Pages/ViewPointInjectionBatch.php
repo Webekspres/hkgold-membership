@@ -9,6 +9,7 @@ use App\Filament\Resources\PointInjectionBatches\Tables\PointInjectionDetailsTab
 use App\Models\PointInjectionBatch;
 use App\Models\PointInjectionDetail;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -46,7 +47,21 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
                 ->where('batch_id', $record->id)
                 ->with(['transactionType', 'member.user']))
             ->heading('Daftar Baris Injeksi')
-            ->description('Detail setiap baris dalam batch upload ini.');
+            ->description('Detail setiap baris dalam batch upload ini.')
+            ->headerActions([
+                Action::make('process')
+                    ->label('Process')
+                    ->button()
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->modalHeading('Process Point Injection')
+                    ->modalDescription('Apakah Anda yakin ingin memproses point injection untuk batch ini?')
+                    ->modalSubmitActionLabel('Ya, Proses')
+                    ->action(fn () => Notification::make()
+                        ->title('Proses Point Injection berhasil dijalankan (Dummy)')
+                        ->success()
+                        ->send()),
+            ]);
     }
 
     /**
