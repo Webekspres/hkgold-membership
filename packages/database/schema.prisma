@@ -34,6 +34,7 @@ enum InjectionStatus {
   PENDING
   VALIDATED
   FAILED
+  SUCCESS
 }
 
 enum DevicePlatform {
@@ -221,6 +222,7 @@ model Media {
   contentCoverImages  ContentCoverImage[]
   promotionBanners    PromotionBanner[]
   pointInjectionBatch PointInjectionBatch?
+  branchImages        BranchImage[]
 
   @@map("media")
 }
@@ -241,17 +243,33 @@ model Branch {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  normalizedAddress Address?              @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  staffs            Staff[]
-  membersRegistered Member[]              @relation("BranchRegistration")
+  normalizedAddress  Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  staffs             Staff[]
+  membersRegistered  Member[]             @relation("BranchRegistration")
   rewardBranchStocks RewardBranchStock[]
-  redeemInvoices    RedeemInvoice[]
-  redeemTokens      RedeemToken[]
-  clockInLogs       StaffClockInLog[]
-  pointMutations    PointMutation[]
+  redeemInvoices     RedeemInvoice[]
+  redeemTokens       RedeemToken[]
+  clockInLogs        StaffClockInLog[]
+  pointMutations     PointMutation[]
+  images             BranchImage[]
 
   @@index([addressId])
   @@map("branches")
+}
+
+model BranchImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  Int      @map("branch_id")
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, mediaId])
+  @@index([mediaId])
+  @@map("branch_images")
 }
 
 // =============================================================================
@@ -604,6 +622,7 @@ model PointInjectionBatch {
   successfulRows      Int      @default(0) @map("successful_rows")
   failedRows          Int      @default(0) @map("failed_rows")
   totalPointsInjected Int      @default(0) @map("total_points_injected")
+  resolved            Boolean  @default(false) @map("resolved")
   uploadedAt          DateTime @default(now()) @map("uploaded_at")
 
   staff   Staff                  @relation(fields: [staffId], references: [id])

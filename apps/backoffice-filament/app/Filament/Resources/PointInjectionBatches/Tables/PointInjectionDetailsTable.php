@@ -85,11 +85,13 @@ class PointInjectionDetailsTable
                     ->badge()
                     ->color(fn (InjectionStatus $state): string => match ($state) {
                         InjectionStatus::Pending => 'gray',
+                        InjectionStatus::Validated => 'info',
                         InjectionStatus::Success => 'success',
                         InjectionStatus::Failed => 'danger',
                     })
                     ->formatStateUsing(fn (InjectionStatus $state): string => match ($state) {
                         InjectionStatus::Pending => 'Pending',
+                        InjectionStatus::Validated => 'Tervalidasi',
                         InjectionStatus::Success => 'Sukses',
                         InjectionStatus::Failed => 'Gagal',
                     }),
@@ -99,6 +101,7 @@ class PointInjectionDetailsTable
                     ->label('Status')
                     ->options([
                         InjectionStatus::Pending->value => 'Pending',
+                        InjectionStatus::Validated->value => 'Tervalidasi',
                         InjectionStatus::Success->value => 'Sukses',
                         InjectionStatus::Failed->value => 'Gagal',
                     ]),
