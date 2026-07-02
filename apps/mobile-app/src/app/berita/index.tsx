@@ -4,19 +4,19 @@ import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EventFilterModal } from '@/components/event-filter-modal';
-import { EventListCard } from '@/components/event-list-card';
+import { DateRangeFilterModal } from '@/components/date-range-filter-modal';
+import { NewsArticleCard } from '@/components/news-article-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { MOCK_EVENT_LIST } from '@/constants/mock-events';
+import { MOCK_NEWS_LIST } from '@/constants/mock-news';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/screen-layout';
 import {
   EMPTY_DATE_RANGE,
   hasActiveDateRange,
   type DateRange,
 } from '@/lib/date-range-filter';
-import { filterEventsByDateRange } from '@/lib/filter-events-by-date-range';
+import { filterNewsByDateRange } from '@/lib/filter-news-by-date-range';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 const FILTER_ICON = {
@@ -25,17 +25,15 @@ const FILTER_ICON = {
   web: 'filter_list',
 } as const;
 
-export default function EventsScreen() {
+export default function NewsListScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [appliedRange, setAppliedRange] = useState<DateRange>(EMPTY_DATE_RANGE);
   const [draftRange, setDraftRange] = useState<DateRange>(EMPTY_DATE_RANGE);
 
-  const filteredEvents = useMemo(
-    () => filterEventsByDateRange(MOCK_EVENT_LIST, appliedRange),
+  const filteredArticles = useMemo(
+    () => filterNewsByDateRange(MOCK_NEWS_LIST, appliedRange),
     [appliedRange]
   );
-
-  const hasActiveFilter = hasActiveDateRange(appliedRange);
 
   const openFilter = () => {
     setDraftRange(appliedRange);
@@ -65,7 +63,7 @@ export default function EventsScreen() {
 
           <Input
             className="min-w-0 flex-1"
-            placeholder="Cari event..."
+            placeholder="Cari berita..."
             placeholderTextColor="#a8a29e"
             editable
           />
@@ -73,20 +71,20 @@ export default function EventsScreen() {
           <Button
             variant="outline"
             size="icon"
-            className={hasActiveFilter ? 'border-[#e8a020] bg-[#fffbeb]' : undefined}
+            className={hasActiveDateRange(appliedRange) ? 'border-[#e8a020] bg-[#fffbeb]' : undefined}
             onPress={openFilter}>
             <SymbolView
               name={FILTER_ICON}
               size={20}
-              tintColor={hasActiveFilter ? '#b45309' : '#44403c'}
+              tintColor={hasActiveDateRange(appliedRange) ? '#b45309' : '#44403c'}
             />
           </Button>
         </View>
 
         <FlatList
-          data={filteredEvents}
+          data={filteredArticles}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventListCard event={item} />}
+          renderItem={({ item }) => <NewsArticleCard article={item} fullWidth />}
           ItemSeparatorComponent={() => <View className="h-4" />}
           contentContainerStyle={{
             paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
@@ -96,14 +94,16 @@ export default function EventsScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View className="items-center py-12">
-              <Text variant="muted">Tidak ada event pada rentang tanggal ini.</Text>
+              <Text variant="muted">Tidak ada berita pada rentang tanggal ini.</Text>
             </View>
           }
         />
       </SafeAreaView>
 
-      <EventFilterModal
+      <DateRangeFilterModal
         visible={filterVisible}
+        title="Filter Berita"
+        description="Pilih rentang tanggal publikasi"
         range={draftRange}
         onRangeChange={setDraftRange}
         onClose={() => setFilterVisible(false)}

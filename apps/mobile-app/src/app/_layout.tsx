@@ -32,9 +32,10 @@ export default function RootLayout() {
           />
           <Stack.Screen name="cms" />
           <Stack.Screen name="events" />
-          <Stack.Screen name="berita/[slug]" />
+          <Stack.Screen name="berita" />
+          <Stack.Screen name="cabang" />
           <Stack.Screen name="event/[slug]" />
-          <Stack.Screen name="reward/[sku]" />
+          <Stack.Screen name="reward" />
         </Stack>
         <PortalHost />
       </ThemeProvider>

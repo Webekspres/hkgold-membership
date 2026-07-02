@@ -1,22 +1,26 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EventFilterModal } from '@/components/event-filter-modal';
-import { EventListCard } from '@/components/event-list-card';
+import { RewardCatalogGrid } from '@/components/reward-catalog-grid';
+import { RewardFilterModal } from '@/components/reward-filter-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { MOCK_EVENT_LIST } from '@/constants/mock-events';
+import {
+  MOCK_REWARD_CATEGORIES,
+  MOCK_REWARD_LIST,
+} from '@/constants/mock-rewards';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/screen-layout';
 import {
-  EMPTY_DATE_RANGE,
-  hasActiveDateRange,
-  type DateRange,
-} from '@/lib/date-range-filter';
-import { filterEventsByDateRange } from '@/lib/filter-events-by-date-range';
+  applyRewardFilters,
+  createDefaultRewardFilter,
+  getRewardPointsBounds,
+  hasActiveRewardFilter,
+  type RewardFilterState,
+} from '@/lib/filter-rewards';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 const FILTER_ICON = {
@@ -25,31 +29,34 @@ const FILTER_ICON = {
   web: 'filter_list',
 } as const;
 
-export default function EventsScreen() {
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [appliedRange, setAppliedRange] = useState<DateRange>(EMPTY_DATE_RANGE);
-  const [draftRange, setDraftRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+const POINTS_BOUNDS = getRewardPointsBounds(MOCK_REWARD_LIST);
+const DEFAULT_FILTER = createDefaultRewardFilter(POINTS_BOUNDS);
 
-  const filteredEvents = useMemo(
-    () => filterEventsByDateRange(MOCK_EVENT_LIST, appliedRange),
-    [appliedRange]
+export default function RewardListScreen() {
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [appliedFilter, setAppliedFilter] = useState<RewardFilterState>(DEFAULT_FILTER);
+  const [draftFilter, setDraftFilter] = useState<RewardFilterState>(DEFAULT_FILTER);
+
+  const filteredRewards = useMemo(
+    () => applyRewardFilters(MOCK_REWARD_LIST, appliedFilter),
+    [appliedFilter]
   );
 
-  const hasActiveFilter = hasActiveDateRange(appliedRange);
+  const hasActiveFilter = hasActiveRewardFilter(appliedFilter, POINTS_BOUNDS);
 
   const openFilter = () => {
-    setDraftRange(appliedRange);
+    setDraftFilter(appliedFilter);
     setFilterVisible(true);
   };
 
   const handleApplyFilter = () => {
-    setAppliedRange(draftRange);
+    setAppliedFilter(draftFilter);
     setFilterVisible(false);
   };
 
   const handleResetFilter = () => {
-    setDraftRange(EMPTY_DATE_RANGE);
-    setAppliedRange(EMPTY_DATE_RANGE);
+    setDraftFilter(DEFAULT_FILTER);
+    setAppliedFilter(DEFAULT_FILTER);
     setFilterVisible(false);
   };
 
@@ -65,7 +72,7 @@ export default function EventsScreen() {
 
           <Input
             className="min-w-0 flex-1"
-            placeholder="Cari event..."
+            placeholder="Cari reward..."
             placeholderTextColor="#a8a29e"
             editable
           />
@@ -83,29 +90,25 @@ export default function EventsScreen() {
           </Button>
         </View>
 
-        <FlatList
-          data={filteredEvents}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventListCard event={item} />}
-          ItemSeparatorComponent={() => <View className="h-4" />}
-          contentContainerStyle={{
-            paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
-            paddingVertical: 16,
-            paddingBottom: 24,
-          }}
+        <ScrollView
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="items-center py-12">
-              <Text variant="muted">Tidak ada event pada rentang tanggal ini.</Text>
+          contentContainerStyle={{ paddingVertical: 16, paddingBottom: 24 }}>
+          {filteredRewards.length === 0 ? (
+            <View className="items-center px-4 py-12">
+              <Text variant="muted">Tidak ada hadiah pada filter ini.</Text>
             </View>
-          }
-        />
+          ) : (
+            <RewardCatalogGrid rewards={filteredRewards} />
+          )}
+        </ScrollView>
       </SafeAreaView>
 
-      <EventFilterModal
+      <RewardFilterModal
         visible={filterVisible}
-        range={draftRange}
-        onRangeChange={setDraftRange}
+        categories={MOCK_REWARD_CATEGORIES}
+        bounds={POINTS_BOUNDS}
+        filter={draftFilter}
+        onFilterChange={setDraftFilter}
         onClose={() => setFilterVisible(false)}
         onApply={handleApplyFilter}
         onReset={handleResetFilter}

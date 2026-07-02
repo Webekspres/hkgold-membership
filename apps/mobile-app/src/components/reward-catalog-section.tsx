@@ -26,7 +26,7 @@ export function RewardCatalogSection({
           Katalog Hadiah
         </Text>
         <Pressable
-          onPress={() => router.push("/cms")}
+          onPress={() => router.push("/reward")}
           className="active:opacity-70"
         >
           <Text className="text-sm font-medium text-[#c4841a]">

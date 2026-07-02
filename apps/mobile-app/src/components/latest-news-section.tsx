@@ -36,7 +36,7 @@ export function LatestNewsSection({ articles, className }: LatestNewsSectionProp
     <View className={cn('gap-3', className)}>
       <View className="flex-row items-center justify-between px-4">
         <Text className="text-base font-semibold text-stone-900">Berita Terbaru</Text>
-        <Pressable onPress={() => router.push('/cms')} className="active:opacity-70">
+        <Pressable onPress={() => router.push('/berita')} className="active:opacity-70">
           <Text className="text-sm font-medium text-[#c4841a]">Lihat semua</Text>
         </Pressable>
       </View>

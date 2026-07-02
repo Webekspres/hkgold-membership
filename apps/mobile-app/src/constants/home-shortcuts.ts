@@ -1,6 +1,6 @@
 import type { SymbolViewProps } from 'expo-symbols';
 
-export type HomeShortcutHref = '/cms' | '/events';
+export type HomeShortcutHref = '/cms' | '/events' | '/berita' | '/cabang' | '/reward';
 
 export type HomeShortcut = {
   id: string;
@@ -20,19 +20,19 @@ export const HOME_SHORTCUTS: HomeShortcut[] = [
     id: 'berita',
     label: 'Berita',
     icon: { ios: 'newspaper', android: 'article', web: 'article' },
-    href: '/cms',
+    href: '/berita',
   },
   {
     id: 'cabang',
     label: 'Cabang',
     icon: { ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' },
-    href: '/cms',
+    href: '/cabang',
   },
   {
     id: 'reward',
     label: 'Reward',
     icon: { ios: 'gift', android: 'redeem', web: 'redeem' },
-    href: '/cms',
+    href: '/reward',
   },
 ];
 

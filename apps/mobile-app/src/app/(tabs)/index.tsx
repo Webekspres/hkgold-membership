@@ -5,12 +5,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MemberWalletCard } from "@/components/member-wallet-card";
 import { HomeShortcutGrid } from "@/components/home-shortcut-grid";
 import { LatestNewsSection } from "@/components/latest-news-section";
+import { NearestBranchSection } from "@/components/nearest-branch-section";
 import { PromotionBannerSlider } from "@/components/promotion-banner-slider";
 import { UpcomingEventsSection } from "@/components/upcoming-events-section";
 import { RewardCatalogSection } from "@/components/reward-catalog-section";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { MOCK_PROMOTION_BANNERS } from "@/constants/mock-banners";
+import { MOCK_NEAREST_BRANCH } from "@/constants/mock-branches";
 import { MOCK_UPCOMING_EVENTS } from "@/constants/mock-events";
 import { MOCK_LATEST_NEWS } from "@/constants/mock-news";
 import { MOCK_REWARD_CATALOG } from "@/constants/mock-rewards";
@@ -38,6 +40,9 @@ export default function HomeScreen() {
           </View>
 
           <HomeShortcutGrid />
+
+          <NearestBranchSection branch={MOCK_NEAREST_BRANCH} />
+
           <PromotionBannerSlider banners={MOCK_PROMOTION_BANNERS} />
 
           <UpcomingEventsSection events={MOCK_UPCOMING_EVENTS} />

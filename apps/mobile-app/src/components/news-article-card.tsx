@@ -6,16 +6,21 @@ import { GoldButton } from "@/components/gold-button";
 import { Text } from "@/components/ui/text";
 import type { NewsArticle } from "@/constants/mock-news";
 import { CAROUSEL_ITEM_WIDTH } from "@/constants/carousel-layout";
+import { cn } from "@/lib/utils";
 
 type NewsArticleCardProps = {
   article: NewsArticle;
+  fullWidth?: boolean;
 };
 
-export function NewsArticleCard({ article }: NewsArticleCardProps) {
+export function NewsArticleCard({ article, fullWidth = false }: NewsArticleCardProps) {
   return (
     <View
-      style={{ width: CAROUSEL_ITEM_WIDTH }}
-      className="rounded-xl shadow-md shadow-stone-900/25 border border-stone-100"
+      style={fullWidth ? undefined : { width: CAROUSEL_ITEM_WIDTH }}
+      className={cn(
+        "rounded-xl border border-stone-100 shadow-md shadow-stone-900/25",
+        fullWidth && "w-full"
+      )}
     >
       <View className="overflow-hidden rounded-xl bg-white">
         <Image

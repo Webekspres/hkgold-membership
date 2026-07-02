@@ -1,0 +1,122 @@
+export type BranchItem = {
+  id: number;
+  branchCode: string;
+  name: string;
+  subdistrict: string;
+  city: string;
+  phone: string | null;
+  locationUrl: string | null;
+};
+
+export const MOCK_BRANCH_LIST: BranchItem[] = [
+  {
+    id: 1,
+    branchCode: 'HK01',
+    name: 'HK Gold Mall Kelapa Gading',
+    subdistrict: 'Kelapa Gading',
+    city: 'Jakarta Utara',
+    phone: '+62 21 4587 1200',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Kelapa+Gading',
+  },
+  {
+    id: 2,
+    branchCode: 'HK02',
+    name: 'HK Gold Grand Indonesia',
+    subdistrict: 'Menteng',
+    city: 'Jakarta Pusat',
+    phone: '+62 21 2358 8800',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Grand+Indonesia',
+  },
+  {
+    id: 3,
+    branchCode: 'HK03',
+    name: 'HK Gold Pondok Indah Mall',
+    subdistrict: 'Pondok Indah',
+    city: 'Jakarta Selatan',
+    phone: '+62 21 765 4321',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Pondok+Indah',
+  },
+  {
+    id: 4,
+    branchCode: 'HK04',
+    name: 'HK Gold Tunjungan Plaza',
+    subdistrict: 'Genteng',
+    city: 'Surabaya',
+    phone: '+62 31 531 7788',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Tunjungan+Plaza',
+  },
+  {
+    id: 5,
+    branchCode: 'HK05',
+    name: 'HK Gold Pakuwon Mall',
+    subdistrict: 'Pabean Cantian',
+    city: 'Surabaya',
+    phone: '+62 31 731 9900',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Pakuwon+Mall',
+  },
+  {
+    id: 6,
+    branchCode: 'HK06',
+    name: 'HK Gold Paris Van Java',
+    subdistrict: 'Sukajadi',
+    city: 'Bandung',
+    phone: '+62 22 820 6611',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Paris+Van+Java',
+  },
+  {
+    id: 7,
+    branchCode: 'HK07',
+    name: 'HK Gold Trans Studio Mall',
+    subdistrict: 'Batununggal',
+    city: 'Bandung',
+    phone: '+62 22 910 1122',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Trans+Studio+Mall',
+  },
+  {
+    id: 8,
+    branchCode: 'HK08',
+    name: 'HK Gold Pakuwon City Mall',
+    subdistrict: 'Genteng',
+    city: 'Surabaya',
+    phone: '+62 31 990 2200',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Pakuwon+City+Mall',
+  },
+  {
+    id: 9,
+    branchCode: 'HK09',
+    name: 'HK Gold Central Park',
+    subdistrict: 'Grogol Petamburan',
+    city: 'Jakarta Barat',
+    phone: '+62 21 5698 5500',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Central+Park',
+  },
+  {
+    id: 10,
+    branchCode: 'HK10',
+    name: 'HK Gold Mall Kelapa Dua',
+    subdistrict: 'Kelapa Dua',
+    city: 'Tangerang',
+    phone: '+62 21 591 7700',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Mall+Kelapa+Dua',
+  },
+  {
+    id: 11,
+    branchCode: 'HK11',
+    name: 'HK Gold Summarecon Mall Serpong',
+    subdistrict: 'Serpong',
+    city: 'Tangerang Selatan',
+    phone: '+62 21 5421 3300',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Summarecon+Serpong',
+  },
+  {
+    id: 12,
+    branchCode: 'HK12',
+    name: 'HK Gold Kota Kasablanka',
+    subdistrict: 'Tebet',
+    city: 'Jakarta Selatan',
+    phone: '+62 21 2946 8800',
+    locationUrl: 'https://maps.google.com/?q=HK+Gold+Kota+Kasablanka',
+  },
+];
+
+export const MOCK_NEAREST_BRANCH = MOCK_BRANCH_LIST[0];
