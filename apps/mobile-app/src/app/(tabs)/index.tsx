@@ -2,27 +2,32 @@ import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { MemberWalletCard } from "@/components/member-wallet-card";
-import { HomeShortcutGrid } from "@/components/home-shortcut-grid";
-import { LatestNewsSection } from "@/components/latest-news-section";
-import { NearestBranchSection } from "@/components/nearest-branch-section";
-import { PromotionBannerSlider } from "@/components/promotion-banner-slider";
-import { UpcomingEventsSection } from "@/components/upcoming-events-section";
-import { RewardCatalogSection } from "@/components/reward-catalog-section";
+import { MemberWalletCard } from "@/components/home/member-wallet-card";
+import { HomeShortcutGrid } from "@/components/home/home-shortcut-grid";
+import { LatestNewsSection } from "@/components/home/latest-news-section";
+import { NearestBranchSection } from "@/components/home/nearest-branch-section";
+import { PromotionBannerSlider } from "@/components/home/promotion-banner-slider";
+import { UpcomingEventsSection } from "@/components/home/upcoming-events-section";
+import { RewardCatalogSection } from "@/components/home/reward-catalog-section";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { MOCK_PROMOTION_BANNERS } from "@/constants/mock-banners";
-import { MOCK_NEAREST_BRANCH } from "@/constants/mock-branches";
-import { MOCK_UPCOMING_EVENTS } from "@/constants/mock-events";
-import { MOCK_LATEST_NEWS } from "@/constants/mock-news";
-import { MOCK_REWARD_CATALOG } from "@/constants/mock-rewards";
-import { BottomTabInset } from "@/constants/theme";
-import { MOCK_MEMBER } from "@/constants/mock-member";
+import { MOCK_PROMOTION_BANNERS } from "@/mocks/mock-banners";
+import { getNearestBranch } from "@/services/branches";
+import { getUpcomingEvents } from "@/services/events";
+import { getLatestNews } from "@/services/news";
+import { getRewardCatalog } from "@/services/rewards";
+import { BottomTabInset } from "@/config/theme";
+import { MOCK_MEMBER } from "@/mocks/mock-member";
+
+const nearestBranch = getNearestBranch();
+const upcomingEvents = getUpcomingEvents();
+const latestNews = getLatestNews();
+const rewardCatalog = getRewardCatalog();
 
 export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background">
-      <SafeAreaView className="flex-1" style={{ paddingBottom: 16 }}>
+      <SafeAreaView className="flex-1" style={{ paddingBottom: 4 }}>
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-6 pb-6 pt-4"
@@ -41,13 +46,13 @@ export default function HomeScreen() {
 
           <HomeShortcutGrid />
 
-          <NearestBranchSection branch={MOCK_NEAREST_BRANCH} />
+          <NearestBranchSection branch={nearestBranch} />
 
           <PromotionBannerSlider banners={MOCK_PROMOTION_BANNERS} />
 
-          <UpcomingEventsSection events={MOCK_UPCOMING_EVENTS} />
+          <UpcomingEventsSection events={upcomingEvents} />
 
-          <LatestNewsSection articles={MOCK_LATEST_NEWS} />
+          <LatestNewsSection articles={latestNews} />
 
           <View className="px-4">
             <Button
@@ -59,7 +64,7 @@ export default function HomeScreen() {
             </Button>
           </View>
 
-          <RewardCatalogSection categories={MOCK_REWARD_CATALOG} />
+          <RewardCatalogSection categories={rewardCatalog} />
         </ScrollView>
       </SafeAreaView>
     </View>

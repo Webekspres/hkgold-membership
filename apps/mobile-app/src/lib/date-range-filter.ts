@@ -1,10 +1,8 @@
 import dayjs from 'dayjs';
-import type { DateType } from 'react-native-ui-datepicker';
 
-export type DateRange = {
-  startDate: DateType;
-  endDate: DateType;
-};
+import type { DateRange } from '@/types/filter';
+
+export type { DateRange };
 
 export const EMPTY_DATE_RANGE: DateRange = {
   startDate: undefined,

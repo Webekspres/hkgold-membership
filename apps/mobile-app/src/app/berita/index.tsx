@@ -4,19 +4,19 @@ import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DateRangeFilterModal } from '@/components/date-range-filter-modal';
-import { NewsArticleCard } from '@/components/news-article-card';
+import { DateRangeFilterModal } from '@/components/shared/date-range-filter-modal';
+import { NewsArticleCard } from '@/components/berita/news-article-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { MOCK_NEWS_LIST } from '@/constants/mock-news';
-import { SCREEN_HORIZONTAL_PADDING } from '@/constants/screen-layout';
+import { getNewsList } from '@/services/news';
+import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 import {
   EMPTY_DATE_RANGE,
   hasActiveDateRange,
   type DateRange,
 } from '@/lib/date-range-filter';
-import { filterNewsByDateRange } from '@/lib/filter-news-by-date-range';
+import { filterNewsByDateRange } from '@/lib/filters/filter-news-by-date-range';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 const FILTER_ICON = {
@@ -25,13 +25,15 @@ const FILTER_ICON = {
   web: 'filter_list',
 } as const;
 
+const newsList = getNewsList();
+
 export default function NewsListScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [appliedRange, setAppliedRange] = useState<DateRange>(EMPTY_DATE_RANGE);
   const [draftRange, setDraftRange] = useState<DateRange>(EMPTY_DATE_RANGE);
 
   const filteredArticles = useMemo(
-    () => filterNewsByDateRange(MOCK_NEWS_LIST, appliedRange),
+    () => filterNewsByDateRange(newsList, appliedRange),
     [appliedRange]
   );
 

@@ -4,27 +4,29 @@ import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BranchCityFilterDropdown } from '@/components/branch-city-filter-dropdown';
-import { BranchListCard } from '@/components/branch-list-card';
+import { BranchCityFilterDropdown } from '@/components/branch/branch-city-filter-dropdown';
+import { BranchListCard } from '@/components/branch/branch-list-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { MOCK_BRANCH_LIST } from '@/constants/mock-branches';
-import { SCREEN_HORIZONTAL_PADDING } from '@/constants/screen-layout';
+import { getBranchList } from '@/services/branches';
+import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 import {
   filterBranchesByCity,
   getBranchCityOptions,
-} from '@/lib/filter-branches-by-city';
+} from '@/lib/filters/filter-branches-by-city';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
+
+const branchList = getBranchList();
 
 export default function BranchListScreen() {
   const [selectedCity, setSelectedCity] = useState<string | null>('all');
 
-  const cityOptions = useMemo(() => getBranchCityOptions(MOCK_BRANCH_LIST), []);
+  const cityOptions = useMemo(() => getBranchCityOptions(branchList), []);
 
   const filteredBranches = useMemo(
-    () => filterBranchesByCity(MOCK_BRANCH_LIST, selectedCity),
+    () => filterBranchesByCity(branchList, selectedCity),
     [selectedCity]
   );
 

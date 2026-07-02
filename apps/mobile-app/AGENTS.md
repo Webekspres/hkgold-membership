@@ -15,24 +15,55 @@ Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi s
 
 **Dokumentasi Expo:** Sebelum menulis kode Expo, baca versi yang tepat di https://docs.expo.dev/versions/v56.0.0/
 
+**Handoff chat baru:** Baca file ini **sebelum** mengubah kode. Ini adalah sumber kebenaran untuk struktur folder, konvensi import, routing, dan status implementasi mobile app.
+
+**Branch Git aktif:** `mobile` di monorepo `hkgold-membership` (`apps/mobile-app/`).
+
 ---
 
-## 1. Kondisi Saat Ini vs Target
+## 1. Status Proyek & Roadmap
 
-### Sudah ada di repo
+### Fase saat ini (sudah selesai)
 
-- **Expo SDK 56** — React 19, React Native 0.85, Expo Router file-based routing
-- **NativeWind v4** + Tailwind CSS v3, theme **stone**, `darkMode: 'class'`
-- **React Native Reusables (RNR)** — style `new-york`, komponen UI: `button`, `text`, `card`, `input`
-- **Root layout** — `GestureHandlerRootView`, `PortalHost`, sinkronisasi dark mode via `nativewind`
-- **Halaman:** `login.tsx` (UI masuk, belum terhubung API), `(tabs)/index` & `(tabs)/explore` (starter)
-- **Native tabs** — `expo-router/unstable-native-tabs` di `src/components/app-tabs.tsx`
-- **Aset brand** — `assets/logo/logo-hkgold.webp`, `assets/media/background.webp`
-- **EAS project** — `projectId` di `app.json`
+Struktur folder sudah dievolusi (components per domain, `mocks/` + `config/` + `services/` + `types/`, routing seragam). **Seluruh layar konten member saat ini UI-only** — data dari mock, belum ada panggilan ke `apps/api-elysia`.
 
-### Target arsitektur (belum diimplementasi penuh)
+| Area | Status | Catatan |
+| --- | --- | --- |
+| Struktur `src/` | ✅ | Lihat §3 |
+| Home `(tabs)/index` | ✅ UI mock | Wallet card, shortcut, banner, section event/berita/cabang/reward |
+| List + detail Event | ✅ UI mock | Filter tanggal; detail: slider, lokasi, CTA maps |
+| List + detail Berita | ✅ UI mock | Filter tanggal; detail: kategori, tanggal relatif |
+| List Cabang | ✅ UI mock | Filter kota (dropdown) |
+| List + detail Reward | ✅ UI mock | Filter kategori + rentang poin; redeem dialog (UI saja) |
+| Auth login/register | ✅ UI saja | Belum wired ke API / JWT |
+| Tab Card & Profile | 🔲 placeholder | `ComingSoonScreen` |
+| CMS hub `/cms` | 🔲 placeholder | `ComingSoonScreen` |
+| Integrasi API | ❌ | `axios`, React Query, encrypted storage belum dipasang |
+| Auth gate | ❌ | Belum ada cek session di root layout |
 
-Fitur member yang akan datang: auth gate, dasbor saldo poin & tier, ledger mutasi, katalog redeem, profil & keamanan, pelacakan redeem OTP, CMS konten, kalender pameran, proteksi suspended member, dan demo mode tamu. Rute akan ditambahkan secara bertahap di bawah `src/app/` mengikuti pola grup Expo Router (`(auth)`, `(tabs)`, `(tracking)`, dll.) tanpa mengubah fondasi stack yang sudah dikunci.
+### Fitur UI yang sudah dibangun (mock)
+
+- **Home:** `MemberWalletCard`, `HomeShortcutGrid` (→ `/events`, `/berita`, `/cabang`, `/reward`), `PromotionBannerSlider`, section event/berita/cabang/reward dengan “Lihat semua”.
+- **Event:** list + `EventFilterModal` (rentang tanggal); detail pakai `ContentDetailScreen` + highlight tanggal/waktu + tombol “Lihat lokasi”.
+- **Berita:** list + filter tanggal; detail pakai `ContentDetailScreen` (tanpa CTA).
+- **Cabang:** list + `BranchCityFilterDropdown`; kartu cabang buka maps via `openLocationUrl`.
+- **Reward:** grid 2 kolom + `RewardFilterModal` (kategori + slider poin `@react-native-community/slider`); detail + stok per cabang + `RewardRedeemDialog`.
+
+### Langkah berikutnya (prioritas wajar)
+
+1. Pasang `axios` + `@tanstack/react-query` + `react-native-encrypted-storage`.
+2. Implementasi auth (login API, simpan JWT, auth gate di `_layout.tsx`).
+3. Ganti isi `src/services/*` dari mock ke API; pertahankan signature fungsi facade.
+4. Tambah `services/member.ts` (wallet, tier) — home masih import `MOCK_MEMBER` & `MOCK_PROMOTION_BANNERS` langsung dari `mocks/`.
+5. Wire redeem flow ke API; tab Card & Profile; CMS hub.
+
+### Target jangka panjang (belum diimplementasi)
+
+Auth gate penuh, ledger mutasi poin, pelacakan redeem OTP, proteksi suspended member, demo mode tamu, kalender pameran terintegrasi API. Rute baru mengikuti pola grup Expo Router (`(auth)`, `(tabs)`, `(tracking)`, dll.) tanpa mengubah fondasi stack §2.
+
+### Fondasi teknis (ringkas)
+
+Expo SDK 56 · React 19 · RN 0.85 · NativeWind v4 (stone) · RNR `new-york` · Reanimated v4 · Root: `GestureHandlerRootView` + `PortalHost` + splash `animated-icon` · Native tabs: `src/components/shared/app-tabs.tsx` · EAS `projectId` di `app.json`.
 
 ---
 
@@ -46,13 +77,18 @@ Anda **wajib** mematuhi stack berikut. Jangan mengganti dengan alternatif tanpa 
 | --- | --- | --- |
 | Framework | Expo SDK 56 + Expo Router | Entry: `expo-router/entry`, root di `src/app/` |
 | Styling | NativeWind v4 + Tailwind v3 | Utility via `className`; config di `tailwind.config.js` |
-| UI Components | React Native Reusables | `@rn-primitives/*`, tambah komponen via CLI |
+| UI Components | React Native Reusables | `@rn-primitives/*`; terpasang: `button`, `text`, `card`, `input`, `dialog`, `icon`, `collapsible` |
 | Animasi | react-native-reanimated v4 | Wajib untuk transisi premium |
 | Gesture | react-native-gesture-handler | Root wrap di `_layout.tsx` |
 | Gambar lokal & remote | **expo-image** | Caching & `.webp`; **jangan** pakai `react-native-fast-image` |
 | Gradasi | expo-linear-gradient | Aksen emas pada CTA (lihat Design System) |
 | Device ID | **expo-device** + **expo-application** | Hardware fingerprint untuk Marketing Protection Engine |
 | Safe area | react-native-safe-area-context | Sudah terpasang |
+| Ikon | expo-symbols (`SymbolView`) | Header back, filter, shortcut, tab |
+| Tanggal | dayjs + react-native-ui-datepicker | Filter rentang tanggal event/berita |
+| Slider poin | @react-native-community/slider | Filter reward (dua slider min/max) |
+| Dropdown | react-native-element-dropdown | Filter kota cabang |
+| Dialog | @rn-primitives/dialog + RNR `dialog` | Redeem confirmation |
 
 ### Wajib dipasang saat implementasi fitur terkait
 
@@ -70,6 +106,7 @@ Instal dependensi baru dengan `npx expo install <package>` agar versi kompatibel
 - `react-native-fast-image` (gunakan `expo-image`)
 - `react-native-device-info` (gunakan `expo-device` + `expo-application`)
 - Styling library lain (Tamagui, Unistyles, StyleSheet-only untuk layout baru)
+- `react-native-slider` / slider tanpa peer dep resmi RN 0.85 — gunakan `@react-native-community/slider`
 - Import langsung dari `@react-navigation/*` di kode aplikasi (lihat §5)
 
 ---
@@ -90,31 +127,122 @@ apps/mobile-app/
     ├── global.css               # Tailwind + CSS variables theme stone
     ├── app/
     │   ├── _layout.tsx          # Root Stack, theme, PortalHost, splash
-    │   ├── login.tsx            # Halaman masuk member (UI siap, API belum)
-    │   └── (tabs)/
-    │       ├── _layout.tsx      # Native tabs wrapper
-    │       ├── index.tsx        # Home (sementara: starter → nanti dasbor)
-    │       └── explore.tsx      # Explore (sementara: starter → nanti diganti)
+    │   ├── (auth)/
+    │   │   ├── _layout.tsx      # Stack auth (login, register)
+    │   │   ├── login.tsx
+    │   │   └── register.tsx
+    │   ├── (tabs)/
+    │   │   ├── _layout.tsx      # Native tabs wrapper
+    │   │   ├── index.tsx        # Home / dasbor member
+    │   │   ├── card.tsx
+    │   │   └── profile.tsx
+    │   ├── events/
+    │   │   ├── index.tsx        # List event
+    │   │   └── [slug].tsx       # Detail event
+    │   ├── berita/
+    │   │   ├── index.tsx
+    │   │   └── [slug].tsx
+    │   ├── cabang/
+    │   │   └── index.tsx
+    │   ├── reward/
+    │   │   ├── index.tsx
+    │   │   └── [sku].tsx
+    │   └── cms.tsx
     ├── components/
     │   ├── ui/                  # Komponen RNR (button, text, card, input, …)
-    │   ├── app-tabs.tsx         # NativeTabs (iOS/Android)
-    │   └── app-tabs.web.tsx     # Fallback web dev only
-    ├── hooks/
-    ├── lib/
-    │   ├── utils.ts             # cn() helper
-    │   └── theme.ts             # THEME + NAV_THEME (stone)
+    │   ├── auth/                # Shell & field auth
+    │   ├── shared/              # Cross-feature (gold-button, app-tabs, content-detail-*)
+    │   ├── home/                # Section homepage
+    │   ├── event/
+    │   ├── berita/
+    │   ├── reward/
+    │   └── branch/
+    ├── config/                  # brand, home-shortcuts, theme (Colors/Fonts starter)
     ├── constants/
-    └── assets/                  # Alias @/assets/* di tsconfig
-        ├── logo/
-        └── media/
+    │   └── layout/              # grid, carousel, screen-layout tokens
+    ├── mocks/                   # Fixture data (mock-*)
+    ├── types/                   # Shared domain types
+    ├── services/                # Data facade — mock sekarang, API nanti
+    ├── hooks/                   # use-color-scheme (hardcode light), use-theme
+    ├── lib/
+    │   ├── filters/             # filter-events, filter-news, filter-rewards, …
+    │   ├── format/              # format-event-date, format-branch-location, …
+    │   ├── utils.ts             # cn() helper
+    │   ├── theme.ts             # THEME + NAV_THEME (stone)
+    │   ├── date-range-filter.ts
+    │   └── open-location-url.ts
+
+assets/                            # Di root proyek (bukan di src/)
+├── logo/logo-hkgold.webp
+├── media/background.webp
+└── mockImage/                     # Gambar fixture list/detail
 ```
+
+### Konvensi import data
+
+| Lapisan | Import dari | Catatan |
+| --- | --- | --- |
+| **Screen** (`src/app/`) | `@/services/*` | Jangan import `@/mocks/*` di route — **kecuali** sementara: home memakai `MOCK_MEMBER`, `MOCK_PROMOTION_BANNERS` |
+| **Komponen** | props dari parent | Import `@/types/*` untuk tipe props; jangan panggil service di komponen presentasional |
+| **Services** | `@/mocks/*` (sekarang) | Satu-satunya lapisan yang tahu sumber data; nanti swap ke axios/React Query |
+| **Mocks** | `@/types/*` | Export data & helper (`getEventDetailBySlug`, dll.); tipe domain di `types/` |
+| **Filter/format** | `@/lib/filters/*`, `@/lib/format/*` | Pure functions; boleh dipakai screen & komponen filter modal |
+
+**Jangan** buat barrel `index.ts` untuk re-export — import langsung ke file (konvensi repo).
+
+### Services (`src/services/`)
+
+| File | Fungsi utama |
+| --- | --- |
+| `events.ts` | `getEventList`, `getUpcomingEvents`, `getEventBySlug` |
+| `news.ts` | `getNewsList`, `getLatestNews`, `getNewsBySlug` |
+| `branches.ts` | `getBranchList`, `getNearestBranch` |
+| `rewards.ts` | `getRewardList`, `getRewardCategories`, `getRewardCatalog`, `getRewardBySku` |
+
+### Types (`src/types/`)
+
+`event.ts`, `news.ts`, `branch.ts`, `reward.ts`, `filter.ts` (`DateRange`, `RewardFilterState`, dll.).
+
+### Mocks (`src/mocks/`)
+
+`mock-events`, `mock-event-details`, `mock-news`, `mock-news-details`, `mock-branches`, `mock-rewards`, `mock-banners`, `mock-member` — 12 item reward, 12 event, 12 berita, dll.
+
+### Root Stack (`src/app/_layout.tsx`)
+
+Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, `reward`. Splash animasi: `AnimatedSplashOverlay` dari `@/components/shared/animated-icon`.
+
+### Pola UI yang dipakai ulang
+
+- **Detail konten:** `ContentDetailScreen` + `ContentDetailImageSlider` (rasio 1:1) — dipakai event, berita, reward.
+- **CTA emas:** `GoldButton` (`@/components/shared/gold-button`) — gradien dari `@/config/brand`.
+- **Placeholder:** `ComingSoonScreen` — tab Card/Profile, CMS, fallback detail tidak ditemukan.
+- **Filter tanggal:** `DateRangeFilterModal` → state `DateRange` dari `@/lib/date-range-filter`.
+- **Layout horizontal:** `SCREEN_HORIZONTAL_PADDING` dari `@/constants/layout/screen-layout`.
+
+### Peta routing aktual
+
+| URL | File | Keterangan |
+| --- | --- | --- |
+| `/` | `(tabs)/index` | Home member |
+| `/card`, `/profile` | `(tabs)/card`, `(tabs)/profile` | Coming soon |
+| `/login`, `/register` | `(auth)/login`, `(auth)/register` | Route group — URL tanpa `(auth)` |
+| `/events` | `events/index` | List event |
+| `/events/[slug]` | `events/[slug]` | Detail event (**bukan** `/event/...`) |
+| `/berita`, `/berita/[slug]` | `berita/index`, `berita/[slug]` | |
+| `/cabang` | `cabang/index` | |
+| `/reward`, `/reward/[sku]` | `reward/index`, `reward/[sku]` | Param detail: `sku` |
+| `/cms` | `cms.tsx` | Hub CMS — coming soon |
+
+Shortcut home (`@/config/home-shortcuts.ts`): Event → `/events`, Berita → `/berita`, Cabang → `/cabang`, Reward → `/reward`.
 
 **Path alias (tsconfig):**
 
 - `@/*` → `./src/*`
 - `@/assets/*` → `./assets/*`
 
-**Penamaan file:** kebab-case untuk komponen (`hint-row.tsx`), lowercase untuk route Expo Router (`login.tsx`, `(tabs)/index.tsx`).
+**Penamaan file:** kebab-case untuk komponen (`event-list-card.tsx`); lowercase untuk route Expo Router (`login.tsx`, `events/[slug].tsx`).
+
+**Typed routes:** `experiments.typedRoutes` aktif — setelah menambah/mindah route, jalankan `npx expo start` agar `.expo/types/router.d.ts` ter-regenerate.
 
 ---
 
@@ -147,7 +275,7 @@ Gunakan `@/components/ui/text` dengan variant RNR (`h1`, `small`, `muted`, `code
 
 - `import '@/global.css'` di `_layout.tsx`
 - `<PortalHost />` sebagai child terakhir provider (dialog, popover, dropdown)
-- Sync color scheme: `useColorScheme` dari `nativewind` + `react-native`
+- Color scheme: root layout memanggil `setColorScheme('light')` — selaras dengan §8 (light-only untuk saat ini)
 
 ---
 
@@ -168,7 +296,7 @@ Gunakan `@/components/ui/text` dengan variant RNR (`h1`, `small`, `muted`, `code
 - **Bahasa kode:** TypeScript strict; semua file baru `.tsx` / `.ts`.
 - **Komponen:** function component; export named untuk utilitas, default export untuk screen route.
 - **Hooks:** prefix `use`, letakkan di `src/hooks/`.
-- **API & bisnis logic:** `src/lib/` atau `src/services/` (buat folder `services/` saat axios layer ditambahkan).
+- **API & bisnis logic:** `src/lib/` untuk utilitas murni; `src/services/` untuk akses data (mock → API).
 - **Jangan** commit `.env`, secret, atau token; gunakan `EXPO_PUBLIC_*` hanya untuk nilai yang aman diekspos ke client.
 - **Lint:** `npm run lint` (Expo ESLint).
 - **Scope perubahan:** minimal diff; jangan refactor file tidak terkait task.
@@ -187,6 +315,10 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 ```
 
 Akses di kode: `process.env.EXPO_PUBLIC_API_URL`
+
+### Integrasi API (cara migrasi)
+
+Jangan ubah import di screen saat API siap — **ganti implementasi di `src/services/*` saja**. Pertahankan signature fungsi facade; tambahkan React Query di dalam service atau hook terpisah jika perlu cache/refetch.
 
 ### Auth (target)
 
@@ -225,8 +357,8 @@ Nuansa **emas premium** di atas fondasi **stone** (RNR neutral).
 
 ### Dark mode
 
-- Ikuti `userInterfaceStyle: "automatic"` di `app.json`.
-- Uji setiap screen di light & dark; jangan hardcode warna hex kecuali aksen emas brand.
+- Saat ini app **light-only**: `userInterfaceStyle: "light"` di `app.json`; `use-color-scheme.ts` mengembalikan `'light'`.
+- Infrastruktur NativeWind `darkMode: 'class'` sudah ada — uji dark mode saat diaktifkan kembali; jangan hardcode hex kecuali aksen emas brand (`@/config/brand`).
 
 ---
 
@@ -244,13 +376,14 @@ Nuansa **emas premium** di atas fondasi **stone** (RNR neutral).
 ```bash
 cd apps/mobile-app
 npm install
-npm start          # Expo dev server
+npm start                    # Expo dev server (+ regenerate typed routes)
 npm run ios
 npm run android
 npm run lint
+npx tsc --noEmit             # Typecheck (pakai --ignoreDeprecations 6.0 jika baseUrl warning)
 ```
 
-Branch Git terkait mobile: `mobile` di monorepo `hkgold-membership`.
+Verifikasi navigasi manual setelah ubah route: Home → shortcut → list → detail; login/register; filter modal tiap list.
 
 ---
 
@@ -261,5 +394,7 @@ Branch Git terkait mobile: `mobile` di monorepo `hkgold-membership`.
 - [ ] Import navigation dari `expo-router`, bukan `@react-navigation/*`
 - [ ] String UI dalam Bahasa Indonesia
 - [ ] Tidak menyimpan secret di `EXPO_PUBLIC_*`
-- [ ] Perubahan route selaras dengan struktur `src/app/` yang ada
+- [ ] Screen baru mengikuti konvensi import: data dari `@/services/*`, tipe dari `@/types/*`
+- [ ] Perubahan route selaras dengan struktur `src/app/` yang ada; pathname event detail = `/events/[slug]`
+- [ ] `npx tsc --noEmit` lulus
 - [ ] `npx @react-native-reusables/cli@latest doctor` lulus jika menyentuh setup UI
