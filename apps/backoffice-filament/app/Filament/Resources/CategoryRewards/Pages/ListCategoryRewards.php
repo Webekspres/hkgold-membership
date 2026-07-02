@@ -19,6 +19,7 @@ class ListCategoryRewards extends ListRecords
         return [
             CreateAction::make()
                 ->label('Tambah kategori')
+                ->goldStyle()
                 ->modalWidth(Width::ExtraLarge)
                 ->mutateDataUsing(fn (array $data): array => CategoryRewardFormSupport::prepareSaveData($data)),
         ];

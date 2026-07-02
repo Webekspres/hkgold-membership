@@ -17,11 +17,7 @@ class ListStaff extends ListRecords
         return [
             CreateAction::make()
                 ->label('Tambah Staff')
-                ->color('primary')
-                ->extraAttributes([
-                    'style' => 'background: linear-gradient(135deg, #f5c842, #e8a020); border: none;',
-                    'class' => 'text-black font-bold hover:opacity-90 shadow-lg',
-                ]),
+                ->goldStyle(),
         ];
     }
 }

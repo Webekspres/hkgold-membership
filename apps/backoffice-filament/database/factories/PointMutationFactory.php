@@ -31,7 +31,8 @@ class PointMutationFactory extends Factory
         return [
             'member_id' => Member::query()->inRandomOrder()->value('id') ?? Member::factory(),
             'branch_id' => fake()->optional(0.8)->passthrough($branchId ?? Branch::factory()),
-            'reference_id' => fake()->optional(0.7)->regexify('INV-[0-9]{10}'),
+            'receipt_number' => fake()->optional(0.7)->regexify('INV-[0-9]{10}'),
+            'source_id' => null,
             'transaction_type_id' => $transactionTypeId,
             'purchase_nominal' => $transactionAmount,
             'points_issued' => $pointsIssued,

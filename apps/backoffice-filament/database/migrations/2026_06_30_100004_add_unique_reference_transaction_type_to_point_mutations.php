@@ -10,23 +10,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if ($this->indexExists('point_mutations', 'point_mutations_reference_transaction_type_unique')) {
+        if ($this->indexExists('point_mutations', 'point_mutations_receipt_number_transaction_type_unique')) {
             return;
         }
 
         Schema::table('point_mutations', function (Blueprint $table): void {
-            $table->unique(['reference_id', 'transaction_type_id'], 'point_mutations_reference_transaction_type_unique');
+            $table->unique(['receipt_number', 'transaction_type_id'], 'point_mutations_receipt_number_transaction_type_unique');
         });
     }
 
     public function down(): void
     {
-        if (! $this->indexExists('point_mutations', 'point_mutations_reference_transaction_type_unique')) {
+        if (! $this->indexExists('point_mutations', 'point_mutations_receipt_number_transaction_type_unique')) {
             return;
         }
 
         Schema::table('point_mutations', function (Blueprint $table): void {
-            $table->dropUnique('point_mutations_reference_transaction_type_unique');
+            $table->dropUnique('point_mutations_receipt_number_transaction_type_unique');
         });
     }
 

@@ -14,7 +14,7 @@ readonly class ManualPointInjectionData
         public ?int $branchId,
         public int $transactionTypeId,
         public string $purchaseNominal,
-        public ?string $referenceId,
+        public ?string $receiptNumber,
         public CarbonInterface $transactionDate,
     ) {}
 
@@ -23,14 +23,14 @@ readonly class ManualPointInjectionData
      */
     public static function fromArray(array $payload): self
     {
-        $referenceId = $payload['reference_id'] ?? null;
+        $receiptNumber = $payload['receipt_number'] ?? $payload['reference_id'] ?? null;
 
         return new self(
             memberId: trim((string) $payload['member_id']),
             branchId: filled($payload['branch_id'] ?? null) ? (int) $payload['branch_id'] : null,
             transactionTypeId: (int) $payload['transaction_type_id'],
             purchaseNominal: number_format((float) $payload['purchase_nominal'], 2, '.', ''),
-            referenceId: filled($referenceId) ? mb_strtoupper(trim((string) $referenceId)) : null,
+            receiptNumber: filled($receiptNumber) ? mb_strtoupper(trim((string) $receiptNumber)) : null,
             transactionDate: Carbon::parse($payload['transaction_date'])->startOfDay(),
         );
     }

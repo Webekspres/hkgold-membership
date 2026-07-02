@@ -26,7 +26,8 @@ class PointMutation extends Model
     protected $fillable = [
         'member_id',
         'branch_id',
-        'reference_id',
+        'source_id',
+        'receipt_number',
         'transaction_type_id',
         'purchase_nominal',
         'points_issued',
@@ -61,5 +62,10 @@ class PointMutation extends Model
     public function transactionType(): BelongsTo
     {
         return $this->belongsTo(TransactionType::class, 'transaction_type_id');
+    }
+
+    public function source(): BelongsTo
+    {
+        return $this->belongsTo(PointInjectionBatch::class, 'source_id');
     }
 }

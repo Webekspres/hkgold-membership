@@ -49,7 +49,7 @@ function createInjectionFixtures(
     $member = Member::factory()->create([
         'current_tier' => $tier,
         'point_balance' => $pointBalance,
-        'highest_point' => max($pointBalance, 800),
+        'highest_point' => $pointBalance,
         'is_suspended' => $isSuspended,
     ]);
 
@@ -64,14 +64,14 @@ function makeInjectionData(
     Member $member,
     TransactionType $transactionType,
     string $purchaseNominal = '1500000.00',
-    ?string $referenceId = null,
+    ?string $receiptNumber = null,
 ): ManualPointInjectionData {
     return ManualPointInjectionData::fromArray([
         'member_id' => $member->id,
         'branch_id' => null,
         'transaction_type_id' => $transactionType->id,
         'purchase_nominal' => $purchaseNominal,
-        'reference_id' => $referenceId,
+        'receipt_number' => $receiptNumber,
         'transaction_date' => Carbon::today()->toDateString(),
     ]);
 }
@@ -110,6 +110,8 @@ it('injects points with correct balance snapshot and activity log', function ():
 it('rejects suspended members and rolls back mutation', function (): void {
     $fixtures = createInjectionFixtures(isSuspended: true);
     $service = app(ManualPointInjectionService::class);
+    $initialMutations = PointMutation::query()->count();
+    $initialLogs = ActivityLog::query()->count();
 
     expect(fn () => $service->inject(
         makeInjectionData($fixtures['member'], $fixtures['transactionType']),
@@ -117,13 +119,14 @@ it('rejects suspended members and rolls back mutation', function (): void {
         '127.0.0.1',
     ))->toThrow(ManualPointInjectionException::class, 'ditangguhkan');
 
-    expect(PointMutation::query()->count())->toBe(0)
-        ->and(ActivityLog::query()->count())->toBe(0);
+    expect(PointMutation::query()->count())->toBe($initialMutations)
+        ->and(ActivityLog::query()->count())->toBe($initialLogs);
 });
 
 it('rejects nominal below conversion minimum', function (): void {
     $fixtures = createInjectionFixtures();
     $service = app(ManualPointInjectionService::class);
+    $initialMutations = PointMutation::query()->count();
 
     expect(fn () => $service->inject(
         makeInjectionData($fixtures['member'], $fixtures['transactionType'], '50000.00'),
@@ -131,7 +134,7 @@ it('rejects nominal below conversion minimum', function (): void {
         '127.0.0.1',
     ))->toThrow(ManualPointInjectionException::class);
 
-    expect(PointMutation::query()->count())->toBe(0);
+    expect(PointMutation::query()->count())->toBe($initialMutations);
 });
 
 it('rejects duplicate receipt for the same transaction type globally', function (): void {
@@ -187,9 +190,10 @@ it('keeps highest point when new balance is lower than previous highest', functi
         ->and($fixtures['member']->highest_point)->toBe(2000);
 });
 
-it('allows multiple mutations without reference id', function (): void {
+it('allows multiple mutations without receipt number', function (): void {
     $fixtures = createInjectionFixtures();
     $service = app(ManualPointInjectionService::class);
+    $initialMutations = PointMutation::query()->count();
 
     $service->inject(
         makeInjectionData($fixtures['member'], $fixtures['transactionType'], '100000.00'),
@@ -203,7 +207,7 @@ it('allows multiple mutations without reference id', function (): void {
         '127.0.0.1',
     );
 
-    expect(PointMutation::query()->count())->toBe(2);
+    expect(PointMutation::query()->count())->toBe($initialMutations + 2);
 });
 
 it('updates last activity at to transaction date', function (): void {
@@ -216,7 +220,7 @@ it('updates last activity at to transaction date', function (): void {
         'branch_id' => null,
         'transaction_type_id' => $fixtures['transactionType']->id,
         'purchase_nominal' => '100000.00',
-        'reference_id' => null,
+        'receipt_number' => null,
         'transaction_date' => $transactionDate->toDateString(),
     ]);
 
@@ -236,7 +240,7 @@ it('rejects future transaction dates', function (): void {
         'branch_id' => null,
         'transaction_type_id' => $fixtures['transactionType']->id,
         'purchase_nominal' => '100000.00',
-        'reference_id' => null,
+        'receipt_number' => null,
         'transaction_date' => Carbon::tomorrow()->toDateString(),
     ]);
 

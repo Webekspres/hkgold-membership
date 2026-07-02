@@ -25,7 +25,7 @@ readonly class ManualPointInjectionResult
         public TierStatus $previousTier,
         public TierStatus $newTier,
         public bool $tierUpgraded,
-        public ?string $referenceId,
+        public ?string $receiptNumber,
         public CarbonInterface $transactionDate,
     ) {}
 
@@ -52,7 +52,7 @@ readonly class ManualPointInjectionResult
                 'previous_tier' => $this->previousTier->value,
                 'new_tier' => $this->newTier->value,
                 'tier_upgraded' => $this->tierUpgraded,
-                'reference_id' => $this->referenceId,
+                'receipt_number' => $this->receiptNumber,
                 'transaction_date' => $this->transactionDate->toIso8601String(),
             ],
         ];

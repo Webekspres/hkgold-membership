@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('point_injection_batches', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignId('staff_id')->constrained('staffs');
-            $table->string('file_name', 255);
+            $table->foreignUuid('media_id')->unique()->constrained('media')->restrictOnDelete();
             $table->integer('total_rows')->default(0);
             $table->integer('successful_rows')->default(0);
             $table->integer('failed_rows')->default(0);
@@ -21,6 +21,7 @@ return new class extends Migration
             $table->dateTime('uploaded_at')->useCurrent();
 
             $table->index('staff_id');
+            $table->index('media_id');
         });
     }
 

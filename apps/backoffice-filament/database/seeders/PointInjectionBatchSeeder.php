@@ -14,6 +14,6 @@ class PointInjectionBatchSeeder extends Seeder
 
     public function run(): void
     {
-        PointInjectionBatch::factory()->count(10)->create();
+        PointInjectionBatch::factory()->count(10)->withDetails(15)->create();
     }
 }

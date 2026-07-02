@@ -37,4 +37,19 @@ class MediaFactory extends Factory
             'file_size' => fake()->numberBetween(120_000, 2_500_000),
         ];
     }
+
+    public function spreadsheet(): self
+    {
+        return $this->state(function (array $attributes) {
+            $fileName = 'inject-poin-'.fake()->date('Ymd').'.xlsx';
+
+            return [
+                'caption' => 'Excel Import File',
+                'file_name' => $fileName,
+                'file_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'file_url' => 'https://cdn.hkgoldvip.id/imports/'.Str::uuid().'/'.$fileName,
+                'file_size' => fake()->numberBetween(15_000, 150_000),
+            ];
+        });
+    }
 }
