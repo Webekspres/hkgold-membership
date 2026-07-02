@@ -60,13 +60,13 @@ class ManualPointInjectionException extends RuntimeException
         );
     }
 
-    public static function duplicateReceipt(string $referenceId, int $transactionTypeId): self
+    public static function duplicateReceipt(string $receiptNumber, int $transactionTypeId): self
     {
         return new self(
             'DUPLICATE_RECEIPT',
             'Nomor struk sudah digunakan untuk jenis transaksi yang sama.',
             [
-                'reference_id' => $referenceId,
+                'receipt_number' => $receiptNumber,
                 'transaction_type_id' => $transactionTypeId,
             ],
         );

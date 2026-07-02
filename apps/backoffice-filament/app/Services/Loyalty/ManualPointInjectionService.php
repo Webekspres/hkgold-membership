@@ -51,7 +51,7 @@ class ManualPointInjectionService
                 throw ManualPointInjectionException::branchNotFound();
             }
 
-            $this->assertReceiptIsUnique($data->referenceId, $data->transactionTypeId);
+            $this->assertReceiptIsUnique($data->receiptNumber, $data->transactionTypeId);
 
             $conversionRule = $this->pointCalculation->resolveConversionRule($member, $transactionType);
             $conversionNominal = (string) $conversionRule->conversion_nominal;
@@ -78,7 +78,7 @@ class ManualPointInjectionService
             $mutation = PointMutation::query()->create([
                 'member_id' => $member->id,
                 'branch_id' => $data->branchId,
-                'reference_id' => $data->referenceId,
+                'receipt_number' => $data->receiptNumber,
                 'transaction_type_id' => $transactionType->id,
                 'purchase_nominal' => $data->purchaseNominal,
                 'points_issued' => $pointsIssued,
@@ -133,7 +133,7 @@ class ManualPointInjectionService
                 previousTier: $previousTier,
                 newTier: $newTier,
                 tierUpgraded: $newTier !== $previousTier,
-                referenceId: $data->referenceId,
+                receiptNumber: $data->receiptNumber,
                 transactionDate: $data->transactionDate,
             );
         });
@@ -166,7 +166,7 @@ class ManualPointInjectionService
             throw ManualPointInjectionException::branchNotFound();
         }
 
-        $this->assertReceiptIsUnique($data->referenceId, $data->transactionTypeId);
+        $this->assertReceiptIsUnique($data->receiptNumber, $data->transactionTypeId);
 
         $calculation = $this->pointCalculation->preview($member, $transactionType, $data->purchaseNominal);
         $conversionNominal = $calculation['conversion_nominal'];
@@ -199,7 +199,7 @@ class ManualPointInjectionService
             'previous_tier' => $member->current_tier->value,
             'new_tier' => $newTier->value,
             'tier_upgraded' => $newTier !== $member->current_tier,
-            'reference_id' => $data->referenceId,
+            'receipt_number' => $data->receiptNumber,
             'transaction_date' => $data->transactionDate->format('d/m/Y'),
         ];
     }
@@ -215,19 +215,19 @@ class ManualPointInjectionService
         }
     }
 
-    private function assertReceiptIsUnique(?string $referenceId, int $transactionTypeId): void
+    private function assertReceiptIsUnique(?string $receiptNumber, int $transactionTypeId): void
     {
-        if ($referenceId === null) {
+        if ($receiptNumber === null) {
             return;
         }
 
         $exists = PointMutation::query()
-            ->where('reference_id', $referenceId)
+            ->where('receipt_number', $receiptNumber)
             ->where('transaction_type_id', $transactionTypeId)
             ->exists();
 
         if ($exists) {
-            throw ManualPointInjectionException::duplicateReceipt($referenceId, $transactionTypeId);
+            throw ManualPointInjectionException::duplicateReceipt($receiptNumber, $transactionTypeId);
         }
     }
 }

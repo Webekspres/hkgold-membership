@@ -21,8 +21,8 @@ class PointAnnualArchive extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'period_id',
         'member_id',
-        'archive_year',
         'frozen_points_total',
         'highest_point',
         'last_tier_position',
@@ -32,12 +32,16 @@ class PointAnnualArchive extends Model
     protected function casts(): array
     {
         return [
-            'archive_year' => 'integer',
             'frozen_points_total' => 'integer',
             'highest_point' => 'integer',
             'last_tier_position' => TierStatus::class,
             'frozen_at' => 'datetime',
         ];
+    }
+
+    public function period(): BelongsTo
+    {
+        return $this->belongsTo(PointAnnualArchivePeriod::class, 'period_id');
     }
 
     public function member(): BelongsTo

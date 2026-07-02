@@ -46,7 +46,7 @@ class InjectManualPointAction
                             'branch_id' => $get('branch_id'),
                             'transaction_type_id' => $get('transaction_type_id'),
                             'purchase_nominal' => $get('purchase_nominal'),
-                            'reference_id' => $get('reference_id'),
+                            'receipt_number' => $get('receipt_number'),
                             'transaction_date' => $get('transaction_date'),
                         ];
 
@@ -75,7 +75,7 @@ class InjectManualPointAction
                                     'branch_id' => $get('branch_id'),
                                     'transaction_type_id' => $get('transaction_type_id'),
                                     'purchase_nominal' => $get('purchase_nominal'),
-                                    'reference_id' => $get('reference_id'),
+                                    'receipt_number' => $get('receipt_number'),
                                     'transaction_date' => $get('transaction_date'),
                                 ];
 
@@ -161,7 +161,7 @@ class InjectManualPointAction
                 ->minValue(1)
                 ->required(),
 
-            TextInput::make('reference_id')
+            TextInput::make('receipt_number')
                 ->label('Nomor struk')
                 ->maxLength(100),
 

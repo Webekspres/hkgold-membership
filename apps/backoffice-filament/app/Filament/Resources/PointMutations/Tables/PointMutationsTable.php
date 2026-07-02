@@ -71,8 +71,8 @@ class PointMutationsTable
                     ->numeric(thousandsSeparator: ',')
                     ->sortable(),
 
-                IconColumn::make('reference_id')
-                    ->label('Reference')
+                IconColumn::make('receipt_number')
+                    ->label('No. Struk')
                     ->icon(fn (?string $state): ?string => filled($state) ? 'heroicon-o-link' : null)
                     ->color('gray')
                     ->tooltip('Segera hadir'),

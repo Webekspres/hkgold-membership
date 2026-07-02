@@ -14,7 +14,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('member_id')->constrained('members')->restrictOnDelete();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
-            $table->string('reference_id', 100)->nullable();
+            $table->string('receipt_number', 100)->nullable();
+            $table->foreignUuid('source_id')->nullable()->constrained('point_injection_batches')->restrictOnDelete();
             $table->foreignId('transaction_type_id')->nullable()->constrained('transaction_types')->restrictOnDelete();
             $table->decimal('purchase_nominal', 15, 2)->default(0);
             $table->integer('points_issued')->default(0);
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->index('member_id');
             $table->index('branch_id');
             $table->index('transaction_type_id');
+            $table->index('source_id');
         });
     }
 

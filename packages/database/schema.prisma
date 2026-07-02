@@ -220,6 +220,7 @@ model Media {
   rewardImages        RewardImage[]
   contentCoverImages  ContentCoverImage[]
   promotionBanners    PromotionBanner[]
+  pointInjectionBatch PointInjectionBatch?
 
   @@map("media")
 }
@@ -598,7 +599,7 @@ model ConversionRule {
 model PointInjectionBatch {
   id                  String   @id @default(uuid()) @db.Char(36)
   staffId             Int      @map("staff_id")
-  fileName            String   @map("file_name") @db.VarChar(255)
+  mediaId             String   @unique @map("media_id") @db.Char(36)
   totalRows           Int      @default(0) @map("total_rows")
   successfulRows      Int      @default(0) @map("successful_rows")
   failedRows          Int      @default(0) @map("failed_rows")
@@ -606,6 +607,7 @@ model PointInjectionBatch {
   uploadedAt          DateTime @default(now()) @map("uploaded_at")
 
   staff   Staff                  @relation(fields: [staffId], references: [id])
+  media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   details PointInjectionDetail[]
 
   @@index([staffId])
@@ -657,17 +659,35 @@ model PointMutation {
   @@map("point_mutations")
 }
 
+model PointAnnualArchivePeriod {
+  id                  String               @id @default(uuid()) @db.Char(36)
+  archiveYear         Int                  @unique @map("archive_year")
+  name                String               @map("name") @db.VarChar(150)
+  totalMembers        Int                  @default(0) @map("total_members")
+  frozenPointsTotal   Int                  @default(0) @map("frozen_points_total")
+  redeemedPointsTotal Int                  @default(0) @map("redeemed_points_total")
+  archivedAt          DateTime?            @map("archived_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  archives PointAnnualArchive[]
+
+  @@map("point_annual_archive_periods")
+}
+
 model PointAnnualArchive {
-  id                String     @id @default(uuid()) @db.Char(36)
-  memberId          String?    @map("member_id") @db.Char(36)
-  archiveYear       Int        @map("archive_year")
-  frozenPointsTotal Int        @map("frozen_points_total")
-  highestPoint      Int        @map("highest_point")
-  lastTierPosition  MemberTier @map("last_tier_position")
-  frozenAt          DateTime   @default(now()) @map("frozen_at")
+  id                String                   @id @default(uuid()) @db.Char(36)
+  periodId          String                   @map("period_id") @db.Char(36)
+  memberId          String?                  @map("member_id") @db.Char(36)
+  frozenPointsTotal Int                      @map("frozen_points_total")
+  highestPoint      Int                      @map("highest_point")
+  lastTierPosition  MemberTier               @map("last_tier_position")
+  frozenAt          DateTime                 @default(now()) @map("frozen_at")
 
-  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  period PointAnnualArchivePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  member Member?                  @relation(fields: [memberId], references: [id], onDelete: SetNull)
 
+  @@index([periodId])
   @@index([memberId])
   @@map("point_annual_archives")
 }

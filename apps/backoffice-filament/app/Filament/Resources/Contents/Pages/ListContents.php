@@ -27,7 +27,8 @@ class ListContents extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah Konten'),
+                ->label('Tambah Konten')
+                ->goldStyle(),
         ];
     }
 
