@@ -1,13 +1,18 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
+import {
+  GOLD_GRADIENT_COLORS,
+  GOLD_GRADIENT_END,
+  GOLD_GRADIENT_START,
+} from '@/config/brand';
 import { HOME_SHORTCUTS } from '@/config/home-shortcuts';
 import { cn } from '@/lib/utils';
 
-const ICON_COLOR = '#c4841a';
-const CIRCLE_BORDER = 'rgba(232, 160, 32, 0.45)';
+const ICON_COLOR = '#ffffff';
 
 type HomeShortcutGridProps = {
   className?: string;
@@ -26,11 +31,19 @@ export function HomeShortcutGrid({ className }: HomeShortcutGridProps) {
             onPress={() => router.push(shortcut.href)}
             accessibilityRole="button"
             accessibilityLabel={shortcut.label}>
-            <View
-              className="h-14 w-14 items-center justify-center rounded-full bg-white"
-              style={{ borderWidth: 1, borderColor: CIRCLE_BORDER }}>
+            <LinearGradient
+              colors={[...GOLD_GRADIENT_COLORS]}
+              start={GOLD_GRADIENT_START}
+              end={GOLD_GRADIENT_END}
+              style={{
+                height: 56,
+                width: 56,
+                borderRadius: 28,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
               <SymbolView name={shortcut.icon} size={24} tintColor={ICON_COLOR} />
-            </View>
+            </LinearGradient>
             <Text variant="small" className="text-center text-stone-700">
               {shortcut.label}
             </Text>

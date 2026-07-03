@@ -1,5 +1,6 @@
 export type ActiveRedeemItem = {
   redeemId: string;
+  redeemToken: string;
   expiresAt: string;
   sku: string;
   name: string;

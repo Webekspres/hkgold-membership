@@ -13,25 +13,25 @@ export const HOME_SHORTCUTS: HomeShortcut[] = [
   {
     id: 'event',
     label: 'Event',
-    icon: { ios: 'calendar', android: 'event', web: 'event' },
+    icon: { ios: 'calendar.fill', android: 'event', web: 'event' },
     href: '/events',
   },
   {
     id: 'berita',
     label: 'Berita',
-    icon: { ios: 'newspaper', android: 'article', web: 'article' },
+    icon: { ios: 'newspaper.fill', android: 'article', web: 'article' },
     href: '/berita',
   },
   {
     id: 'cabang',
     label: 'Cabang',
-    icon: { ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' },
+    icon: { ios: 'mappin.circle.fill', android: 'location_on', web: 'location_on' },
     href: '/cabang',
   },
   {
     id: 'reward',
     label: 'Reward',
-    icon: { ios: 'gift', android: 'redeem', web: 'redeem' },
+    icon: { ios: 'gift.fill', android: 'redeem', web: 'redeem' },
     href: '/reward',
   },
 ];

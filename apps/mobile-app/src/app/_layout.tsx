@@ -31,6 +31,7 @@ export default function RootLayout() {
           <Stack.Screen name="berita" />
           <Stack.Screen name="cabang" />
           <Stack.Screen name="faq" />
+          <Stack.Screen name="tier-benefit" />
           <Stack.Screen name="redeem" />
           <Stack.Screen name="reward/[sku]" />
         </Stack>

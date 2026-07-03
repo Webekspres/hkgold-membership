@@ -58,6 +58,9 @@ function handlePressProfileMenu(item: ProfileMenuItem) {
     case "faq":
       router.push("/faq" as Href);
       return;
+    case "tier-benefit":
+      router.push("/tier-benefit" as Href);
+      return;
     default:
       router.push("/cms");
   }
