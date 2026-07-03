@@ -1,5 +1,4 @@
-import * as Clipboard from "expo-clipboard";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import {
   BellRing,
   Crown,
@@ -10,13 +9,14 @@ import {
   Newspaper,
   Settings,
 } from "lucide-react-native";
-import { Alert, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ProfileLastRewardCard } from "@/components/profile/profile-last-reward-card";
 import { ProfileMemberCard } from "@/components/profile/profile-member-card";
 import { ProfileMenuList, type ProfileMenuItem } from "@/components/profile/profile-menu-list";
 import { ProfilePointsTierCard } from "@/components/profile/profile-points-tier-card";
+import { copyMemberCode } from "@/lib/clipboard/copy-member-code";
 import { getRewardList } from "@/services/rewards";
 import { MOCK_MEMBER } from "@/mocks/mock-member";
 
@@ -34,17 +34,15 @@ const profileMenus: ProfileMenuItem[] = [
   { key: "account-settings", title: "Pengaturan Akun", icon: Settings },
 ];
 
-async function copyMemberCode(memberCode: string) {
-  await Clipboard.setStringAsync(memberCode);
-  Alert.alert("Kode member tersalin", memberCode);
-}
-
 function formatTierName(tier: string) {
   return tier.charAt(0) + tier.slice(1).toLowerCase();
 }
 
 function handlePressProfileMenu(item: ProfileMenuItem) {
   switch (item.key) {
+    case "redeem-history":
+      router.push("/redeem" as Href);
+      return;
     case "reward-catalog":
       router.push("/reward");
       return;
@@ -56,6 +54,9 @@ function handlePressProfileMenu(item: ProfileMenuItem) {
       return;
     case "branch-location":
       router.push("/cabang");
+      return;
+    case "faq":
+      router.push("/faq" as Href);
       return;
     default:
       router.push("/cms");

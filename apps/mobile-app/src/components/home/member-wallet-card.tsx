@@ -21,6 +21,8 @@ export type MemberWalletCardProps = {
   currentTier: MemberTier;
   pointBalance: number;
   className?: string;
+  pressable?: boolean;
+  onPressMemberNumber?: () => void;
 };
 
 const TIER_STYLES: Record<
@@ -62,28 +64,76 @@ function formatPointBalance(points: number) {
   return points.toLocaleString("id-ID");
 }
 
+function CardWrapper({
+  pressable,
+  className,
+  children,
+}: {
+  pressable: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (pressable) {
+    return (
+      <Pressable
+        className={cn("active:opacity-95", className)}
+        onPress={() => router.push("/card")}
+        accessibilityRole="button"
+        accessibilityLabel="Buka kartu member">
+        {children}
+      </Pressable>
+    );
+  }
+
+  return <View className={className}>{children}</View>;
+}
+
+function MemberNumber({
+  memberNumber,
+  onPressMemberNumber,
+}: {
+  memberNumber: string;
+  onPressMemberNumber?: () => void;
+}) {
+  if (onPressMemberNumber) {
+    return (
+      <Pressable
+        className="self-start rounded-full bg-stone-100 px-3 py-1 active:opacity-80"
+        onPress={onPressMemberNumber}
+        accessibilityRole="button"
+        accessibilityLabel="Salin nomor member">
+        <Text variant="small" className="text-stone-700">
+          {memberNumber}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Text variant="small" className="text-stone-500">
+      {memberNumber}
+    </Text>
+  );
+}
+
 export function MemberWalletCard({
   fullName,
   memberNumber,
   currentTier,
   pointBalance,
   className,
+  pressable = true,
+  onPressMemberNumber,
 }: MemberWalletCardProps) {
   const tier = TIER_STYLES[currentTier];
 
   return (
-    <Pressable
-      className={cn("active:opacity-95", className)}
-      onPress={() => router.push("/card")}
-      accessibilityRole="button"
-      accessibilityLabel="Buka kartu member"
-    >
+    <CardWrapper pressable={pressable} className={className}>
       <LinearGradient
         colors={[...GOLD_GRADIENT_COLORS]}
         start={GOLD_GRADIENT_START}
         end={GOLD_GRADIENT_END}
-        style={{ borderRadius: 20, padding: 2 }}
-      >
+        style={{ borderRadius: 20, padding: 2 }}>
         <View className="rounded-[18px] bg-white px-5 py-5">
           <Image
             source={require("@/assets/media/background.webp")}
@@ -96,19 +146,17 @@ export function MemberWalletCard({
             contentFit="cover"
           />
           <View className="mb-1">
-            <Text
-              className="text-xl font-semibold text-stone-900"
-              numberOfLines={2}
-            >
+            <Text className="text-xl font-semibold text-stone-900" numberOfLines={2}>
               {fullName}
             </Text>
           </View>
 
           <View className="flex-row items-stretch gap-3">
             <View className="w-3/5 justify-center">
-              <Text variant="small" className="text-stone-500">
-                {memberNumber}
-              </Text>
+              <MemberNumber
+                memberNumber={memberNumber}
+                onPressMemberNumber={onPressMemberNumber}
+              />
               <View className="my-4 h-0.5 w-full rounded-full bg-stone-100" />
 
               <Text variant="muted" className="text-xs uppercase tracking-wide">
@@ -126,19 +174,17 @@ export function MemberWalletCard({
               className={cn(
                 "w-2/5 items-center justify-center rounded-2xl px-3 py-3",
                 tier.panelClassName,
-              )}
-            >
+              )}>
               <Icon as={Crown} size={34} className={cn(tier.iconClassName)} />
               <Text
                 variant="small"
-                className={cn("mt-1.5 font-semibold", tier.textClassName)}
-              >
+                className={cn("mt-1.5 font-semibold", tier.textClassName)}>
                 {tier.label}
               </Text>
             </View>
           </View>
         </View>
       </LinearGradient>
-    </Pressable>
+    </CardWrapper>
   );
 }

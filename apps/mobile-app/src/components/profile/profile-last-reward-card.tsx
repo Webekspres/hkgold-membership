@@ -1,27 +1,29 @@
-import { Image } from "expo-image";
-import { Pressable, View } from "react-native";
+import type { ReactNode } from 'react';
+import { Image } from 'expo-image';
+import { Pressable, View } from 'react-native';
 
-import { Text } from "@/components/ui/text";
-import type { RewardCatalogItem } from "@/types/reward";
+import { Text } from '@/components/ui/text';
+import type { RewardCatalogItem } from '@/types/reward';
 
 type ProfileLastRewardCardProps = {
   title?: string;
   reward: RewardCatalogItem;
   onPress: () => void;
+  footer?: ReactNode;
 };
 
 export function ProfileLastRewardCard({
-  title = "Reward terakhir diklaim",
+  title = 'Reward terakhir diklaim',
   reward,
   onPress,
+  footer,
 }: ProfileLastRewardCardProps) {
   return (
     <View className="gap-2">
       <Text className="text-base font-semibold text-stone-900">{title}</Text>
       <Pressable
-        className="flex-row gap-3 rounded-xl border border-stone-200 bg-white  shadow-md shadow-stone-900/15 active:opacity-90"
-        onPress={onPress}
-      >
+        className="flex-row gap-3 rounded-xl border border-stone-200 bg-white shadow-md shadow-stone-900/15 active:opacity-90"
+        onPress={onPress}>
         <Image
           source={reward.image}
           style={{
@@ -37,15 +39,14 @@ export function ProfileLastRewardCard({
           <Text variant="muted" className="text-[11px] uppercase tracking-wide">
             {reward.categoryName}
           </Text>
-          <Text
-            className="text-base font-semibold leading-snug text-stone-900"
-            numberOfLines={2}
-          >
+          <Text className="text-base font-semibold leading-snug text-stone-900" numberOfLines={2}>
             {reward.name}
           </Text>
-          <Text className="text-sm font-medium text-amber-700">
-            {reward.pointsRequired.toLocaleString("id-ID")} poin
-          </Text>
+          {footer ?? (
+            <Text className="text-sm font-medium text-amber-700">
+              {reward.pointsRequired.toLocaleString('id-ID')} poin
+            </Text>
+          )}
         </View>
       </Pressable>
     </View>
