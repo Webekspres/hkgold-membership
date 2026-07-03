@@ -14,9 +14,9 @@ import Animated, {
 
 import { Text } from "@/components/ui/text";
 import {
-  GOLD_GRADIENT_COLORS,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
+  GOLD_TAB_INDICATOR_COLORS,
 } from "@/config/brand";
 import { Colors } from "@/config/theme";
 
@@ -147,7 +147,7 @@ export default function AnimatedTabBar() {
       >
         <AnimatedLinearGradient
           pointerEvents="none"
-          colors={[...GOLD_GRADIENT_COLORS]}
+          colors={[...GOLD_TAB_INDICATOR_COLORS]}
           start={GOLD_GRADIENT_START}
           end={GOLD_GRADIENT_END}
           style={[
@@ -155,7 +155,6 @@ export default function AnimatedTabBar() {
               position: "absolute",
               top: 4,
               bottom: 4,
-              opacity: 0.42,
               borderRadius: 999,
             },
             indicatorStyle,
