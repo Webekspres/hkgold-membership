@@ -12,6 +12,7 @@
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.35",
+        "maatwebsite/excel": "4.x-dev",
         "predis/predis": "^3.5"
     },
     "require-dev": {
@@ -48,11 +49,11 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"npm run dev\" --names='server,queue,vite'"
         ],
         "dev:flyenv": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='queue,vite'"
+            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"npm run dev\" --names='queue,vite'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

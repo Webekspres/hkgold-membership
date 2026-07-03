@@ -616,7 +616,7 @@ model ConversionRule {
 
 model PointInjectionBatch {
   id                  String   @id @default(uuid()) @db.Char(36)
-  staffId             Int      @map("staff_id")
+  staffId             Int?     @map("staff_id")
   mediaId             String   @unique @map("media_id") @db.Char(36)
   totalRows           Int      @default(0) @map("total_rows")
   successfulRows      Int      @default(0) @map("successful_rows")
@@ -625,7 +625,7 @@ model PointInjectionBatch {
   resolved            Boolean  @default(false) @map("resolved")
   uploadedAt          DateTime @default(now()) @map("uploaded_at")
 
-  staff   Staff                  @relation(fields: [staffId], references: [id])
+  staff   Staff?                 @relation(fields: [staffId], references: [id], onDelete: SetNull)
   media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   details PointInjectionDetail[]
 
@@ -640,15 +640,15 @@ model PointInjectionDetail {
   rawMemberNumber   String          @map("raw_member_number") @db.VarChar(50)
   rawBranchCode     String          @map("raw_branch_code") @db.VarChar(20)
   purchaseNominal   Decimal         @map("purchase_nominal") @db.Decimal(15, 2)
-  transactionTypeId Int             @map("transaction_type_id")
-  transactionDate   DateTime        @map("transaction_date")
+  transactionTypeId Int?            @map("transaction_type_id")
+  transactionDate   DateTime?       @map("transaction_date")
   calculatedPoints  Int             @default(0) @map("calculated_points")
   status            InjectionStatus @default(PENDING) @map("status")
   errorMessage      String?         @map("error_message") @db.Text
   processedAt       DateTime?       @map("processed_at")
 
   batch           PointInjectionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  transactionType TransactionType     @relation(fields: [transactionTypeId], references: [id])
+  transactionType TransactionType?    @relation(fields: [transactionTypeId], references: [id], onDelete: Restrict)
 
   @@index([batchId])
   @@index([transactionTypeId])
