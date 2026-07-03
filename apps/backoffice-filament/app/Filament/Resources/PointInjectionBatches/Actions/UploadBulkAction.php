@@ -24,7 +24,7 @@ class UploadBulkAction
             ->color('primary')
             ->goldStyle()
             ->modalHeading('Upload Bulk Injeksi Poin')
-            ->modalDescription('Unggah file Excel (.xlsx, .xls) atau CSV berisi data transaksi untuk injeksi poin massal.')
+            ->modalDescription('Unggah file Excel (.xlsx, .xls) atau CSV. Format tanggal transaksi: DD-MM-YYYY (contoh: 31-12-2026). Unduh template untuk contoh kolom.')
             ->modalSubmitActionLabel('Upload & Proses')
             ->form([
                 FileUpload::make('spreadsheet')

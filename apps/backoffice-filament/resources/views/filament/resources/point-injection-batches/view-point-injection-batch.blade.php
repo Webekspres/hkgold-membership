@@ -405,7 +405,33 @@
 
     @php($progress = $this->getProgressStats())
 
-    @if ($progress['is_processing'])
+    @if ($progress['is_finalizing'])
+        <div wire:poll.5s="refreshBatch" class="bulk-update-progress-container">
+            <div class="bulk-update-progress-header">
+                <x-heroicon-o-arrow-path class="bulk-update-spinner" />
+                <span class="bulk-update-progress-title">Sedang memproses ke PointMutation...</span>
+            </div>
+            <div class="bulk-update-progress-track">
+                @if ($progress['finalize_percent'] !== null)
+                    <div
+                        class="bulk-update-progress-fill"
+                        style="width: {{ $progress['finalize_percent'] }}%;"
+                    ></div>
+                @else
+                    <div class="bulk-update-progress-fill indeterminate"></div>
+                @endif
+            </div>
+            <p class="bulk-update-progress-caption">
+                {{ number_format($progress['success_rows'], 0, ',', '.') }}
+                dari
+                {{ number_format($progress['validated_rows'], 0, ',', '.') }}
+                baris selesai
+                @if ($progress['finalize_percent'] !== null)
+                    ({{ $progress['finalize_percent'] }}%)
+                @endif
+            </p>
+        </div>
+    @elseif ($progress['is_processing'])
         <div wire:poll.5s="refreshBatch" class="bulk-update-progress-container">
             <div class="bulk-update-progress-header">
                 <x-heroicon-o-arrow-path class="bulk-update-spinner" />
@@ -437,13 +463,29 @@
         </div>
     @else
         <div class="bulk-update-summary-container">
-            @if ($progress['is_stale'])
+            @if ($progress['is_stale'] && $progress['can_retry_import'])
+                <div class="bulk-update-alert alert-warning">
+                    <x-heroicon-o-exclamation-triangle class="bulk-update-alert-icon" />
+                    <span>
+                        Pemrosesan mungkin gagal — gunakan tombol <strong>Ulangi Parsing</strong> di header
+                        atau pastikan queue worker berjalan
+                        (<code>php artisan queue:work redis --queue=bulk-injection</code>).
+                    </span>
+                </div>
+            @elseif ($progress['is_stale'])
                 <div class="bulk-update-alert alert-warning">
                     <x-heroicon-o-exclamation-triangle class="bulk-update-alert-icon" />
                     <span>
                         Pemrosesan mungkin gagal — pastikan queue worker berjalan
                         (<code>php artisan queue:work redis --queue=bulk-injection</code>).
                     </span>
+                </div>
+            @endif
+
+            @if ($progress['is_resolved'])
+                <div class="bulk-update-alert" style="border: 1px solid rgb(167 243 208); background-color: rgb(236 253 245); color: rgb(6 95 70);">
+                    <x-heroicon-o-check-badge class="bulk-update-alert-icon" />
+                    <span>Batch ini sudah selesai diproses. Halaman ini bersifat view-only.</span>
                 </div>
             @endif
 

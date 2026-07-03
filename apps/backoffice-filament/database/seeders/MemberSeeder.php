@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\Role;
+use App\Enums\TierStatus;
 use App\Models\Address;
 use App\Models\Branch;
 use App\Models\Member;
@@ -28,6 +29,18 @@ class MemberSeeder extends Seeder
 
         $addressIds = Address::query()->pluck('id')->all();
         $branchIds = Branch::query()->pluck('id')->all();
+
+        if (! Member::query()->where('member_number', 'HKD0000001')->exists()) {
+            Member::factory()->create([
+                'member_number' => 'HKD0000001',
+                'address_id' => $addressIds[0] ?? null,
+                'registered_at_branch_id' => Branch::query()->where('branch_code', 'HK01')->value('id'),
+                'current_tier' => TierStatus::Silver,
+                'point_balance' => 0,
+                'highest_point' => 0,
+                'is_suspended' => false,
+            ]);
+        }
 
         $customerUsers = User::query()
             ->where('role', Role::Member)

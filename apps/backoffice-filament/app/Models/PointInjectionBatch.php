@@ -29,17 +29,21 @@ class PointInjectionBatch extends Model
         'total_points_injected',
         'resolved',
         'uploaded_at',
+        'import_started_at',
+        'processing_started_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_rows'            => 'integer',
-            'successful_rows'       => 'integer',
-            'failed_rows'           => 'integer',
+            'total_rows' => 'integer',
+            'successful_rows' => 'integer',
+            'failed_rows' => 'integer',
             'total_points_injected' => 'integer',
-            'resolved'              => 'boolean',
-            'uploaded_at'           => 'datetime',
+            'resolved' => 'boolean',
+            'uploaded_at' => 'datetime',
+            'import_started_at' => 'datetime',
+            'processing_started_at' => 'datetime',
         ];
     }
 

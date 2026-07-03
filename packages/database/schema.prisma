@@ -622,8 +622,10 @@ model PointInjectionBatch {
   successfulRows      Int      @default(0) @map("successful_rows")
   failedRows          Int      @default(0) @map("failed_rows")
   totalPointsInjected Int      @default(0) @map("total_points_injected")
-  resolved            Boolean  @default(false) @map("resolved")
-  uploadedAt          DateTime @default(now()) @map("uploaded_at")
+  resolved            Boolean   @default(false) @map("resolved")
+  uploadedAt          DateTime  @default(now()) @map("uploaded_at")
+  importStartedAt     DateTime? @map("import_started_at")
+  processingStartedAt DateTime? @map("processing_started_at")
 
   staff   Staff?                 @relation(fields: [staffId], references: [id], onDelete: SetNull)
   media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)

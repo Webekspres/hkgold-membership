@@ -23,6 +23,7 @@ class MembersTable
             ->columns([
                 TextColumn::make('member_number')
                     ->label('No. Member')
+                    ->color('primary')
                     ->searchable()
                     ->sortable()
                     ->copyable()

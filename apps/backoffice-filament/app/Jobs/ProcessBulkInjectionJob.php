@@ -43,10 +43,15 @@ class ProcessBulkInjectionJob implements ShouldQueue
             return;
         }
 
+        $batch->import_started_at = now();
+        $batch->save();
+
         $media = $batch->media;
 
         if ($media === null) {
             Log::error('ProcessBulkInjectionJob: media tidak ditemukan.', ['batch_id' => $batch->id]);
+            $batch->import_started_at = null;
+            $batch->save();
 
             return;
         }
@@ -95,6 +100,8 @@ class ProcessBulkInjectionJob implements ShouldQueue
             }
 
             $batch->save();
+            $batch->import_started_at = null;
+            $batch->save();
         } finally {
             $uploadSupport->deleteTempFile($tempPath);
         }
@@ -102,6 +109,10 @@ class ProcessBulkInjectionJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        PointInjectionBatch::query()
+            ->whereKey($this->batch->id)
+            ->update(['import_started_at' => null]);
+
         Log::error('ProcessBulkInjectionJob gagal.', [
             'batch_id' => $this->batch->id,
             'message' => $exception?->getMessage(),

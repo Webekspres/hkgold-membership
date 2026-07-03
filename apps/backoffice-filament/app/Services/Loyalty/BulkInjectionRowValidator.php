@@ -10,9 +10,8 @@ use App\Models\Member;
 use App\Models\PointInjectionDetail;
 use App\Models\PointMutation;
 use App\Models\TransactionType;
-use DateTimeInterface;
+use App\Support\BulkInjectionDateParser;
 use Illuminate\Support\Carbon;
-use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class BulkInjectionRowValidator
 {
@@ -204,27 +203,7 @@ class BulkInjectionRowValidator
 
     private function parseTransactionDate(mixed $value): ?Carbon
     {
-        if ($value instanceof DateTimeInterface) {
-            return Carbon::instance($value)->startOfDay();
-        }
-
-        if (is_numeric($value)) {
-            try {
-                return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value))->startOfDay();
-            } catch (\Throwable) {
-                return null;
-            }
-        }
-
-        if (blank($value)) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse((string) $value)->startOfDay();
-        } catch (\Throwable) {
-            return null;
-        }
+        return BulkInjectionDateParser::parse($value);
     }
 
     private function normalizePurchaseNominal(mixed $value): string
