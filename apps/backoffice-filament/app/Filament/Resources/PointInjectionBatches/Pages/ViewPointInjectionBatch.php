@@ -18,6 +18,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
@@ -55,7 +56,7 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
         $record = $this->record;
 
         return PointInjectionDetailsTable::configure($table)
-            ->query(fn () => PointInjectionDetail::query()
+            ->query(fn() => PointInjectionDetail::query()
                 ->where('batch_id', $record->id)
                 ->with(['transactionType', 'member.user', 'batch']))
             ->heading('Daftar Baris Injeksi')
@@ -64,12 +65,14 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
                 Action::make('process')
                     ->label('Process')
                     ->button()
+                    ->goldStyle()
                     ->color('primary')
-                    ->disabled(fn (): bool => ! $this->canProcess())
-                    ->visible(fn (): bool => ! $this->record->resolved)
-                    ->tooltip(fn (): ?string => $this->processDisabledReason())
+                    ->disabled(fn(): bool => ! $this->canProcess())
+                    ->visible(fn(): bool => ! $this->record->resolved)
+                    ->tooltip(fn(): ?string => $this->processDisabledReason())
                     ->modalHeading('Proses Injeksi Poin')
                     ->modalDescription('Periksa ringkasan berikut sebelum memproses batch ke PointMutation.')
+                    ->modalWidth(Width::TwoExtraLarge)
                     ->modalSubmitActionLabel('Ya, Proses Sekarang')
                     ->form([
                         Placeholder::make('summary')
@@ -314,7 +317,7 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
 
         return [
             'total_points_injected' => number_format((int) $batch->total_points_injected, 0, ',', '.'),
-            'total_purchase_nominal' => 'Rp '.number_format((float) $totalPurchaseNominal, 0, ',', '.'),
+            'total_purchase_nominal' => 'Rp ' . number_format((float) $totalPurchaseNominal, 0, ',', '.'),
             'total_unique_members' => number_format($totalUniqueMember, 0, ',', '.'),
             'uploaded_at' => $batch->uploaded_at?->translatedFormat('d M Y, H:i'),
             'media_file_name' => $batch->media?->file_name,

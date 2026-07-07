@@ -28,6 +28,7 @@ return new class extends Migration
             $table->index('branch_id');
             $table->index('transaction_type_id');
             $table->index('source_id');
+            $table->unique(['receipt_number', 'transaction_type_id'], 'point_mutations_receipt_number_transaction_type_unique');
         });
     }
 

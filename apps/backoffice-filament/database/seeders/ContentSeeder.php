@@ -37,6 +37,7 @@ class ContentSeeder extends Seeder
                     'body_content' => fake('id_ID')->paragraphs(2, true),
                     'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
                     'status' => ContentStatus::Published,
+                    'is_staged' => false,
                 ],
             );
         }

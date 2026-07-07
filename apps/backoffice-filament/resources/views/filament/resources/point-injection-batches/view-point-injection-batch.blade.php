@@ -4,7 +4,7 @@
         .bulk-update-stats-grid {
             display: grid;
             grid-template-columns: repeat(1, minmax(0, 1fr));
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         @media (min-width: 768px) {
@@ -81,9 +81,14 @@
             color: rgb(17 24 39);
         }
 
+        .bulk-update-view {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
         /* Meta Container */
         .bulk-update-meta-container {
-            margin-top: 0.5rem;
             border-radius: 0.75rem;
             border: 1px solid rgb(229 231 235);
             background-color: rgb(255 255 255);
@@ -159,7 +164,6 @@
 
         /* Progress Section */
         .bulk-update-progress-container {
-            margin-top: 1rem;
             border-radius: 0.75rem;
             border: 1px solid rgb(219 234 254);
             background-color: rgb(239 246 255);
@@ -225,7 +229,6 @@
 
         /* Summary Section */
         .bulk-update-summary-container {
-            margin-top: 1rem;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -334,6 +337,7 @@
         }
     </style>
 
+    <div class="bulk-update-view">
     <!-- Header Stats Cards -->
     <div class="bulk-update-stats-grid">
         <!-- Card 1: Total Poin -->
@@ -516,7 +520,8 @@
     @endif
 
     <!-- Detail Table -->
-    <div style="margin-top: 1rem;">
+    <div>
         {{ $this->table }}
+    </div>
     </div>
 </x-filament-panels::page>

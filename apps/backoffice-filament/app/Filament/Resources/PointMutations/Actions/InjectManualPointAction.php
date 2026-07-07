@@ -31,6 +31,7 @@ class InjectManualPointAction
             ->label('Tambah Poin')
             ->icon('heroicon-o-plus-circle')
             ->color('primary')
+            ->goldStyle()
             ->modalWidth(Width::ExtraLarge)
             ->modalHeading('Suntik Poin Manual')
             ->closeModalByClickingAway(false)

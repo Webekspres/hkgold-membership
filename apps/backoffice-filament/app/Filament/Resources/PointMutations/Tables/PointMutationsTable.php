@@ -97,7 +97,7 @@ class PointMutationsTable
                             ->searchable()
                             ->preload(),
                     ])
-                    ->columns(4)
+                    ->columns(2)
                     ->columnSpanFull()
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -146,8 +146,8 @@ class PointMutationsTable
                         return $indicators;
                     }),
             ])
-            ->filtersFormColumns(1)
-            ->filtersFormWidth(Width::Full)
+            ->filtersFormColumns(2)
+            ->filtersFormWidth(Width::TwoExtraLarge)
             ->filtersLayout(FiltersLayout::Modal)
             ->filtersTriggerAction(
                 fn (Action $action): Action => $action

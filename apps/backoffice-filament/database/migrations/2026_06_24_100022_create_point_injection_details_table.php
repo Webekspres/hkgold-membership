@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('raw_member_number', 50);
             $table->string('raw_branch_code', 20);
             $table->decimal('purchase_nominal', 15, 2);
-            $table->foreignId('transaction_type_id')->constrained('transaction_types');
-            $table->dateTime('transaction_date');
+            $table->foreignId('transaction_type_id')->nullable()->constrained('transaction_types')->restrictOnDelete();
+            $table->dateTime('transaction_date')->nullable();
             $table->integer('calculated_points')->default(0);
             $table->string('status')->default('PENDING');
             $table->text('error_message')->nullable();

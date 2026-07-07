@@ -28,7 +28,7 @@ class PointAnnualArchiveResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Loyalty Point';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function table(Table $table): Table
     {
@@ -61,6 +61,7 @@ class PointAnnualArchiveResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->orderByDesc('archived_at')
             ->orderByDesc('archive_year');
     }
 }

@@ -75,6 +75,7 @@ class PointInjectionBatchesTable
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
                     ->color('primary')
+                    ->goldStyle()
                     ->url(fn (PointInjectionBatch $record): string => PointInjectionBatchResource::getUrl('view', ['record' => $record->id])),
             ])
             ->bulkActions([]);
