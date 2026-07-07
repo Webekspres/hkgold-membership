@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('successful_rows')->default(0);
             $table->integer('failed_rows')->default(0);
             $table->integer('total_points_injected')->default(0);
+            $table->boolean('resolved')->default(false);
             $table->dateTime('uploaded_at')->useCurrent();
 
             $table->index('staff_id');

@@ -6,7 +6,8 @@ namespace App\Enums;
 
 enum InjectionStatus: string
 {
-    case Pending = 'PENDING';
-    case Success = 'SUCCESS';
-    case Failed = 'FAILED';
+    case Pending   = 'PENDING';
+    case Validated = 'VALIDATED';
+    case Failed    = 'FAILED';
+    case Success   = 'SUCCESS';
 }

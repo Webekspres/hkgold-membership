@@ -63,4 +63,9 @@ class Branch extends Model
     {
         return $this->hasMany(RedeemInvoice::class);
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(BranchImage::class)->orderBy('sort_order');
+    }
 }

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ShieldRolesSeeder::class,
             UserSeeder::class,
             BranchSeeder::class,
+            BranchImageSeeder::class,
             StaffSeeder::class,
             MemberSeeder::class,
             BranchRewardStockSeeder::class,

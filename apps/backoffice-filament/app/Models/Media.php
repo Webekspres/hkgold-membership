@@ -52,4 +52,9 @@ class Media extends Model
     {
         return $this->hasMany(PromotionBanner::class);
     }
+
+    public function branchImages(): HasMany
+    {
+        return $this->hasMany(BranchImage::class);
+    }
 }

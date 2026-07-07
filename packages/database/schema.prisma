@@ -34,6 +34,7 @@ enum InjectionStatus {
   PENDING
   VALIDATED
   FAILED
+  SUCCESS
 }
 
 enum DevicePlatform {
@@ -221,6 +222,7 @@ model Media {
   contentCoverImages  ContentCoverImage[]
   promotionBanners    PromotionBanner[]
   pointInjectionBatch PointInjectionBatch?
+  branchImages        BranchImage[]
 
   @@map("media")
 }
@@ -241,17 +243,33 @@ model Branch {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  normalizedAddress Address?              @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  staffs            Staff[]
-  membersRegistered Member[]              @relation("BranchRegistration")
+  normalizedAddress  Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  staffs             Staff[]
+  membersRegistered  Member[]             @relation("BranchRegistration")
   rewardBranchStocks RewardBranchStock[]
-  redeemInvoices    RedeemInvoice[]
-  redeemTokens      RedeemToken[]
-  clockInLogs       StaffClockInLog[]
-  pointMutations    PointMutation[]
+  redeemInvoices     RedeemInvoice[]
+  redeemTokens       RedeemToken[]
+  clockInLogs        StaffClockInLog[]
+  pointMutations     PointMutation[]
+  images             BranchImage[]
 
   @@index([addressId])
   @@map("branches")
+}
+
+model BranchImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  Int      @map("branch_id")
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, mediaId])
+  @@index([mediaId])
+  @@map("branch_images")
 }
 
 // =============================================================================
@@ -598,15 +616,18 @@ model ConversionRule {
 
 model PointInjectionBatch {
   id                  String   @id @default(uuid()) @db.Char(36)
-  staffId             Int      @map("staff_id")
+  staffId             Int?     @map("staff_id")
   mediaId             String   @unique @map("media_id") @db.Char(36)
   totalRows           Int      @default(0) @map("total_rows")
   successfulRows      Int      @default(0) @map("successful_rows")
   failedRows          Int      @default(0) @map("failed_rows")
   totalPointsInjected Int      @default(0) @map("total_points_injected")
-  uploadedAt          DateTime @default(now()) @map("uploaded_at")
+  resolved            Boolean   @default(false) @map("resolved")
+  uploadedAt          DateTime  @default(now()) @map("uploaded_at")
+  importStartedAt     DateTime? @map("import_started_at")
+  processingStartedAt DateTime? @map("processing_started_at")
 
-  staff   Staff                  @relation(fields: [staffId], references: [id])
+  staff   Staff?                 @relation(fields: [staffId], references: [id], onDelete: SetNull)
   media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   details PointInjectionDetail[]
 
@@ -621,15 +642,15 @@ model PointInjectionDetail {
   rawMemberNumber   String          @map("raw_member_number") @db.VarChar(50)
   rawBranchCode     String          @map("raw_branch_code") @db.VarChar(20)
   purchaseNominal   Decimal         @map("purchase_nominal") @db.Decimal(15, 2)
-  transactionTypeId Int             @map("transaction_type_id")
-  transactionDate   DateTime        @map("transaction_date")
+  transactionTypeId Int?            @map("transaction_type_id")
+  transactionDate   DateTime?       @map("transaction_date")
   calculatedPoints  Int             @default(0) @map("calculated_points")
   status            InjectionStatus @default(PENDING) @map("status")
   errorMessage      String?         @map("error_message") @db.Text
   processedAt       DateTime?       @map("processed_at")
 
   batch           PointInjectionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  transactionType TransactionType     @relation(fields: [transactionTypeId], references: [id])
+  transactionType TransactionType?    @relation(fields: [transactionTypeId], references: [id], onDelete: Restrict)
 
   @@index([batchId])
   @@index([transactionTypeId])

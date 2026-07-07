@@ -11,6 +11,7 @@ use App\Models\PostalCode;
 use App\Models\Province;
 use App\Models\SubDistrict;
 use App\Models\Village;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -66,7 +67,7 @@ class BranchForm
                 Section::make('Alamat')
                     ->columnSpanFull()
                     ->columns(3)
-                    ->collapsible()
+                     ->collapsible()
                     ->schema([
                         TextInput::make('location_url')
                             ->label('Link Google Maps')
@@ -169,6 +170,32 @@ class BranchForm
                             ->maxLength(65535)
                             ->dehydrated(false)
                             ->required(fn (Get $get): bool => filled($get('province_id')))
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Foto Cabang')
+                    ->columnSpanFull()
+                    ->description('Upload foto-foto cabang (maksimal 10 gambar, format JPG/PNG, ukuran maks. 512KB per gambar).')
+                    ->collapsible()
+                    ->schema([
+                        FileUpload::make('cover_images')
+                            ->label('Foto Cabang')
+                            ->image()
+                            ->imageEditor()
+                            ->imageEditorAspectRatios(['16:9'])
+                            ->imageAspectRatio('16:9')
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesToWidth('1200')
+                            ->automaticallyResizeImagesToHeight('675')
+                            ->automaticallyUpscaleImagesWhenResizing(false)
+                            ->multiple()
+                            ->reorderable()
+                            ->disk(fn ($livewire): string => filled($livewire->getRecord()?->getKey()) ? 'r2' : 'content_staging')
+                            ->directory('temp')
+                            ->maxSize(512)
+                            ->maxFiles(10)
+                            ->dehydrated(false)
+                            ->helperText('Foto pertama akan ditampilkan sebagai gambar utama cabang.')
                             ->columnSpanFull(),
                     ]),
             ]);

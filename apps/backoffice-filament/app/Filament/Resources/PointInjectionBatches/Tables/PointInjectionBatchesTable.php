@@ -7,7 +7,9 @@ namespace App\Filament\Resources\PointInjectionBatches\Tables;
 use App\Filament\Resources\PointInjectionBatches\PointInjectionBatchResource;
 use App\Models\PointInjectionBatch;
 use Filament\Actions\Action;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class PointInjectionBatchesTable
@@ -51,6 +53,22 @@ class PointInjectionBatchesTable
                     ->color('primary')
                     ->icon('heroicon-o-document-text')
                     ->url(fn (PointInjectionBatch $record): string => $record->media?->file_url ?? '#', shouldOpenInNewTab: true),
+
+                IconColumn::make('resolved')
+                    ->label('Status')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-clock')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (PointInjectionBatch $record): string => $record->resolved ? 'Selesai' : 'Belum Diselesaikan'),
+            ])
+            ->filters([
+                TernaryFilter::make('resolved')
+                    ->label('Status Penyelesaian')
+                    ->trueLabel('Selesai')
+                    ->falseLabel('Belum Diselesaikan')
+                    ->native(false),
             ])
             ->actions([
                 Action::make('viewBatch')
