@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,6 +32,10 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login(Login::class)
+            ->darkMode(false)
+            // tidak perlu refresh untuk pindah halaman
+            ->spa(true)
+            ->defaultThemeMode(ThemeMode::Light)
             // ->assets([
             //     Css::make('custom')->relativePublicPath('css/filament-custom.css'),
             // ])

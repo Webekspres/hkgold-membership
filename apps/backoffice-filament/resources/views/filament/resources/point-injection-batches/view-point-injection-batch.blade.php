@@ -96,6 +96,14 @@
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
 
+        .bulk-update-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
         .bulk-update-meta-list {
             display: flex;
             flex-wrap: wrap;
@@ -120,6 +128,49 @@
         .bulk-update-meta-author {
             font-weight: 700;
             color: rgb(31 41 55);
+        }
+
+        .bulk-update-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+            border-radius: 0.5rem;
+            border: 1px solid rgb(217 119 6);
+            background-color: rgb(255 251 235);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(180 83 9);
+            text-decoration: none;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .bulk-update-download-btn:hover {
+            background-color: rgb(254 243 199);
+            color: rgb(146 64 14);
+        }
+
+        .bulk-update-download-icon {
+            height: 1rem;
+            width: 1rem;
+        }
+
+        .bulk-update-status-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bulk-update-status-filter-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(107 114 128);
+            white-space: nowrap;
+        }
+
+        .bulk-update-status-filter .fi-input-wrp {
+            min-width: 10rem;
         }
 
         /* Dark Mode Theme Support */
@@ -160,6 +211,21 @@
         }
         .dark .bulk-update-meta-author {
             color: var(--gray-200, rgb(228 228 231));
+        }
+
+        .dark .bulk-update-download-btn {
+            border-color: rgb(217 119 6);
+            background-color: rgb(69 26 3 / 0.35);
+            color: rgb(251 191 36);
+        }
+
+        .dark .bulk-update-download-btn:hover {
+            background-color: rgb(69 26 3 / 0.55);
+            color: rgb(253 224 71);
+        }
+
+        .dark .bulk-update-status-filter-label {
+            color: var(--gray-400, rgb(161 161 170));
         }
 
         /* Progress Section */
@@ -248,6 +314,38 @@
             padding: 0.5rem 0.875rem;
             font-size: 0.875rem;
             font-weight: 500;
+        }
+
+        .bulk-update-dismiss-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.25rem;
+            border: none;
+            border-radius: 0.25rem;
+            background: transparent;
+            padding: 0.125rem;
+            color: inherit;
+            opacity: 0.65;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+
+        .bulk-update-dismiss-btn:hover {
+            opacity: 1;
+        }
+
+        .bulk-update-dismiss-icon {
+            height: 0.875rem;
+            width: 0.875rem;
+        }
+
+        .bulk-update-alert-content {
+            flex: 1 1 0%;
+        }
+
+        .bulk-update-alert-dismissible {
+            align-items: center;
         }
 
         .bulk-update-summary-chip.chip-success {
@@ -387,27 +485,42 @@
     </div>
 
 
+    @php
+        $stats = $this->getStats();
+    @endphp
+
     <!-- Batch Meta Info -->
     <div class="bulk-update-meta-container">
-        <div class="bulk-update-meta-list">
-            <div class="bulk-update-meta-item">
-                <x-heroicon-o-user class="bulk-update-meta-icon" />
-                <span>Diupload oleh <strong class="bulk-update-meta-author">{{ $this->getStats()['staff_name'] }}</strong></span>
-            </div>
-            <div class="bulk-update-meta-item">
-                <x-heroicon-o-clock class="bulk-update-meta-icon" />
-                <span>{{ $this->getStats()['uploaded_at'] }}</span>
-            </div>
-            @if ($this->getStats()['media_file_name'])
+        <div class="bulk-update-meta-row">
+            <div class="bulk-update-meta-list">
                 <div class="bulk-update-meta-item">
-                    <x-heroicon-o-document-text class="bulk-update-meta-icon" />
-                    <span>{{ $this->getStats()['media_file_name'] }}</span>
+                    <x-heroicon-o-user class="bulk-update-meta-icon" />
+                    <span>Diupload oleh <strong class="bulk-update-meta-author">{{ $stats['staff_name'] }}</strong></span>
                 </div>
+                <div class="bulk-update-meta-item">
+                    <x-heroicon-o-clock class="bulk-update-meta-icon" />
+                    <span>{{ $stats['uploaded_at'] }}</span>
+                </div>
+            </div>
+
+            @if ($stats['media_download_url'])
+                <a
+                    href="{{ $stats['media_download_url'] }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bulk-update-download-btn"
+                    @if (filled($stats['media_file_name'])) download="{{ $stats['media_file_name'] }}" @endif
+                >
+                    <x-heroicon-o-arrow-down-tray class="bulk-update-download-icon" />
+                    Unduh File
+                </a>
             @endif
         </div>
     </div>
 
-    @php($progress = $this->getProgressStats())
+    @php
+        $progress = $this->getProgressStats();
+    @endphp
 
     @if ($progress['is_finalizing'])
         <div wire:poll.5s="refreshBatch" class="bulk-update-progress-container">
@@ -486,34 +599,73 @@
                 </div>
             @endif
 
-            @if ($progress['is_resolved'])
-                <div class="bulk-update-alert" style="border: 1px solid rgb(167 243 208); background-color: rgb(236 253 245); color: rgb(6 95 70);">
+            @if ($progress['is_resolved'] && $this->showViewOnlyAlert)
+                <div class="bulk-update-alert bulk-update-alert-dismissible" style="border: 1px solid rgb(167 243 208); background-color: rgb(236 253 245); color: rgb(6 95 70);">
                     <x-heroicon-o-check-badge class="bulk-update-alert-icon" />
-                    <span>Batch ini sudah selesai diproses. Halaman ini bersifat view-only.</span>
+                    <span class="bulk-update-alert-content">Batch ini sudah selesai diproses. </span>
+                    <button
+                        type="button"
+                        wire:click="dismissViewOnlyAlert"
+                        class="bulk-update-dismiss-btn"
+                        aria-label="Tutup"
+                    >
+                        <x-heroicon-o-x-mark class="bulk-update-dismiss-icon" />
+                    </button>
                 </div>
             @endif
 
-            @if ($progress['total_rows'] > 0 || $progress['validated_rows'] > 0 || $progress['failed_rows'] > 0)
+            @php
+                $showValidatedChip = $this->showValidatedSummary && ($progress['total_rows'] > 0 || $progress['validated_rows'] > 0);
+                $showFailedChip = $this->showFailedSummary && $progress['failed_rows'] > 0;
+            @endphp
+
+            @if ($showValidatedChip || $showFailedChip)
                 <div class="bulk-update-summary-row">
-                    <span class="bulk-update-summary-chip chip-success">
-                        <x-heroicon-o-check-circle class="bulk-update-summary-chip-icon" />
-                        {{ number_format($progress['validated_rows'], 0, ',', '.') }} baris tervalidasi
-                    </span>
-                    @if ($progress['failed_rows'] > 0)
+                    @if ($showValidatedChip)
+                        <span class="bulk-update-summary-chip chip-success">
+                            <x-heroicon-o-check-circle class="bulk-update-summary-chip-icon" />
+                            {{ number_format($progress['validated_rows'], 0, ',', '.') }} baris tervalidasi
+                            <button
+                                type="button"
+                                wire:click="dismissValidatedSummary"
+                                class="bulk-update-dismiss-btn"
+                                aria-label="Tutup"
+                            >
+                                <x-heroicon-o-x-mark class="bulk-update-dismiss-icon" />
+                            </button>
+                        </span>
+                    @endif
+                    @if ($showFailedChip)
                         <span class="bulk-update-summary-chip chip-danger">
                             <x-heroicon-o-x-circle class="bulk-update-summary-chip-icon" />
                             {{ number_format($progress['failed_rows'], 0, ',', '.') }} baris gagal
+                            <button
+                                type="button"
+                                wire:click="dismissFailedSummary"
+                                class="bulk-update-dismiss-btn"
+                                aria-label="Tutup"
+                            >
+                                <x-heroicon-o-x-mark class="bulk-update-dismiss-icon" />
+                            </button>
                         </span>
                     @endif
                 </div>
             @endif
 
-            @if ($progress['failed_rows'] > 0)
-                <div class="bulk-update-alert alert-danger">
+            @if ($progress['failed_rows'] > 0 && $this->showFailedValidationAlert)
+                <div class="bulk-update-alert alert-danger bulk-update-alert-dismissible">
                     <x-heroicon-o-exclamation-circle class="bulk-update-alert-icon" />
-                    <span>
+                    <span class="bulk-update-alert-content">
                         Terdapat baris yang gagal divalidasi. Perbaiki atau hapus sebelum memproses.
                     </span>
+                    <button
+                        type="button"
+                        wire:click="dismissFailedValidationAlert"
+                        class="bulk-update-dismiss-btn"
+                        aria-label="Tutup"
+                    >
+                        <x-heroicon-o-x-mark class="bulk-update-dismiss-icon" />
+                    </button>
                 </div>
             @endif
         </div>

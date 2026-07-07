@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PointMutations\Tables;
 
-use App\Filament\Resources\PointMutations\Actions\InjectManualPointAction;
 use App\Filament\Resources\PointMutations\Support\PointMutationSupport;
 use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\Branch;
@@ -14,7 +13,6 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\Width;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -32,7 +30,8 @@ class PointMutationsTable
                     ->label('Tanggal')
                     ->formatStateUsing(fn (mixed $state): ?string => IndonesianDateTimeFormatter::tableDate($state))
                     ->tooltip(fn (mixed $state): ?string => IndonesianDateTimeFormatter::tableDateTooltip($state))
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('member.user.full_name')
                     ->label('Nama Member')
@@ -42,40 +41,46 @@ class PointMutationsTable
                                 ->orWhereHas('user', fn (Builder $query): Builder => $query->where('full_name', 'like', "%{$search}%"));
                         });
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('branch.name')
                     ->label('Cabang')
                     ->sortable()
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('transactionType.display_name')
                     ->label('Tipe Transaksi')
                     ->sortable()
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('purchase_nominal')
                     ->label('Pembelian')
                     ->prefix('Rp ')
                     ->numeric(decimalPlaces: 0, thousandsSeparator: ',')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('points_delta')
                     ->label('Poin')
                     ->state(fn (PointMutation $record): string => PointMutationSupport::formatPointsDelta($record)['formatted'])
                     ->badge()
-                    ->color(fn (PointMutation $record): string => PointMutationSupport::formatPointsDelta($record)['color']),
+                    ->color(fn (PointMutation $record): string => PointMutationSupport::formatPointsDelta($record)['color'])
+                    ->toggleable(),
 
                 TextColumn::make('balance_snapshot')
                     ->label('Sisa Balance')
                     ->numeric(thousandsSeparator: ',')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
-                IconColumn::make('receipt_number')
+                TextColumn::make('receipt_number')
                     ->label('No. Struk')
-                    ->icon(fn (?string $state): ?string => filled($state) ? 'heroicon-o-link' : null)
-                    ->color('gray')
-                    ->tooltip('Segera hadir'),
+                    ->searchable()
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('transaction_date', 'desc')
             ->filters([
@@ -153,6 +158,11 @@ class PointMutationsTable
                 fn (Action $action): Action => $action
                     ->iconButton()
                     ->icon('heroicon-o-funnel'),
+            )
+            ->columnManagerTriggerAction(
+                fn (Action $action): Action => $action
+                    ->iconButton()
+                    ->icon('heroicon-o-view-columns'),
             )
             ->recordActions([])
             // ->headerActions([

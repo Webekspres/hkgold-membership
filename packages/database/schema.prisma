@@ -686,6 +686,7 @@ model PointAnnualArchivePeriod {
   name                String               @map("name") @db.VarChar(150)
   totalMembers        Int                  @default(0) @map("total_members")
   frozenPointsTotal   Int                  @default(0) @map("frozen_points_total")
+  earnedPointsTotal   Int                  @default(0) @map("earned_points_total")
   redeemedPointsTotal Int                  @default(0) @map("redeemed_points_total")
   archivedAt          DateTime?            @map("archived_at")
   createdAt           DateTime             @default(now()) @map("created_at")
