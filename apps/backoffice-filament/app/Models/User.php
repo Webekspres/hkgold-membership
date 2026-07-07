@@ -72,7 +72,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if (! $this->is_active || in_array($this->role, [Role::Member], true)) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -80,8 +80,31 @@ class User extends Authenticatable implements FilamentUser
             return true;
         }
 
-        return $this->hasRole(Utils::getSuperAdminName())
-            || $this->hasRole(Utils::getPanelUserRoleName());
+        return $this->hasAnyRole(self::panelAccessRoleNames($panel->getId()));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function panelAccessRoleNames(string $panelId): array
+    {
+        if ($panelId === 'member') {
+            return [strtolower(Role::Member->value)];
+        }
+
+        $businessRoles = array_map(
+            static fn (Role $role): string => strtolower($role->value),
+            array_filter(
+                Role::cases(),
+                static fn (Role $role): bool => $role !== Role::Member,
+            ),
+        );
+
+        return array_values(array_unique([
+            Utils::getSuperAdminName(),
+            Utils::getPanelUserRoleName(),
+            ...$businessRoles,
+        ]));
     }
 
     public function getFilamentName(): string

@@ -8,6 +8,7 @@ use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\Reward;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -88,7 +89,9 @@ class RewardsTable
                     ->placeholder('Semua')
                     ->trueLabel('Aktif')
                     ->falseLabel('Nonaktif'),
-            ])
+            ], layout: FiltersLayout::Hidden)
+            ->deferFilters(false)
+            ->hiddenFilterIndicators()
             ->recordActions([
                 ViewAction::make()
                     ->label('Lihat'),

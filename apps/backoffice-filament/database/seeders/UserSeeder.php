@@ -43,9 +43,12 @@ class UserSeeder extends Seeder
             $usedProfilePhotoIds[] = $superAdminPhotoId;
         }
 
-        User::factory()->count(1)->staffRole(Role::Administrator)->create();
-        User::factory()->count(3)->staffRole(Role::StoreManager)->create();
-        User::factory()->count(2)->staffRole(Role::Marketing)->create();
+        User::factory()->count(1)->staffRole(Role::Administrator)->create()
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
+        User::factory()->count(3)->staffRole(Role::StoreManager)->create()
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
+        User::factory()->count(2)->staffRole(Role::Marketing)->create()
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
 
         User::factory()
             ->count(12)
@@ -63,6 +66,24 @@ class UserSeeder extends Seeder
                 }
 
                 return ['profile_photo_id' => $profilePhotoId];
-            });
+            })
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
+    }
+
+    private function assignShieldRole(User $user): User
+    {
+        if (! $user->role instanceof Role) {
+            return $user;
+        }
+
+        $shieldRole = SpatieRole::query()
+            ->where('name', strtolower($user->role->value))
+            ->first();
+
+        if ($shieldRole !== null) {
+            $user->assignRole($shieldRole);
+        }
+
+        return $user;
     }
 }

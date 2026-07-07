@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\RedeemStatus;
 use Database\Factories\RedeemInvoiceFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,7 @@ class RedeemInvoice extends Model
     {
         return [
             'points_redeemed' => 'integer',
+            'status' => RedeemStatus::class,
         ];
     }
 

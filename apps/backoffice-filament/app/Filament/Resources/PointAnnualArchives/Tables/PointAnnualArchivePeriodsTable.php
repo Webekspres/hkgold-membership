@@ -6,13 +6,10 @@ namespace App\Filament\Resources\PointAnnualArchives\Tables;
 
 use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\PointAnnualArchivePeriod;
-use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
@@ -136,13 +133,6 @@ class PointAnnualArchivePeriodsTable
                     }),
             ])
             ->filtersFormColumns(2)
-            ->filtersFormWidth(Width::TwoExtraLarge)
-            ->filtersLayout(FiltersLayout::Modal)
-            ->filtersTriggerAction(
-                fn (Action $action): Action => $action
-                    ->iconButton()
-                    ->icon('heroicon-o-funnel'),
-            )
             ->recordActions([
                 ViewAction::make(),
             ]);

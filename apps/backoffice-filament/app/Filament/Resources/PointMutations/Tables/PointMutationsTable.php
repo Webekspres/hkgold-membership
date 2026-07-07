@@ -9,12 +9,9 @@ use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\Branch;
 use App\Models\PointMutation;
 use App\Models\TransactionType;
-use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
@@ -152,15 +149,8 @@ class PointMutationsTable
                     }),
             ])
             ->filtersFormColumns(2)
-            ->filtersFormWidth(Width::TwoExtraLarge)
-            ->filtersLayout(FiltersLayout::Modal)
-            ->filtersTriggerAction(
-                fn (Action $action): Action => $action
-                    ->iconButton()
-                    ->icon('heroicon-o-funnel'),
-            )
             ->columnManagerTriggerAction(
-                fn (Action $action): Action => $action
+                fn (\Filament\Actions\Action $action): \Filament\Actions\Action => $action
                     ->iconButton()
                     ->icon('heroicon-o-view-columns'),
             )

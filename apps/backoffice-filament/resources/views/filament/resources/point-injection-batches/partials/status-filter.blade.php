@@ -9,12 +9,15 @@
     ];
 @endphp
 
-<div class="bulk-update-status-filter">
-    <label class="bulk-update-status-filter-label" for="bulk-update-status-filter">
+<div class="flex items-center gap-2">
+    <label
+        class="text-sm font-medium whitespace-nowrap text-gray-500 dark:text-gray-400"
+        for="bulk-update-status-filter"
+    >
         Status
     </label>
 
-    <x-filament::input.wrapper>
+    <x-filament::input.wrapper class="min-w-44">
         <x-filament::input.select
             id="bulk-update-status-filter"
             wire:model.live="tableFilters.status.value"
