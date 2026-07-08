@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             PointAnnualArchiveSeeder::class,
             RedeemInvoiceSeeder::class,
             ContentSeeder::class,
+            NotificationSeeder::class,
         ]);
     }
 }

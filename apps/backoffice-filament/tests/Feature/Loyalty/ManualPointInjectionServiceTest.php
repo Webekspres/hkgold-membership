@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 use App\Data\Loyalty\ManualPointInjectionData;
+use App\Enums\ActivityLogAction;
 use App\Enums\Role;
 use App\Enums\TierStatus;
 use App\Exceptions\Loyalty\ManualPointInjectionException;
-use App\Models\ActivityLog;
+use App\Jobs\PersistActivityLogJob;
 use App\Models\ConversionRule;
 use App\Models\Member;
 use App\Models\PointMutation;
@@ -16,10 +17,15 @@ use App\Models\User;
 use App\Services\Loyalty\ManualPointInjectionService;
 use Database\Seeders\TierMemberSeeder;
 use Database\Seeders\TransactionTypeSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    Queue::fake();
+});
 
 /**
  * @return array{member: Member, transactionType: TransactionType, actor: User}
@@ -99,19 +105,19 @@ it('injects points with correct balance snapshot and activity log', function ():
         ->and($mutation->points_issued)->toBe(15)
         ->and($mutation->points_redeemed)->toBe(0);
 
-    $log = ActivityLog::query()->where('auditable_id', $mutation->id)->first();
-
-    expect($log)->not->toBeNull()
-        ->and($log?->user_id)->toBe($fixtures['actor']->id)
-        ->and($log?->before_json['point_balance'])->toBe(500)
-        ->and($log?->after_json['point_balance'])->toBe(515);
+    Queue::assertPushed(PersistActivityLogJob::class, function (PersistActivityLogJob $job) use ($mutation, $fixtures): bool {
+        return $job->data->auditableId === $mutation->id
+            && $job->data->userId === $fixtures['actor']->id
+            && $job->data->beforeJson['point_balance'] === 500
+            && $job->data->afterJson['point_balance'] === 515
+            && $job->data->action === ActivityLogAction::ManualPointInjection;
+    });
 });
 
 it('rejects suspended members and rolls back mutation', function (): void {
     $fixtures = createInjectionFixtures(isSuspended: true);
     $service = app(ManualPointInjectionService::class);
     $initialMutations = PointMutation::query()->count();
-    $initialLogs = ActivityLog::query()->count();
 
     expect(fn () => $service->inject(
         makeInjectionData($fixtures['member'], $fixtures['transactionType']),
@@ -119,8 +125,9 @@ it('rejects suspended members and rolls back mutation', function (): void {
         '127.0.0.1',
     ))->toThrow(ManualPointInjectionException::class, 'ditangguhkan');
 
-    expect(PointMutation::query()->count())->toBe($initialMutations)
-        ->and(ActivityLog::query()->count())->toBe($initialLogs);
+    expect(PointMutation::query()->count())->toBe($initialMutations);
+
+    Queue::assertNotPushed(PersistActivityLogJob::class);
 });
 
 it('rejects nominal below conversion minimum', function (): void {
@@ -135,6 +142,8 @@ it('rejects nominal below conversion minimum', function (): void {
     ))->toThrow(ManualPointInjectionException::class);
 
     expect(PointMutation::query()->count())->toBe($initialMutations);
+
+    Queue::assertNotPushed(PersistActivityLogJob::class);
 });
 
 it('rejects duplicate receipt for the same transaction type globally', function (): void {
@@ -246,4 +255,6 @@ it('rejects future transaction dates', function (): void {
 
     expect(fn () => $service->inject($data, $fixtures['actor'], '127.0.0.1'))
         ->toThrow(ManualPointInjectionException::class, 'Tanggal transaksi');
+
+    Queue::assertNotPushed(PersistActivityLogJob::class);
 });

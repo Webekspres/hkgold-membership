@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\TierMembers\Support;
 
+use App\Enums\ActivityLogAction;
 use App\Models\ConversionRule;
 use App\Models\TierMember;
 use App\Models\TransactionType;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
+use Illuminate\Support\Facades\Auth;
 
 class TierMemberFormSupport
 {
@@ -16,7 +20,7 @@ class TierMemberFormSupport
      */
     public static function conversionFieldKey(string $typeKey): string
     {
-        return 'conversion_' . strtolower($typeKey);
+        return 'conversion_'.strtolower($typeKey);
     }
 
     /**
@@ -33,8 +37,8 @@ class TierMemberFormSupport
         $record->loadMissing('conversionRules.transactionType');
 
         foreach ($record->conversionRules as $rule) {
-            $key          = self::conversionFieldKey($rule->transactionType->type_key);
-            $data[$key]   = (string) $rule->conversion_nominal;
+            $key = self::conversionFieldKey($rule->transactionType->type_key);
+            $data[$key] = (string) $rule->conversion_nominal;
         }
 
         return $data;
@@ -46,6 +50,8 @@ class TierMemberFormSupport
      */
     public static function saveWithConversions(TierMember $record, array $data): TierMember
     {
+        $before = ActivityLogSanitizer::extract($record);
+
         $record->update([
             'min_points' => $data['min_points'],
             'max_points' => $data['max_points'],
@@ -63,13 +69,25 @@ class TierMemberFormSupport
             ConversionRule::updateOrCreate(
                 [
                     'transaction_type_id' => $type->id,
-                    'tier_member_id'      => $record->id,
+                    'tier_member_id' => $record->id,
                 ],
                 [
                     'conversion_nominal' => $data[$key],
                 ],
             );
         }
+
+        $record->refresh();
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::TierConfigUpdated,
+            description: 'Memperbarui konfigurasi tier member',
+            auditable: $record,
+            ipAddress: (string) request()->ip(),
+            before: $before,
+            after: ActivityLogSanitizer::extract($record),
+            actor: Auth::user(),
+        );
 
         return $record;
     }

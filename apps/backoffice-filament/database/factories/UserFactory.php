@@ -34,8 +34,17 @@ class UserFactory extends Factory
     {
         return $this->state(fn (): array => [
             'role' => Role::SuperAdmin,
-            'full_name' => 'Admin HK Gold VIP',
-            'email' => 'admin@example.com',
+            'full_name' => 'Super Admin HK Gold',
+            'email' => 'superadmin@example.com',
+        ]);
+    }
+
+    public function administrator(): static
+    {
+        return $this->state(fn (): array => [
+            'role' => Role::Administrator,
+            'full_name' => 'Administrator HK Gold',
+            'email' => 'administrator@example.com',
         ]);
     }
 

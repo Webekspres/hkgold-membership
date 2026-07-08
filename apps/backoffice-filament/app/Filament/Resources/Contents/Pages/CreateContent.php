@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Contents\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Filament\Resources\Contents\ContentResource;
 use App\Filament\Resources\Contents\Support\ContentFormSupport;
 use App\Models\Content;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Renderless;
 
@@ -24,6 +28,8 @@ class CreateContent extends CreateRecord
         'body_content',
         'event_date',
     ];
+
+    protected ?Content $createdContent = null;
 
     protected static string $resource = ContentResource::class;
 
@@ -55,15 +61,28 @@ class CreateContent extends CreateRecord
     {
         $state = ContentFormSupport::formState($this->form);
 
-        return $this->persistDraft(
+        $this->createdContent = $this->persistDraft(
             $data,
             self::normalizeCoverImagePaths($state['cover_images'] ?? []),
             $data['status'] ?? ContentStatus::Draft->value,
         );
+
+        return $this->createdContent;
     }
 
     protected function afterCreate(): void
     {
+        if ($this->createdContent !== null) {
+            app(ActivityLogger::class)->log(
+                action: ActivityLogAction::ContentCreated,
+                description: 'Membuat konten baru',
+                auditable: $this->createdContent,
+                ipAddress: (string) request()->ip(),
+                after: ActivityLogSanitizer::extract($this->createdContent),
+                actor: Auth::user(),
+            );
+        }
+
         $this->js("localStorage.removeItem('hkgold-content-draft')");
     }
 

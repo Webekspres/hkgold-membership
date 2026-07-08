@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\TierStatus;
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Member extends Model
 {
     /** @use HasFactory<MemberFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasAuditableActivityLogs, HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'members';
 

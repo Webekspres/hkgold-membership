@@ -309,5 +309,19 @@
                 </div>
             </section>
         </div>
+
+        <section class="redeem-member-card" style="flex-direction: column; align-items: stretch;">
+            <h3 class="text-base font-semibold text-gray-950 dark:text-white" style="margin-bottom: 0.75rem;">
+                Riwayat Aktivitas
+            </h3>
+            @livewire(
+                \App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager::class,
+                [
+                    'ownerRecord' => $this->record,
+                    'pageClass' => \App\Filament\Resources\RedeemInvoices\Pages\ViewRedeemInvoice::class,
+                ],
+                key('redeem-activity-logs-' . $this->record->getKey())
+            )
+        </section>
     </div>
 </x-filament-panels::page>

@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Contents\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Filament\Resources\Contents\ContentResource;
 use App\Filament\Resources\Contents\Support\ContentFormSupport;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class EditContent extends EditRecord
@@ -47,13 +51,26 @@ class EditContent extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $state = ContentFormSupport::formState($this->form);
+        $before = ActivityLogSanitizer::extract($record);
 
-        return $this->persistRecord(
+        $updatedRecord = $this->persistRecord(
             $record,
             $data,
             self::normalizeCoverImagePaths($state['cover_images'] ?? []),
             $data['status'] ?? ContentStatus::Draft->value,
         );
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::ContentUpdated,
+            description: 'Memperbarui konten',
+            auditable: $updatedRecord,
+            ipAddress: (string) request()->ip(),
+            before: $before,
+            after: ActivityLogSanitizer::extract($updatedRecord),
+            actor: Auth::user(),
+        );
+
+        return $updatedRecord;
     }
 
     /**

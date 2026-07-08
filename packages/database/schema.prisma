@@ -60,6 +60,12 @@ enum NotificationPlatform {
   WEB_ADMIN_IN_APP // Format khusus database-notifications milik Laravel Filament
 }
 
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum ContentType {
   NEWS  // Artikel berita seputar emas & promo ritel
   EVENT // Jadwal kalender pameran emas luar kota
@@ -426,19 +432,28 @@ model OtpVerification {
 }
 
 model Notification {
-  id          String               @id @default(uuid()) @db.Char(36)
-  userId      String?              @map("user_id") @db.Char(36)
-  title       String               @map("title") @db.VarChar(150)
-  body        String               @map("body") @db.Text
-  platform    NotificationPlatform @map("platform")
-  dataPayload Json?                @map("data_payload")
-  readAt      DateTime?            @map("read_at")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
+  id              String                     @id @default(uuid()) @db.Char(36)
+  userId          String?                    @map("user_id") @db.Char(36)
+  notificationKey String?                    @map("notification_key") @db.Char(36)
+  title           String                     @map("title") @db.VarChar(150)
+  body            String                     @map("body") @db.Text
+  platform        NotificationPlatform       @map("platform")
+  status          NotificationDeliveryStatus @default(PENDING) @map("status")
+  dataPayload     Json?                      @map("data_payload")
+  readAt          DateTime?                  @map("read_at")
+  sentAt          DateTime?                  @map("sent_at")
+  failedAt        DateTime?                  @map("failed_at")
+  errorMessage    String?                    @map("error_message") @db.VarChar(500)
+  attemptCount    Int                        @default(0) @map("attempt_count")
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
 
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
+  @@index([userId, platform, createdAt])
+  @@index([status, createdAt])
+  @@unique([userId, notificationKey, platform])
   @@map("notifications")
 }
 

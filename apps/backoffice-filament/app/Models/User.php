@@ -70,6 +70,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         if (! $this->is_active) {
@@ -102,7 +107,6 @@ class User extends Authenticatable implements FilamentUser
 
         return array_values(array_unique([
             Utils::getSuperAdminName(),
-            Utils::getPanelUserRoleName(),
             ...$businessRoles,
         ]));
     }

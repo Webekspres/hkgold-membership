@@ -47,7 +47,8 @@ class ContentsTable
                     }),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->authorize(fn (Content $record): bool => auth()->user()?->can('update', $record) ?? false),
             ]);
     }
 }

@@ -2,20 +2,26 @@
 
 declare(strict_types=1);
 
+use App\Enums\ActivityLogAction;
 use App\Enums\InjectionStatus;
 use App\Enums\Role;
 use App\Exceptions\Loyalty\ProcessBatchException;
-use App\Models\ActivityLog;
+use App\Jobs\PersistActivityLogJob;
 use App\Models\Member;
 use App\Models\PointInjectionBatch;
 use App\Models\PointInjectionDetail;
 use App\Models\PointMutation;
 use App\Models\User;
 use App\Services\Loyalty\ProcessBatchService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    Queue::fake([PersistActivityLogJob::class]);
+});
 
 /**
  * @return array{batch: PointInjectionBatch, actor: User, member: Member}
@@ -72,14 +78,12 @@ it('processes validated batch into point mutations and resolves batch', function
         ->and($mutation?->points_issued)->toBe(15)
         ->and($mutation?->balance_snapshot)->toBe(515);
 
-    $log = ActivityLog::query()
-        ->where('auditable_type', 'PointInjectionBatch')
-        ->where('auditable_id', $data['batch']->id)
-        ->first();
-
-    expect($log)->not->toBeNull()
-        ->and($log?->action)->toBe('bulk_point_injection')
-        ->and($log?->after_json['resolved'])->toBeTrue();
+    Queue::assertPushed(PersistActivityLogJob::class, function (PersistActivityLogJob $job) use ($data): bool {
+        return $job->data->auditableType === 'PointInjectionBatch'
+            && $job->data->auditableId === $data['batch']->id
+            && $job->data->action === ActivityLogAction::BulkPointInjection
+            && $job->data->afterJson['resolved'] === true;
+    });
 });
 
 it('creates zero-point mutation without changing member balance', function (): void {
@@ -136,6 +140,8 @@ it('rolls back when member is suspended during process', function (): void {
     $data['batch']->refresh();
     expect($data['batch']->resolved)->toBeFalse()
         ->and(PointMutation::query()->where('source_id', $data['batch']->id)->count())->toBe(0);
+
+    Queue::assertNotPushed(PersistActivityLogJob::class);
 });
 
 it('rolls back on duplicate receipt in point mutations', function (): void {
@@ -160,6 +166,8 @@ it('rolls back on duplicate receipt in point mutations', function (): void {
 
     $data['batch']->refresh();
     expect($data['batch']->resolved)->toBeFalse();
+
+    Queue::assertNotPushed(PersistActivityLogJob::class);
 });
 
 it('rejects already resolved batch', function (): void {

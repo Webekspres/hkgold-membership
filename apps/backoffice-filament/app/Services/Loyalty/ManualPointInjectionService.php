@@ -6,13 +6,14 @@ namespace App\Services\Loyalty;
 
 use App\Data\Loyalty\ManualPointInjectionData;
 use App\Data\Loyalty\ManualPointInjectionResult;
+use App\Enums\ActivityLogAction;
 use App\Exceptions\Loyalty\ManualPointInjectionException;
-use App\Models\ActivityLog;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\PointMutation;
 use App\Models\TransactionType;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +21,7 @@ class ManualPointInjectionService
 {
     public function __construct(
         private readonly PointCalculationService $pointCalculation,
+        private readonly ActivityLogger $activityLogger,
     ) {}
 
     public function inject(ManualPointInjectionData $data, User $actor, string $ipAddress): ManualPointInjectionResult
@@ -95,27 +97,25 @@ class ManualPointInjectionService
                 'last_activity_at' => $data->transactionDate,
             ]);
 
-            ActivityLog::query()->create([
-                'user_id' => $actor->id,
-                'action' => 'manual_point_injection',
-                'description' => 'Suntik poin manual oleh staff',
-                'auditable_type' => 'PointMutation',
-                'auditable_id' => $mutation->id,
-                'before_json' => [
+            $this->activityLogger->log(
+                action: ActivityLogAction::ManualPointInjection,
+                description: 'Suntik poin manual oleh staff',
+                auditable: $mutation,
+                ipAddress: $ipAddress,
+                before: [
                     'point_balance' => $previousBalance,
                     'highest_point' => $previousHighest,
                     'current_tier' => $previousTier->value,
                     'last_activity_at' => $previousLastActivity?->toIso8601String(),
                 ],
-                'after_json' => [
+                after: [
                     'point_balance' => $newBalance,
                     'highest_point' => $newHighest,
                     'current_tier' => $newTier->value,
                     'last_activity_at' => $data->transactionDate->toIso8601String(),
                 ],
-                'ip_address' => $ipAddress,
-                'created_at' => now(),
-            ]);
+                actor: $actor,
+            );
 
             return new ManualPointInjectionResult(
                 mutationId: $mutation->id,

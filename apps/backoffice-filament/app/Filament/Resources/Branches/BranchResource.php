@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Branches;
 
+use App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager;
 use App\Filament\Resources\Branches\Pages\CreateBranch;
 use App\Filament\Resources\Branches\Pages\EditBranch;
 use App\Filament\Resources\Branches\Pages\ListBranches;
@@ -15,11 +16,13 @@ use App\Filament\Resources\Branches\Schemas\BranchInfolist;
 use App\Filament\Resources\Branches\Tables\BranchesTable;
 use App\Models\Branch;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class BranchResource extends Resource
 {
@@ -38,6 +41,13 @@ class BranchResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->hasRole(Utils::getSuperAdminName());
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -59,6 +69,7 @@ class BranchResource extends Resource
         return [
             'reward-stocks' => RewardStocksRelationManager::class,
             'redeem-invoices' => RedeemInvoicesRelationManager::class,
+            'activity-logs' => ActivityLogsRelationManager::class,
         ];
     }
 

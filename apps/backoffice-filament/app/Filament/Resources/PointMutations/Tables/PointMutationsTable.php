@@ -9,6 +9,8 @@ use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\Branch;
 use App\Models\PointMutation;
 use App\Models\TransactionType;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
@@ -150,11 +152,13 @@ class PointMutationsTable
             ])
             ->filtersFormColumns(2)
             ->columnManagerTriggerAction(
-                fn (\Filament\Actions\Action $action): \Filament\Actions\Action => $action
+                fn (Action $action): Action => $action
                     ->iconButton()
                     ->icon('heroicon-o-view-columns'),
             )
-            ->recordActions([])
+            ->recordActions([
+                ViewAction::make(),
+            ])
             // ->headerActions([
             //     InjectManualPointAction::make(),
             // ])

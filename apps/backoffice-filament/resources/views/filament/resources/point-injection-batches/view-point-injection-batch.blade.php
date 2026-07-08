@@ -675,5 +675,19 @@
     <div>
         {{ $this->table }}
     </div>
+
+    <section class="bulk-update-stat-card" style="margin-top: 1rem;">
+        <h3 class="text-base font-semibold text-gray-950 dark:text-white" style="margin-bottom: 0.75rem;">
+            Riwayat Aktivitas
+        </h3>
+        @livewire(
+            \App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager::class,
+            [
+                'ownerRecord' => $this->record,
+                'pageClass' => \App\Filament\Resources\PointInjectionBatches\Pages\ViewPointInjectionBatch::class,
+            ],
+            key('batch-activity-logs-' . $this->record->getKey())
+        )
+    </section>
     </div>
 </x-filament-panels::page>

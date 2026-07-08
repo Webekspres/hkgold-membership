@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\PointInjectionBatchFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PointInjectionBatch extends Model
 {
     /** @use HasFactory<PointInjectionBatchFactory> */
-    use HasFactory, HasUuids;
+    use HasAuditableActivityLogs, HasFactory, HasUuids;
 
     protected $table = 'point_injection_batches';
 

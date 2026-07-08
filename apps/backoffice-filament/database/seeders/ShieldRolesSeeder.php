@@ -7,69 +7,458 @@ namespace Database\Seeders;
 use App\Enums\Role;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\PermissionRegistrar;
 
 class ShieldRolesSeeder extends Seeder
 {
     public function run(): void
     {
         Utils::createRole(name: Utils::getSuperAdminName());
-        Utils::createPanelUserRole();
+        Utils::createRole(name: strtolower(Role::SuperAdmin->value));
 
         foreach (Role::cases() as $role) {
-            if ($role === Role::SuperAdmin) {
+            if (in_array($role, [Role::SuperAdmin, Role::Administrator], true)) {
                 continue;
             }
 
             Utils::createRole(name: strtolower($role->value));
         }
 
-        // Project default:
-        // marketing & store_manager (branch manager) can only read Content resource.
-        $this->syncContentReadOnlyPermissions([
-            strtolower(Role::Marketing->value),
-            strtolower(Role::StoreManager->value),
-        ]);
+        $this->ensureShieldPermissionsGenerated();
+        $this->ensureActivityLogPermissionsGenerated();
+        $this->ensureCustomPermissions();
+        $this->removePanelUserRole();
+
+        $this->syncCmsPermissionsForRole(strtolower(Role::Administrator->value), fullAccess: true);
+        $this->syncCmsPermissionsForRole(strtolower(Role::Marketing->value), fullAccess: false);
+        $this->syncCmsPermissionsForRole(strtolower(Role::StoreManager->value), fullAccess: false);
+
+        $readOnlyGroupResources = array_merge(
+            $this->katalogRewardResources(),
+            $this->loyaltyPointResources(),
+            $this->redeemPoinResources(),
+        );
+
+        $this->syncResourceGroupPermissionsForRole(
+            strtolower(Role::SuperAdmin->value),
+            $readOnlyGroupResources,
+            fullAccess: true,
+        );
+
+        foreach ([Role::Marketing, Role::StoreManager] as $role) {
+            $this->syncResourceGroupPermissionsForRole(
+                strtolower($role->value),
+                $readOnlyGroupResources,
+                fullAccess: false,
+            );
+        }
+
+        $this->syncSuperAdminPermissions();
+        $this->syncMemberLookupPermissionsForRole(strtolower(Role::Marketing->value));
+        $this->syncMemberLookupPermissionsForRole(strtolower(Role::StoreManager->value));
+        $this->revokeMemberStaffPermissionsForRole(strtolower(Role::Member->value));
+        $this->revokeResourceGroupPermissionsForRole(
+            strtolower(Role::Member->value),
+            $readOnlyGroupResources,
+        );
+
+        foreach ([Role::SuperAdmin, Role::Marketing, Role::StoreManager, Role::Member] as $role) {
+            $this->revokeAdminOnlyPermissionsForRole(strtolower($role->value));
+        }
     }
 
-    /**
-     * @param  array<int, string>  $roleNames
-     */
-    private function syncContentReadOnlyPermissions(array $roleNames): void
+    private function ensureActivityLogPermissionsGenerated(): void
     {
-        $contentPermissions = Permission::query()
-            ->get(['name'])
-            ->pluck('name')
-            ->filter(fn (string $name): bool => str_contains(strtolower($name), 'content'))
-            ->values();
-
-        if ($contentPermissions->isEmpty()) {
+        if (Permission::query()->where('name', 'ViewAny:ActivityLog')->exists()) {
             return;
         }
 
-        $readOnlyPermissions = $contentPermissions
-            ->filter(fn (string $name): bool => preg_match('/^(viewany|view)([:._-]|$)/i', $name) === 1)
+        Artisan::call('shield:generate', [
+            '--all' => true,
+            '--panel' => 'app',
+            '--no-interaction' => true,
+        ]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function ensureShieldPermissionsGenerated(): void
+    {
+        if (Permission::query()->where('name', 'ViewAny:Content')->exists()) {
+            return;
+        }
+
+        Artisan::call('shield:generate', [
+            '--all' => true,
+            '--panel' => 'app',
+            '--no-interaction' => true,
+        ]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function ensureCustomPermissions(): void
+    {
+        foreach ([
+            'Update:PromotionBannerPage',
+            'View:MemberLookupPage',
+        ] as $permissionName) {
+            Permission::query()->firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => config('auth.defaults.guard', 'web'),
+            ]);
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function removePanelUserRole(): void
+    {
+        $roleName = Utils::getPanelUserRoleName();
+
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $role->users()->detach();
+        $role->permissions()->detach();
+        $role->delete();
+    }
+
+    private function syncSuperAdminPermissions(): void
+    {
+        $role = SpatieRole::query()
+            ->where('name', strtolower(Role::SuperAdmin->value))
+            ->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $permissions = Permission::query()
+            ->pluck('name')
+            ->reject(fn (string $name): bool => $this->isExcludedFromSuperAdminPermission($name))
             ->values();
 
-        $writePermissions = $contentPermissions
-            ->diff($readOnlyPermissions)
+        if ($permissions->isEmpty()) {
+            return;
+        }
+
+        $role->syncPermissions($permissions->all());
+    }
+
+    /**
+     * @param  array<int, string>  $resourceNames
+     */
+    private function syncResourceGroupPermissionsForRole(string $roleName, array $resourceNames, bool $fullAccess): void
+    {
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $groupPermissions = $this->permissionsForResources($resourceNames);
+
+        if ($groupPermissions->isEmpty()) {
+            return;
+        }
+
+        $readPermissions = $groupPermissions
+            ->filter(fn (string $name): bool => $this->isReadOnlyPermission($name))
             ->values();
 
-        foreach ($roleNames as $roleName) {
-            $role = SpatieRole::query()->where('name', $roleName)->first();
+        $writePermissions = $groupPermissions
+            ->reject(fn (string $name): bool => $this->isReadOnlyPermission($name))
+            ->values();
 
-            if ($role === null) {
-                continue;
-            }
+        if ($readPermissions->isNotEmpty()) {
+            $role->givePermissionTo($readPermissions->all());
+        }
 
-            if ($writePermissions->isNotEmpty()) {
-                $role->revokePermissionTo($writePermissions->all());
-            }
+        if ($writePermissions->isEmpty()) {
+            return;
+        }
 
-            if ($readOnlyPermissions->isNotEmpty()) {
-                $role->givePermissionTo($readOnlyPermissions->all());
+        if ($fullAccess) {
+            $role->givePermissionTo($writePermissions->all());
+
+            return;
+        }
+
+        $assignedWritePermissions = $role->permissions()
+            ->whereIn('name', $writePermissions)
+            ->pluck('name');
+
+        if ($assignedWritePermissions->isNotEmpty()) {
+            $role->revokePermissionTo($assignedWritePermissions->all());
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $resourceNames
+     */
+    private function revokeResourceGroupPermissionsForRole(string $roleName, array $resourceNames): void
+    {
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $assignedPermissions = $role->permissions()
+            ->pluck('name')
+            ->filter(fn (string $name): bool => $this->matchesResourcePermission($name, $resourceNames))
+            ->values();
+
+        if ($assignedPermissions->isNotEmpty()) {
+            $role->revokePermissionTo($assignedPermissions->all());
+        }
+    }
+
+    private function revokeAdminOnlyPermissionsForRole(string $roleName): void
+    {
+        $this->revokeResourceGroupPermissionsForRole($roleName, $this->adminOnlyResources());
+    }
+
+    private function syncMemberLookupPermissionsForRole(string $roleName): void
+    {
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $this->revokeMemberStaffPermissionsForRole($roleName);
+
+        $lookupPermission = Permission::query()
+            ->where('name', 'View:MemberLookupPage')
+            ->value('name');
+
+        if ($lookupPermission !== null) {
+            $role->givePermissionTo($lookupPermission);
+        }
+    }
+
+    private function revokeMemberStaffPermissionsForRole(string $roleName): void
+    {
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $assignedPermissions = $role->permissions()
+            ->pluck('name')
+            ->filter(fn (string $name): bool => $this->isMemberOrStaffResourcePermission($name))
+            ->values();
+
+        if ($assignedPermissions->isNotEmpty()) {
+            $role->revokePermissionTo($assignedPermissions->all());
+        }
+    }
+
+    private function isExcludedFromSuperAdminPermission(string $name): bool
+    {
+        return $this->isMemberOrStaffResourcePermission($name)
+            || $name === 'View:MemberLookupPage'
+            || $this->isAdminOnlyResourcePermission($name);
+    }
+
+    private function isMemberOrStaffResourcePermission(string $name): bool
+    {
+        if ($name === 'View:MemberLookupPage') {
+            return false;
+        }
+
+        return (bool) preg_match('/:(Member|Staff)(?:$|:)/', $name);
+    }
+
+    private function isAdminOnlyResourcePermission(string $name): bool
+    {
+        return $this->matchesResourcePermission($name, $this->adminOnlyResources());
+    }
+
+    private function isReadOnlyPermission(string $name): bool
+    {
+        return preg_match('/^(ViewAny|View):/', $name) === 1;
+    }
+
+    /**
+     * @param  array<int, string>  $resourceNames
+     * @return Collection<int, string>
+     */
+    private function permissionsForResources(array $resourceNames): Collection
+    {
+        return Permission::query()
+            ->pluck('name')
+            ->filter(fn (string $name): bool => $this->matchesResourcePermission($name, $resourceNames))
+            ->values();
+    }
+
+    /**
+     * @param  array<int, string>  $resourceNames
+     */
+    private function matchesResourcePermission(string $permissionName, array $resourceNames): bool
+    {
+        foreach ($resourceNames as $resourceName) {
+            if (preg_match('/^[^:]+:'.preg_quote($resourceName, '/').'$/', $permissionName) === 1) {
+                return true;
             }
         }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function katalogRewardResources(): array
+    {
+        return [
+            'CategoryReward',
+            'Reward',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function loyaltyPointResources(): array
+    {
+        return [
+            'PointInjectionBatch',
+            'PointMutation',
+            'PointAnnualArchivePeriod',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function redeemPoinResources(): array
+    {
+        return [
+            'RedeemInvoice',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function adminOnlyResources(): array
+    {
+        return [
+            'Branch',
+            'TierMember',
+            'Province',
+            'City',
+            'SubDistrict',
+            'Village',
+            'PostalCode',
+            'Role',
+            'ActivityLog',
+        ];
+    }
+
+    private function syncCmsPermissionsForRole(string $roleName, bool $fullAccess): void
+    {
+        $role = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($role === null) {
+            return;
+        }
+
+        $readPermissions = Permission::query()
+            ->whereIn('name', array_merge(
+                $this->contentReadPermissions(),
+                $this->promotionBannerReadPermissions(),
+            ))
+            ->pluck('name');
+
+        $writePermissions = Permission::query()
+            ->whereIn('name', array_merge(
+                $this->contentWritePermissions(),
+                $this->promotionBannerWritePermissions(),
+            ))
+            ->pluck('name');
+
+        if ($readPermissions->isNotEmpty()) {
+            $role->givePermissionTo($readPermissions->all());
+        }
+
+        if ($writePermissions->isEmpty()) {
+            return;
+        }
+
+        if ($fullAccess) {
+            $role->givePermissionTo($writePermissions->all());
+
+            return;
+        }
+
+        $assignedWritePermissions = $role->permissions()
+            ->whereIn('name', $writePermissions)
+            ->pluck('name');
+
+        if ($assignedWritePermissions->isNotEmpty()) {
+            $role->revokePermissionTo($assignedWritePermissions->all());
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function contentReadPermissions(): array
+    {
+        return [
+            'ViewAny:Content',
+            'View:Content',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function contentWritePermissions(): array
+    {
+        return [
+            'Create:Content',
+            'Update:Content',
+            'Delete:Content',
+            'DeleteAny:Content',
+            'ForceDelete:Content',
+            'ForceDeleteAny:Content',
+            'Restore:Content',
+            'RestoreAny:Content',
+            'Replicate:Content',
+            'Reorder:Content',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function promotionBannerReadPermissions(): array
+    {
+        return [
+            'View:PromotionBannerPage',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function promotionBannerWritePermissions(): array
+    {
+        return [
+            'Update:PromotionBannerPage',
+        ];
     }
 }

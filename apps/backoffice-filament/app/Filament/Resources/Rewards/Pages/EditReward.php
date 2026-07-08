@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Rewards\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Filament\Resources\Rewards\RewardResource;
 use App\Filament\Resources\Rewards\Support\RewardFormSupport;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class EditReward extends EditRecord
@@ -45,23 +49,36 @@ class EditReward extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $imagePaths = self::normalizeImagePaths($data['reward_images'] ?? []);
+        $before = ActivityLogSanitizer::extract($record);
 
-        return DB::transaction(function () use ($record, $data, $imagePaths): Model {
+        $updatedRecord = DB::transaction(function () use ($record, $data, $imagePaths): Model {
             $record->update([
-                'category_id'     => $data['category_id'],
-                'name'            => $data['name'],
-                'sku'             => strtoupper((string) $data['sku']),
-                'description'     => RewardFormSupport::normalizeDescription($data['description'] ?? null),
+                'category_id' => $data['category_id'],
+                'name' => $data['name'],
+                'sku' => strtoupper((string) $data['sku']),
+                'description' => RewardFormSupport::normalizeDescription($data['description'] ?? null),
                 'points_required' => $data['points_required'],
-                'is_active'       => $data['is_active'] ?? true,
-                'start_at'        => $data['start_at'],
-                'end_at'          => $data['end_at'],
+                'is_active' => $data['is_active'] ?? true,
+                'start_at' => $data['start_at'],
+                'end_at' => $data['end_at'],
             ]);
 
             RewardFormSupport::syncImages($record, $imagePaths);
 
             return $record->refresh();
         });
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::RewardUpdated,
+            description: 'Memperbarui data reward',
+            auditable: $updatedRecord,
+            ipAddress: (string) request()->ip(),
+            before: $before,
+            after: ActivityLogSanitizer::extract($updatedRecord),
+            actor: Auth::user(),
+        );
+
+        return $updatedRecord;
     }
 
     /**

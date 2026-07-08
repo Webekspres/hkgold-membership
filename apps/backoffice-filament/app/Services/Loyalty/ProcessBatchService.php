@@ -6,21 +6,23 @@ namespace App\Services\Loyalty;
 
 use App\Data\Loyalty\ProcessBatchResult;
 use App\Data\Loyalty\ProcessBatchSummary;
+use App\Enums\ActivityLogAction;
 use App\Enums\InjectionStatus;
 use App\Exceptions\Loyalty\ProcessBatchException;
-use App\Models\ActivityLog;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\PointInjectionBatch;
 use App\Models\PointInjectionDetail;
 use App\Models\PointMutation;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
 use Illuminate\Support\Facades\DB;
 
 class ProcessBatchService
 {
     public function __construct(
         private readonly PointCalculationService $pointCalculation,
+        private readonly ActivityLogger $activityLogger,
     ) {}
 
     public function assertBatchCanProcess(PointInjectionBatch $batch, bool $ignoreProcessingFlag = false): void
@@ -184,24 +186,22 @@ class ProcessBatchService
                 'processing_started_at' => null,
             ]);
 
-            ActivityLog::query()->create([
-                'user_id' => $actor->id,
-                'action' => 'bulk_point_injection',
-                'description' => 'Proses injeksi poin massal batch',
-                'auditable_type' => 'PointInjectionBatch',
-                'auditable_id' => $lockedBatch->id,
-                'before_json' => [
+            $this->activityLogger->log(
+                action: ActivityLogAction::BulkPointInjection,
+                description: 'Proses injeksi poin massal batch',
+                auditable: $lockedBatch,
+                ipAddress: $ipAddress,
+                before: [
                     'resolved' => $previousResolved,
                     'total_points_injected' => $previousTotalPointsInjected,
                 ],
-                'after_json' => [
+                after: [
                     'resolved' => true,
                     'total_points_injected' => $totalPointsInjected,
                     'rows_processed' => $details->count(),
                 ],
-                'ip_address' => $ipAddress,
-                'created_at' => now(),
-            ]);
+                actor: $actor,
+            );
 
             return new ProcessBatchResult(
                 batchId: $lockedBatch->id,

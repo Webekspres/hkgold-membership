@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Staff;
 
+use App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager;
 use App\Filament\Resources\Staff\Pages\CreateStaff;
 use App\Filament\Resources\Staff\Pages\EditStaff;
 use App\Filament\Resources\Staff\Pages\ListStaff;
@@ -13,12 +14,14 @@ use App\Filament\Resources\Staff\Schemas\StaffInfolist;
 use App\Filament\Resources\Staff\Tables\StaffTable;
 use App\Models\Staff;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class StaffResource extends Resource
 {
@@ -38,6 +41,13 @@ class StaffResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'employee_code';
 
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->hasRole(Utils::getSuperAdminName());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return StaffForm::configure($schema);
@@ -55,7 +65,9 @@ class StaffResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ActivityLogsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
