@@ -241,6 +241,21 @@ return [
             'backoff' => [10, 30, 60],
             'nice' => 0,
         ],
+        'notifications-supervisor' => [
+            'connection' => 'redis',
+            'queue' => ['notifications'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 2,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 60,
+            'backoff' => [10, 30, 60],
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -256,6 +271,10 @@ return [
             'bulk-injection-supervisor' => [
                 'processes' => 1,
             ],
+            'notifications-supervisor' => [
+                'minProcesses' => 1,
+                'maxProcesses' => 2,
+            ],
         ],
 
         'local' => [
@@ -269,6 +288,10 @@ return [
             ],
             'bulk-injection-supervisor' => [
                 'processes' => 1,
+            ],
+            'notifications-supervisor' => [
+                'minProcesses' => 1,
+                'maxProcesses' => 1,
             ],
         ],
     ],

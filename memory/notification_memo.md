@@ -4,7 +4,7 @@
 >
 > Disusun dari diskusi requirement (Juli 2026) + kondisi schema/kode awal yang sudah ada.
 >
-> **Status:** requirement disepakati sebagian besar; implementasi lengkap service/driver FCM/campaign masih outstanding.
+> **Status:** requirement disepakati sebagian besar; roadmap fase di **§17**; implementasi service/driver FCM/campaign/UI masih outstanding.
 
 ---
 
@@ -346,17 +346,21 @@ Detail permission Shield belum final — dicatat sebagai tugas implementasi UI.
 | Factory + `NotificationSeeder` | `database/factories`, `database/seeders` |
 | Scaffold `NotificationDispatcher` | `app/Services/Notification/NotificationDispatcher.php` |
 
-### Belum ada (to-build)
+### Belum ada (to-build) — lihat roadmap §17
 
-- Tabel/model `notification_campaigns`
-- `NotificationService` full (notifyUser + broadcastMass)
-- Jobs queue `notifications` + Horizon/dev worker entry
-- FCM / WebPush drivers + env skeleton
-- Token storage (FCM token column/table)
-- Filament UI inbox / campaign stats
-- Integrasi call-site di loyalty (inject/batch/redeem)
-- Policy / Shield resources
-- Feature tests
+| Area | Fase |
+|------|------|
+| Tabel/model `notification_campaigns` | 0, 2 |
+| `NotificationService` (`notifyUser` + `broadcastMass`) | 0 |
+| Jobs queue `notifications` + Horizon supervisor | 0, 3 |
+| FCM / WebPush drivers + env skeleton | 0, 3, 5 |
+| Token storage (`device_push_tokens`) | 4 |
+| Filament inbox admin + campaign UI | 1, 2 |
+| Integrasi loyalty (inject/batch/redeem) | 6 |
+| Shield / policy | 2, 7 |
+| Feature tests + prune | 7 |
+
+**Catatan kode existing:** `NotificationDispatcher` sudah punya `dispatchToPlatforms`, `markAsSent`, `markAsFailed` — belum enqueue job, belum `markAsRead`, belum dipanggil dari call-site bisnis. `TrustedDevice` belum simpan FCM token.
 
 ---
 
@@ -372,31 +376,431 @@ Detail permission Shield belum final — dicatat sebagai tugas implementasi UI.
 
 ---
 
-## 15. Pertanyaan Terbuka (belum mengunci implementasi detail)
+## 15. Pertanyaan Terbuka — Keputusan Final (Juli 2026)
 
-1. Nama final & kolom tepat `notification_campaigns` (status enum naming).
-2. Audience filter format (`criteria_json` vs kolom eksplisit batch_id/tier).
-3. Apakah blast setelah bulk injection otomatis atau manual trigger admin.
-4. Apakah satu blast boleh multi-platform dalam 1 campaign row atau 1 campaign per platform.
-5. Package FCM tepat (`laravel-notification-channels/fcm` vs `kreait/laravel-firebase`).
-6. Penyimpanan token: extend `trusted_devices` vs tabel baru.
-7. Retensi row `notifications` & campaign (perlu prune seperti activity-log?).
+| # | Pertanyaan | Keputusan |
+|---|------------|-----------|
+| 1 | Nama & kolom `notification_campaigns` | `CampaignStatus` enum (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`); kolom `criteria_json`, `platforms` (JSON array), `targeted_count`, `accepted_count`, `failed_count` |
+| 2 | Format audience filter | `criteria_json` v1: `{ "type": "all_active_members" }`, `{ "type": "tier", "tier": "..." }`, `{ "type": "batch", "batch_id": "..." }` |
+| 3 | Blast setelah bulk injection | **Otomatis** — `ProcessBatchService::process()` memanggil `broadcastMass()` setelah commit, best-effort |
+| 4 | Multi-platform per campaign | **1 row per blast**, field `platforms` JSON array; v1 blast UI hanya `MOBILE_APP_PUSH` |
+| 5 | Package FCM | **`kreait/laravel-firebase`** via `FcmPushDriver`; env `FIREBASE_CREDENTIALS` |
+| 6 | Penyimpanan token | **Tabel baru `device_push_tokens`**; register/revoke via Elysia API (out of scope backoffice) |
+| 7 | Retensi inbox & campaign | **`notifications:prune --months=3`** — hapus notifikasi sudah dibaca + campaign `COMPLETED`/`FAILED` |
 
----
-
-## 16. Definition of Done (fase berikutnya)
-
-- [ ] Migrasi + model campaign angka
-- [ ] `NotificationService` dengan dua jalur jelas
-- [ ] Redis queue `notifications` + jobs + env skeleton kosong
-- [ ] Driver FCM/WebPush stub (no-op / pending bila credential kosong)
-- [ ] Token registration plan (schema update) terdokumentasi atau diimplementasi
-- [ ] Minimal tests: personalized multi-platform creates N rows; mass creates 1 campaign + targeted_count
-- [ ] Runbook singkat worker & retry di doc ini atau AGENTS
+**Keputusan tambahan Fase 6:**
+- Suntik manual: member dapat `MOBILE_APP_PUSH` + staff yang inject dapat `WEB_ADMIN_IN_APP`
+- Firebase credentials belum tersedia di staging → driver graceful fail (`FAILED` + `error_message`), siap hidup saat env diisi
 
 ---
 
-## 17. Ringkas One-Liner
+## 16. Definition of Done (keseluruhan v1)
+
+Checklist global — detail per fase ada di **§17**.
+
+- [x] Migrasi + model `notification_campaigns` (sync Prisma)
+- [x] `NotificationService` dengan dua jalur jelas (`notifyUser` + `broadcastMass`)
+- [x] Redis queue `notifications` + jobs + Horizon supervisor
+- [x] Env skeleton kosong + driver FCM/WebPush graceful (no-op bila credential kosong)
+- [x] Token push tersimpan & bisa di-resolve per user
+- [x] Filament inbox admin (`WEB_ADMIN_IN_APP`) + badge unread
+- [x] Filament campaign list/view + aksi broadcast (role terbatas)
+- [x] Integrasi call-site loyalty (`ManualPointInjectionService` + `ProcessBatchService`)
+- [x] Shield permission + `canAccess()` konsisten
+- [ ] Minimal tests: personalized multi-platform → N rows; mass → 1 campaign + `targeted_count` (opsional, belum diminta)
+- [x] Runbook worker & retry (§18)
+
+---
+
+## 17. Fase Pengembangan (Roadmap)
+
+> Disusun Juli 2026 berdasarkan kondisi kode saat ini (`NotificationDispatcher` scaffold, belum ada campaign/jobs/UI/driver).
+>
+> **Prinsip urutan:** deliver value bertahap — inbox admin in-app bisa hidup **tanpa** FCM; driver push di fase belakang.
+>
+> **Referensi pola internal:** `ActivityLogger` → `PersistActivityLogJob` (`afterCommit`, queue dedicated, try/catch best-effort).
+
+### Diagram dependensi
+
+```text
+Fase 0 (Foundation)
+    ├── Fase 1 (In-app inbox Filament)     ← nilai admin cepat
+    ├── Fase 2 (Campaign + UI blast)       ← butuh Fase 0
+    └── Fase 3 (Queue worker + driver stub)
+            ├── Fase 4 (Token storage)
+            │       └── Fase 5 (FCM/WebPush production)
+            └── Fase 6 (Integrasi loyalty)
+                    └── Fase 7 (Hardening & ops)
+```
+
+---
+
+### Fase 0 — Foundation domain & infrastruktur
+
+**Tujuan:** Satu pintu masuk tulis notifikasi; schema campaign; queue siap; tanpa UI dulu.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Tabel `notifications` + model sudah ada |
+| Scope | `apps/backoffice-filament/` + sync `packages/database/schema.prisma` |
+
+**Deliverables**
+
+1. **Prisma + migration** `notification_campaigns` (+ enum status campaign di Prisma & PHP).
+2. **Model** `NotificationCampaign` + factory + seeder ringkas.
+3. **`config/notifications.php`** — queue name (`notifications`), retry/backoff, key env FCM/WebPush (boleh kosong).
+4. **`NotificationService`** (pintu masuk domain):
+   - `notifyUser(User, title, body, platforms[], ?payload)` → generate `notification_key`, persist via dispatcher, enqueue `DeliverNotificationJob` per row push / skip enqueue untuk in-app yang sudah `SENT`.
+   - `broadcastMass(title, body, audience criteria, platforms[])` → hitung `targeted_count`, create campaign `PENDING`, enqueue `BroadcastNotificationJob`.
+   - Pola **`afterCommit`** + **try/catch** (jangan gagalkan transaksi bisnis) — salin dari `ActivityLogger`.
+5. **Perkaya `NotificationDispatcher`:** `markAsRead()`, `markAllAsReadForUser()`, query unread count (`WEB_ADMIN_IN_APP` only).
+6. **Jobs skeleton:** `DeliverNotificationJob`, `BroadcastNotificationJob` — `onQueue('notifications')`, `tries`/`backoff` selaras activity-log.
+7. **Horizon:** supervisor `notifications-supervisor` di `config/horizon.php` (local + production).
+8. **`.env.example`:** `NOTIFICATIONS_QUEUE`, `FCM_*`, `WEBPUSH_VAPID_*`.
+
+**Definition of Done**
+
+- [ ] `NotificationService::notifyUser()` dengan 2 platform → 2 row, unique `(user_id, notification_key, platform)`.
+- [ ] `NotificationService::broadcastMass()` → 1 row campaign + `targeted_count` benar.
+- [ ] Job ter-dispatch `afterCommit`; gagal enqueue hanya log warning.
+- [ ] `php artisan horizon` memproses queue `notifications` (job skeleton boleh no-op).
+
+**Estimasi:** kecil–sedang.
+
+---
+
+### Fase 1 — In-app inbox admin (Filament)
+
+**Tujuan:** Admin panel punya inbox DB (`WEB_ADMIN_IN_APP`) — baca & tandai dibaca — **tanpa** FCM.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 0 (`markAsRead`, unread count) |
+| Catatan | **Bukan** Laravel default `notifications` morph table / Filament Echo — pakai model custom `App\Models\Notification`. |
+
+**Deliverables**
+
+1. **Badge unread** di panel header (Livewire polling atau render on navigate) — hanya `WEB_ADMIN_IN_APP` + `read_at IS NULL`.
+2. **Halaman inbox** — pilih salah satu (putuskan saat implementasi, default **custom Page**):
+   - **Opsi A (disarankan):** `NotificationInboxPage` — list read-only + filter belum dibaca, pola `MemberLookupPage` / `PointMutationResource` (list read-only).
+   - **Opsi B:** `NotificationResource` list-only (tanpa create/edit) jika ingin RelationManager nanti.
+3. **Aksi:** tandai dibaca (1 item), tandai semua dibaca — di `Actions/` + `getHeaderActions()`.
+4. **Label UI:** Bahasa Indonesia (judul, empty state, notifikasi sukses).
+5. **Akses:** semua user panel yang login; query **scoped** `user_id = auth()->id()` — bukan global inbox.
+
+**Definition of Done**
+
+- [ ] Seed `NotificationSeeder` tampil di inbox admin yang login.
+- [ ] Badge berkurang setelah mark read.
+- [ ] Tidak ada route create/edit notifikasi manual dari UI (notifikasi hanya dari service/event).
+
+**Estimasi:** sedang.
+
+---
+
+### Fase 2 — Campaign mass blast (UI + orkestrasi)
+
+**Tujuan:** Admin/marketing bisa trigger broadcast massal; rekapan angka di campaign; push masih boleh stub.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 0 (campaign model + `broadcastMass`) |
+| Referensi UI | `InjectManualPointAction` (wizard modal), `PointMutationResource` (list read-only + stat) |
+
+**Deliverables**
+
+1. **`NotificationCampaignResource`** — list + view (infolist angka: ditarget, diterima, gagal, status, pembuat, waktu).
+2. **`BroadcastNotificationAction`** — wizard: judul, isi, platform, filter audience (tier / semua member aktif / batch id — format `criteria_json` dikunci di fase ini).
+3. **`navigationGroup`:** usulan **`Notifikasi`** (baru) atau tanya user — jangan campur `Loyalty Point`.
+4. **Shield:** permission `View:NotificationCampaignResource`, `Create:BroadcastNotification` (nama final saat generate Shield); `administrator` full; `super_admin` + `marketing` via permission eksplisit; `store_manager` read-only campaign (opsional).
+5. **Stat card widget** (opsional): total campaign bulan ini, total ditarget.
+
+**Keputusan yang harus dikunci di fase ini**
+
+- Format `criteria_json` v1 (mis. `{ "type": "all_active_members" }`, `{ "type": "tier", "tier_id": "..." }`, `{ "type": "batch", "batch_id": "..." }`).
+- Satu campaign row per operasi blast (multi-platform dalam 1 row vs 1 row per platform) — **default: 1 row, field `platforms` JSON array**.
+
+**Definition of Done**
+
+- [ ] Trigger blast dari UI → 1 campaign `PENDING` → job `BroadcastNotificationJob` jalan.
+- [ ] `targeted_count` = hasil query audience saat submit (bukan dari Firebase).
+- [ ] Role tanpa permission tidak melihat menu / tidak bisa trigger.
+
+**Estimasi:** sedang.
+
+---
+
+### Fase 3 — Worker delivery & driver stub
+
+**Tujuan:** Jalur push end-to-end di worker; credential kosong = graceful `FAILED` + log, bukan exception bisnis.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 0 (jobs skeleton) |
+| Referensi | `PersistActivityLogJob`, pola `failed_jobs` monitoring |
+
+**Deliverables**
+
+1. **Interface** `PushDriver` / `PushDeliveryResult` DTO.
+2. **`FcmPushDriver`** — baca `config/notifications.php`; jika credential kosong → return failure message jelas, jangan throw.
+3. **`WebPushDriver`** — sama (VAPID kosong → skip).
+4. **`DeliverNotificationJob::handle()`** — resolve token user → kirim → `markAsSent` / `markAsFailed`; increment `attempt_count`.
+5. **`BroadcastNotificationJob::handle()`** — update campaign `PROCESSING` → `COMPLETED`/`FAILED`; isi `accepted_count`/`failed_count` dari response driver (atau 0 jika stub).
+6. **Pilih package** (keputusan §15.5): implementasi minimal di fase ini; bisa `kreait/laravel-firebase` atau channel FCM — **jangan** block Fase 1–2.
+
+**Definition of Done**
+
+- [ ] Personalized row `MOBILE_APP_PUSH` tanpa credential → `FAILED` + `error_message` terisi.
+- [ ] Campaign blast tanpa credential → `FAILED` di campaign, bukan 500 di Filament.
+- [ ] Retry job mengikuti `tries`/`backoff` Horizon.
+
+**Estimasi:** sedang–besar (tergantung package).
+
+---
+
+### Fase 4 — Device push token storage
+
+**Tujuan:** Personalized push bisa resolve token per user/device; siap konsumsi API mobile.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 3 (driver butuh token) |
+| Keputusan | §15.6 — **default usulan:** tabel baru `device_push_tokens` (jangan overload `trusted_devices` dulu) |
+
+**Deliverables**
+
+1. **Prisma + migration** `device_push_tokens`:
+   - `user_id`, `device_uuid` (nullable), `platform` (`MOBILE`/`WEB`), `token`, `last_used_at`, `revoked_at`.
+   - Unique `(user_id, token)` atau `(device_uuid, platform)`.
+2. **Model + `DevicePushTokenRegistry` service:** register, refresh, revoke, `activeTokensForUser()`.
+3. **Wire ke `DeliverNotificationJob`** — ambil token aktif; multi-device = chunk kirim.
+4. **Dokumentasi kontrak API** (endpoint register/revoke di Elysia — **out of scope implementasi backoffice**, cukup catat di memo atau OpenAPI stub).
+
+**Definition of Done**
+
+- [ ] Token dummy di seeder → personalized push job memanggil driver dengan token tersebut.
+- [ ] Token revoked tidak dipakai.
+
+**Estimasi:** sedang.
+
+---
+
+### Fase 5 — FCM / WebPush production-ready
+
+**Tujuan:** Credential terisi → push benar-benar terkirim; multicast/topic untuk blast.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 3 + 4 |
+| Lingkungan | Firebase project + VAPID keys di staging |
+
+**Deliverables**
+
+1. Isi env production/staging; dokumentasi setup di §18 runbook.
+2. **Personalized:** FCM per device token; update `sent_at` per row.
+3. **Mass:** FCM multicast batch (chunk 500) **atau** topic — pilih satu strategi v1 (disarankan **multicast dari query token** agar audience tetap dari DB, bukan Firebase CRM).
+4. **Web push staf** (opsional v1): subscription flow di front-end staf — bisa ditunda sub-fase 5b.
+5. Monitoring: alert jika queue `notifications` `failed_jobs` > threshold.
+
+**Definition of Done**
+
+- [ ] Test manual staging: suntik poin → member terima push (1 device).
+- [ ] Test blast ke audience kecil → campaign `COMPLETED` + angka masuk akal.
+
+**Estimasi:** sedang (bergantung akses Firebase).
+
+---
+
+### Fase 6 — Integrasi call-site bisnis
+
+**Tujuan:** Notifikasi terpicu dari alur loyalty yang sudah ada — best-effort setelah commit.
+
+| Item | Detail |
+|------|--------|
+| Prasyarat | Fase 0 minimal; Fase 1 untuk alert admin; Fase 5 untuk push member nyata |
+| Referensi | `ManualPointInjectionService`, `ProcessBatchService` |
+
+**Deliverables (prioritas)**
+
+| Call-site | Jalur | Platform | Catatan |
+|-----------|-------|----------|---------|
+| `ManualPointInjectionService` | Personalized | `MOBILE_APP_PUSH` + opsional `WEB_ADMIN_IN_APP` ke staff yang inject | Body: poin + nominal |
+| `ProcessBatchService` (batch sukses) | Mass **atau** manual trigger | `MOBILE_APP_PUSH` | Putuskan §15.3: auto blast vs tombol di `ViewPointInjectionBatch` |
+| Redeem status change | Personalized | `MOBILE_APP_PUSH` | Tergantung Redeem Fase 2–7 |
+| Alert operasional admin | Personalized | `WEB_ADMIN_IN_APP` | Fraud/anomaly nanti |
+
+**Pola kode**
+
+```php
+// Di akhir transaksi bisnis — jangan di dalam DB::transaction throw path
+try {
+    app(NotificationService::class)->notifyUser(...);
+} catch (Throwable $e) {
+    Log::warning('Notifikasi gagal diantre.', [...]);
+}
+```
+
+**Definition of Done**
+
+- [ ] Suntik manual → member dapat row inbox/push (sesuai platform aktif).
+- [ ] Kegagalan notifikasi tidak mengubah hasil suntik poin.
+- [ ] Activity log tetap independen dari notifikasi.
+
+**Estimasi:** kecil per call-site.
+
+---
+
+### Fase 7 — Hardening, testing, operasional
+
+**Tujuan:** Production confidence — test, retensi, permission final, dokumentasi ops.
+
+**Deliverables**
+
+1. **Feature tests** (jika diminta user):
+   - `notifyUser` multi-platform → N rows + job dispatched.
+   - `broadcastMass` → 1 campaign, `targeted_count` correct.
+   - Inbox mark-read scoped ke user.
+2. **`notifications:prune`** command (opsional, pola `activity-log:prune`) — retensi inbox & campaign.
+3. **Shield seeder** update idempotent di `ShieldRolesSeeder.php`.
+4. **Resolve pertanyaan terbuka §15** — catat keputusan final di memo.
+5. **Runbook §18** — worker, env, debug `failed_jobs`.
+
+**Definition of Done**
+
+- [ ] `vendor/bin/pint --dirty` bersih setelah perubahan PHP.
+- [ ] Semua checklist §16 terpenuhi untuk scope v1.
+
+**Estimasi:** kecil–sedang.
+
+---
+
+### Ringkasan fase & prioritas implementasi
+
+| Fase | Nama | Nilai bisnis | Blokir FCM? |
+|------|------|--------------|-------------|
+| 0 | Foundation | Infrastruktur | Tidak |
+| 1 | Inbox admin Filament | Tinggi (admin langsung pakai) | Tidak |
+| 2 | Campaign + UI blast | Tinggi (marketing) | Tidak (angka + stub push) |
+| 3 | Worker + driver stub | Transport siap | Tidak |
+| 4 | Token storage | Prasyarat push nyata | Ya |
+| 5 | FCM/WebPush prod | Push member/staf hidup | Ya |
+| 6 | Integrasi loyalty | End-to-end produk | Sebagian |
+| 7 | Hardening | Production | Tidak |
+
+**Urutan disarankan untuk sesi coding:** `0 → 1 → 2 → 3 → 6 (in-app only) → 4 → 5 → 6 (push) → 7`.
+
+---
+
+## 18. Runbook Operasional
+
+### Worker
+
+```bash
+# Dari apps/backoffice-filament/
+php artisan horizon
+# atau queue worker tunggal (dev):
+php artisan queue:work redis --queue=notifications --tries=3
+```
+
+Pastikan Redis berjalan (`REDIS_HOST`, `REDIS_PORT` di `.env`).
+
+### Setup Firebase (FCM)
+
+1. Buka [Firebase Console](https://console.firebase.google.com/) → pilih project (atau buat baru).
+2. **Project Settings** → tab **Service accounts** → **Generate new private key** → simpan JSON.
+3. Letakkan file di server (mis. `storage/app/firebase/service-account.json`) — **jangan commit ke git**.
+4. Isi `.env`:
+
+```env
+NOTIFICATIONS_QUEUE=notifications
+FIREBASE_CREDENTIALS=/absolute/path/to/service-account.json
+```
+
+Alternatif: isi `FIREBASE_CREDENTIALS` dengan JSON inline (satu baris) jika deploy tidak memakai file.
+
+5. Verifikasi driver terkonfigurasi:
+
+```bash
+php artisan tinker
+>>> app(\App\Services\Notification\FcmPushDriver::class)->isConfigured()
+# true = siap kirim push
+```
+
+6. Pastikan device token terdaftar di tabel `device_push_tokens` (via Elysia API mobile).
+
+### Env Web Push (opsional, staf — sub-fase 5b)
+
+```env
+WEBPUSH_VAPID_PUBLIC_KEY=
+WEBPUSH_VAPID_PRIVATE_KEY=
+WEBPUSH_VAPID_SUBJECT=mailto:admin@example.com
+```
+
+Web Push masih stub di `WebPushDriver` — tidak wajib untuk v1.
+
+### Strategi multicast (mass blast)
+
+- `BroadcastNotificationJob` resolve token dari DB via `DevicePushTokenRegistry::tokensForCriteria()`.
+- Kirim via `FcmPushDriver::sendMulticast()` dengan **chunk 500** token per request.
+- Audience tetap dari DB (`criteria_json`), bukan Firebase topic/CRM.
+
+### Retensi data
+
+```bash
+# Lihat jumlah yang akan dihapus (default 3 bulan)
+php artisan notifications:prune --dry-run
+
+# Hapus notifikasi sudah dibaca + campaign COMPLETED/FAILED
+php artisan notifications:prune --months=3
+```
+
+Jadwalkan via cron/scheduler di production (mis. mingguan).
+
+### Monitoring & alert
+
+**Threshold disarankan:** `failed_jobs` pada queue `notifications` > 10 dalam 1 jam → investigasi.
+
+```sql
+-- Cek failed jobs notifikasi
+SELECT id, queue, failed_at, exception
+FROM failed_jobs
+WHERE queue = 'notifications'
+ORDER BY failed_at DESC
+LIMIT 20;
+```
+
+**Row personalized** (`notifications` table):
+
+| Kolom | Arti |
+|-------|------|
+| `status` | `PENDING`, `SENT`, `FAILED` |
+| `error_message` | Pesan gagal (credential kosong, token tidak ada, FCM error) |
+| `attempt_count` | Jumlah percobaan kirim |
+| `sent_at` | Waktu push berhasil |
+
+**Campaign** (`notification_campaigns`):
+
+| Kolom | Arti |
+|-------|------|
+| `status` | `PENDING` → `PROCESSING` → `COMPLETED` / `FAILED` |
+| `targeted_count` | Audience dari query DB saat submit |
+| `accepted_count` / `failed_count` | Hasil multicast FCM |
+
+### Debug alur end-to-end
+
+1. **Suntik manual poin** → cek row `notifications` untuk member (`MOBILE_APP_PUSH`) dan staff (`WEB_ADMIN_IN_APP`).
+2. **Proses batch** → cek 1 row baru di `notification_campaigns` dengan `criteria_json.type = batch`.
+3. Jalankan worker → cek `status` campaign / row notifikasi berubah.
+4. Tanpa credential: expect `FAILED` + `error_message` jelas, **bukan** 500 di UI loyalty.
+
+### Test manual staging (setelah credential diisi)
+
+- [ ] Suntik poin → member terima push (1 device dengan token di `device_push_tokens`).
+- [ ] Blast ke audience kecil → campaign `COMPLETED` + `accepted_count` masuk akal.
+
+---
+
+## 19. Ringkas One-Liner
 
 **Personalized = row inbox per user × platform + token push via Redis.**  
 **Mass = push-only Firebase + 1 campaign record berisi angka target (tanpa kota, tanpa ribuan inbox rows).**

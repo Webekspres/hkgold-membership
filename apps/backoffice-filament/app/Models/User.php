@@ -75,6 +75,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Notification::class);
     }
 
+    public function notificationCampaigns(): HasMany
+    {
+        return $this->hasMany(NotificationCampaign::class, 'created_by_id');
+    }
+
+    public function devicePushTokens(): HasMany
+    {
+        return $this->hasMany(DevicePushToken::class);
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         if (! $this->is_active) {

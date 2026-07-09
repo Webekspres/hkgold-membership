@@ -55,6 +55,7 @@ class AppPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Manajemen Pengguna'),
                 NavigationGroup::make()->label('Master Lokasi'),
                 NavigationGroup::make()->label('Konfigurasi'),
+                NavigationGroup::make()->label('Notifikasi'),
             ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

@@ -30,6 +30,7 @@ class ShieldRolesSeeder extends Seeder
 
         $this->ensureShieldPermissionsGenerated();
         $this->ensureActivityLogPermissionsGenerated();
+        $this->ensureNotificationCampaignPermissionsGenerated();
         $this->ensureCustomPermissions();
         $this->removePanelUserRole();
 
@@ -60,6 +61,7 @@ class ShieldRolesSeeder extends Seeder
         $this->syncSuperAdminPermissions();
         $this->syncMemberLookupPermissionsForRole(strtolower(Role::Marketing->value));
         $this->syncMemberLookupPermissionsForRole(strtolower(Role::StoreManager->value));
+        $this->syncNotificationCampaignPermissions();
         $this->revokeMemberStaffPermissionsForRole(strtolower(Role::Member->value));
         $this->revokeResourceGroupPermissionsForRole(
             strtolower(Role::Member->value),
@@ -101,11 +103,27 @@ class ShieldRolesSeeder extends Seeder
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
+    private function ensureNotificationCampaignPermissionsGenerated(): void
+    {
+        if (Permission::query()->where('name', 'ViewAny:NotificationCampaign')->exists()) {
+            return;
+        }
+
+        Artisan::call('shield:generate', [
+            '--all' => true,
+            '--panel' => 'app',
+            '--no-interaction' => true,
+        ]);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
     private function ensureCustomPermissions(): void
     {
         foreach ([
             'Update:PromotionBannerPage',
             'View:MemberLookupPage',
+            'Create:BroadcastNotification',
         ] as $permissionName) {
             Permission::query()->firstOrCreate([
                 'name' => $permissionName,
@@ -459,6 +477,56 @@ class ShieldRolesSeeder extends Seeder
     {
         return [
             'Update:PromotionBannerPage',
+        ];
+    }
+
+    private function syncNotificationCampaignPermissions(): void
+    {
+        $readPermissions = Permission::query()
+            ->whereIn('name', $this->notificationCampaignReadPermissions())
+            ->pluck('name');
+
+        $broadcastPermission = Permission::query()
+            ->where('name', 'Create:BroadcastNotification')
+            ->value('name');
+
+        $marketingRole = SpatieRole::query()
+            ->where('name', strtolower(Role::Marketing->value))
+            ->first();
+
+        if ($marketingRole !== null) {
+            if ($readPermissions->isNotEmpty()) {
+                $marketingRole->givePermissionTo($readPermissions->all());
+            }
+
+            if ($broadcastPermission !== null) {
+                $marketingRole->givePermissionTo($broadcastPermission);
+            }
+        }
+
+        $storeManagerRole = SpatieRole::query()
+            ->where('name', strtolower(Role::StoreManager->value))
+            ->first();
+
+        if ($storeManagerRole !== null && $readPermissions->isNotEmpty()) {
+            $storeManagerRole->givePermissionTo($readPermissions->all());
+        }
+
+        if ($broadcastPermission !== null && $storeManagerRole !== null) {
+            if ($storeManagerRole->hasPermissionTo($broadcastPermission)) {
+                $storeManagerRole->revokePermissionTo($broadcastPermission);
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function notificationCampaignReadPermissions(): array
+    {
+        return [
+            'ViewAny:NotificationCampaign',
+            'View:NotificationCampaign',
         ];
     }
 }

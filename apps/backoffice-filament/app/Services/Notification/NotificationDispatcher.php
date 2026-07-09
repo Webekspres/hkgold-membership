@@ -78,4 +78,41 @@ class NotificationDispatcher
 
         return $notification->refresh();
     }
+
+    public function markAsRead(Notification $notification): Notification
+    {
+        if ($notification->platform !== NotificationPlatform::WebAdminInApp) {
+            return $notification;
+        }
+
+        if ($notification->read_at !== null) {
+            return $notification;
+        }
+
+        $notification->update([
+            'read_at' => now(),
+        ]);
+
+        return $notification->refresh();
+    }
+
+    public function markAllAsReadForUser(User $user): int
+    {
+        return Notification::query()
+            ->where('user_id', $user->id)
+            ->where('platform', NotificationPlatform::WebAdminInApp)
+            ->whereNull('read_at')
+            ->update([
+                'read_at' => now(),
+            ]);
+    }
+
+    public function unreadCountForUser(User $user): int
+    {
+        return Notification::query()
+            ->where('user_id', $user->id)
+            ->where('platform', NotificationPlatform::WebAdminInApp)
+            ->whereNull('read_at')
+            ->count();
+    }
 }

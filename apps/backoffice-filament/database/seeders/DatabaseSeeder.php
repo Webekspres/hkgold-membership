@@ -38,6 +38,8 @@ class DatabaseSeeder extends Seeder
             RedeemInvoiceSeeder::class,
             ContentSeeder::class,
             NotificationSeeder::class,
+            NotificationCampaignSeeder::class,
+            DevicePushTokenSeeder::class,
         ]);
     }
 }

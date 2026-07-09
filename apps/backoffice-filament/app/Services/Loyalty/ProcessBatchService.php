@@ -8,6 +8,7 @@ use App\Data\Loyalty\ProcessBatchResult;
 use App\Data\Loyalty\ProcessBatchSummary;
 use App\Enums\ActivityLogAction;
 use App\Enums\InjectionStatus;
+use App\Enums\NotificationPlatform;
 use App\Exceptions\Loyalty\ProcessBatchException;
 use App\Models\Branch;
 use App\Models\Member;
@@ -16,13 +17,17 @@ use App\Models\PointInjectionDetail;
 use App\Models\PointMutation;
 use App\Models\User;
 use App\Services\ActivityLog\ActivityLogger;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ProcessBatchService
 {
     public function __construct(
         private readonly PointCalculationService $pointCalculation,
         private readonly ActivityLogger $activityLogger,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function assertBatchCanProcess(PointInjectionBatch $batch, bool $ignoreProcessingFlag = false): void
@@ -92,7 +97,7 @@ class ProcessBatchService
 
     public function process(PointInjectionBatch $batch, User $actor, string $ipAddress): ProcessBatchResult
     {
-        return DB::transaction(function () use ($batch, $actor, $ipAddress): ProcessBatchResult {
+        $result = DB::transaction(function () use ($batch, $actor, $ipAddress): ProcessBatchResult {
             $lockedBatch = PointInjectionBatch::query()
                 ->whereKey($batch->id)
                 ->lockForUpdate()
@@ -210,6 +215,31 @@ class ProcessBatchService
                 uniqueMembers: count($processedMemberNumbers),
             );
         });
+
+        $this->dispatchBatchNotifications($result, $actor);
+
+        return $result;
+    }
+
+    private function dispatchBatchNotifications(ProcessBatchResult $result, User $actor): void
+    {
+        try {
+            $this->notificationService->broadcastMass(
+                title: 'Poin batch telah diproses',
+                body: "Batch {$result->batchId} selesai diproses. Cek saldo poin Anda.",
+                criteria: [
+                    'type' => 'batch',
+                    'batch_id' => $result->batchId,
+                ],
+                platforms: [NotificationPlatform::MobileAppPush],
+                createdBy: $actor,
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Notifikasi batch gagal diantre.', [
+                'batch_id' => $result->batchId,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function resolveBranchId(?string $rawBranchCode): ?int

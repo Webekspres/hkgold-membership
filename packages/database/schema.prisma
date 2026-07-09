@@ -66,6 +66,13 @@ enum NotificationDeliveryStatus {
   FAILED
 }
 
+enum CampaignStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum ContentType {
   NEWS  // Artikel berita seputar emas & promo ritel
   EVENT // Jadwal kalender pameran emas luar kota
@@ -299,6 +306,7 @@ model User {
   member         Member?
   trustedDevices TrustedDevice[]
   notifications  Notification[]
+  notificationCampaigns NotificationCampaign[]
   activityLogs   ActivityLog[]
 
   @@map("users")
@@ -455,6 +463,27 @@ model Notification {
   @@index([status, createdAt])
   @@unique([userId, notificationKey, platform])
   @@map("notifications")
+}
+
+model NotificationCampaign {
+  id            String         @id @default(uuid()) @db.Char(36)
+  title         String         @map("title") @db.VarChar(150)
+  body          String         @map("body") @db.Text
+  platforms     Json           @map("platforms")
+  criteriaJson  Json?          @map("criteria_json")
+  targetedCount Int            @default(0) @map("targeted_count")
+  acceptedCount Int?           @map("accepted_count")
+  failedCount   Int?           @map("failed_count")
+  status        CampaignStatus @default(PENDING) @map("status")
+  errorMessage  String?        @map("error_message") @db.VarChar(500)
+  createdById   String?        @map("created_by_id") @db.Char(36)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("notification_campaigns")
 }
 
 // =============================================================================
