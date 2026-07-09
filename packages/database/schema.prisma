@@ -4,11 +4,11 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../../apps/api-elysia/node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 // =============================================================================
