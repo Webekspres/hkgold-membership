@@ -8,6 +8,7 @@ enum ActivityLogAction: string
 {
     case ManualPointInjection = 'manual_point_injection';
     case BulkPointInjection = 'bulk_point_injection';
+    case PointAnnualArchive = 'point_annual_archive';
     case MemberCreated = 'member_created';
     case MemberUpdated = 'member_updated';
     case StaffCreated = 'staff_created';
@@ -27,6 +28,7 @@ enum ActivityLogAction: string
         return match ($this) {
             self::ManualPointInjection => 'Suntik Poin Manual',
             self::BulkPointInjection => 'Injeksi Poin Massal',
+            self::PointAnnualArchive => 'Arsip Poin Tahunan',
             self::MemberCreated => 'Anggota Dibuat',
             self::MemberUpdated => 'Anggota Diperbarui',
             self::StaffCreated => 'Staff Dibuat',
