@@ -1,0 +1,7 @@
+/node_modules
+/.bun
+/apps/backoffice-filament/vendor
+/apps/backoffice-filament/.env
+.env
+*.log
+.DS_Store

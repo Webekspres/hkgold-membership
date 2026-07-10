@@ -1,0 +1,80 @@
+version: '3.8'
+
+# Mode FlyEnv (disarankan): nginx + PHP-FPM di PC, hanya infra di Docker
+#   docker compose up -d db redis
+#   http://hkgoldadmin.test:8011  (document root → apps/backoffice-filament/public)
+#   Matikan MySQL/Redis FlyEnv agar port 3306/6379 tidak bentrok dengan container
+#
+# Mode full-docker: Laravel juga di container
+#   docker compose --profile full up -d
+
+networks:
+  hkgold-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+
+services:
+  # MySQL — dipakai oleh Laravel lokal (127.0.0.1:3306) atau container lain di network
+  db:
+    image: mysql:8.0
+    container_name: hkgold-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_super_secure
+      MYSQL_DATABASE: hkgold_backoffice_filament
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - hkgold-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password_super_secure"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: hkgold-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - hkgold-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Opsional: jalankan Laravel di Docker (profile full)
+  # docker compose --profile full up -d
+  backoffice:
+    profiles: ["full"]
+    image: webdevops/php-nginx:8.3-alpine
+    container_name: hkgold-backoffice-filament
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./apps/backoffice-filament:/app
+      - ./apps/backoffice-filament/.env.docker:/app/.env:ro
+    ports:
+      - "8000:80"
+    environment:
+      WEB_DOCUMENT_ROOT: /app/public
+      PHP_MEMORY_LIMIT: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hkgold-network
