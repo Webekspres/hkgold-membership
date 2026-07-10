@@ -27,14 +27,22 @@ class NotificationCampaignInfolist
                             ->columnSpanFull(),
                         TextEntry::make('platforms')
                             ->label('Platform')
-                            ->formatStateUsing(fn (?array $state): string => BroadcastNotificationFormSupport::formatPlatformLabels($state ?? [])),
+                            ->formatStateUsing(
+                                fn (mixed $state): string => BroadcastNotificationFormSupport::formatPlatformLabels(
+                                    BroadcastNotificationFormSupport::normalizeJsonAttribute($state),
+                                ),
+                            ),
                     ]),
                 Section::make('Audience & Statistik')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('criteria_json')
                             ->label('Audience')
-                            ->formatStateUsing(fn (?array $state): string => BroadcastNotificationFormSupport::audienceLabel($state ?? [])),
+                            ->formatStateUsing(
+                                fn (mixed $state): string => BroadcastNotificationFormSupport::audienceLabel(
+                                    BroadcastNotificationFormSupport::normalizeJsonObjectAttribute($state),
+                                ),
+                            ),
                         TextEntry::make('targeted_count')
                             ->label('Ditarget')
                             ->numeric(thousandsSeparator: '.'),

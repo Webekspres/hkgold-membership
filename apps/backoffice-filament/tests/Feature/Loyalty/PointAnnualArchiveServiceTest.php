@@ -15,6 +15,7 @@ use App\Services\ActivityLog\ActivityLogger;
 use App\Services\Loyalty\PointAnnualArchiveService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
@@ -158,13 +159,13 @@ it('rolls back all changes when archive process fails', function (): void {
     $failingLogger
         ->shouldReceive('log')
         ->once()
-        ->andThrow(new RuntimeException('forced failure'));
+        ->andThrow(new \RuntimeException('forced failure'));
     app()->instance(ActivityLogger::class, $failingLogger);
 
     $service = app(PointAnnualArchiveService::class);
 
     expect(fn () => $service->archive($admin, '127.0.0.1', $targetYear))
-        ->toThrow(RuntimeException::class, 'forced failure');
+        ->toThrow(\RuntimeException::class, 'forced failure');
 
     $member->refresh();
 
@@ -177,4 +178,29 @@ it('rolls back all changes when archive process fails', function (): void {
     $lastRunStatus = $service->getLastRunStatus();
     expect($lastRunStatus['status'])->toBe('failed')
         ->and($lastRunStatus['error'])->toContain('forced failure');
+});
+
+it('marks stale queued or processing runs as failed', function (): void {
+    $admin = User::factory()->administrator()->create();
+    $service = app(PointAnnualArchiveService::class);
+    $targetYear = now()->subYear()->year;
+
+    $service->markRunQueued($admin, $targetYear);
+
+    Cache::forever('point-annual-archive:last-run', [
+        'status' => 'processing',
+        'target_year' => $targetYear,
+        'started_at' => now()->subMinutes(30)->toIso8601String(),
+        'completed_at' => null,
+        'total_members' => null,
+        'frozen_points_total' => null,
+        'error' => null,
+        'requested_by' => $admin->full_name,
+    ]);
+
+    $status = $service->getLastRunStatus();
+
+    expect($status['status'])->toBe('failed')
+        ->and($status['error'])->toContain('terhenti')
+        ->and($service->isRunInProgress())->toBeFalse();
 });

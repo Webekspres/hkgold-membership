@@ -17,6 +17,8 @@ class PointAnnualArchiveLastRunStatusWidget extends StatsOverviewWidget
 
     protected int|array|null $columns = 4;
 
+    protected ?string $pollingInterval = '5s';
+
     /**
      * @return array<Stat>
      */

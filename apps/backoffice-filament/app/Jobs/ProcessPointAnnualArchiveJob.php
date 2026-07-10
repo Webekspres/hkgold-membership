@@ -6,12 +6,13 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Services\Loyalty\PointAnnualArchiveService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class ProcessPointAnnualArchiveJob implements ShouldQueue
+class ProcessPointAnnualArchiveJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -19,12 +20,19 @@ class ProcessPointAnnualArchiveJob implements ShouldQueue
 
     public int $timeout = 900;
 
+    public int $uniqueFor = 960;
+
     public function __construct(
         public User $actor,
         public string $ipAddress,
         public int $archiveYear,
     ) {
         $this->onQueue('bulk-injection');
+    }
+
+    public function uniqueId(): string
+    {
+        return 'point-annual-archive:'.$this->archiveYear;
     }
 
     public function handle(PointAnnualArchiveService $service): void
@@ -50,6 +58,12 @@ class ProcessPointAnnualArchiveJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        app(PointAnnualArchiveService::class)->markRunFailed(
+            actor: $this->actor,
+            archiveYear: $this->archiveYear,
+            message: $exception?->getMessage() ?? 'Proses arsip poin gagal tanpa pesan error.',
+        );
+
         Log::error('ProcessPointAnnualArchiveJob gagal.', [
             'archive_year' => $this->archiveYear,
             'actor_id' => $this->actor->id,

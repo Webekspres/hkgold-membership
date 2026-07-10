@@ -36,6 +36,64 @@ class BroadcastNotificationFormSupport
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public static function normalizeJsonObjectAttribute(mixed $value): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (! is_string($value)) {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function normalizeJsonAttribute(mixed $value): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values(array_map(
+                static fn (mixed $item): string => (string) $item,
+                $value,
+            ));
+        }
+
+        if (! is_string($value)) {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (is_array($decoded)) {
+            return array_values(array_map(
+                static fn (mixed $item): string => (string) $item,
+                $decoded,
+            ));
+        }
+
+        if (is_string($decoded) && $decoded !== '') {
+            return [$decoded];
+        }
+
+        return $value !== '' ? [$value] : [];
+    }
+
+    /**
      * @param  array<string, mixed>  $criteria
      */
     public static function audienceLabel(array $criteria): string

@@ -21,7 +21,8 @@ class PointAnnualArchiveSeeder extends Seeder
         }
 
         $currentYear = (int) date('Y');
-        $years = [$currentYear - 3, $currentYear - 2, $currentYear - 1];
+        // Jangan seed tahun target arsip (tahun sebelumnya) agar tombol "Arsipkan Poin" tetap bisa diuji.
+        $years = [$currentYear - 3, $currentYear - 2];
 
         $members = Member::query()->limit(12)->get();
         if ($members->count() === 0) {

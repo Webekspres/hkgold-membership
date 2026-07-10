@@ -19,7 +19,8 @@ class ArchivePointsAction
 {
     public static function make(): Action
     {
-        $targetYear = app(PointAnnualArchiveService::class)->resolveTargetYear();
+        $service = app(PointAnnualArchiveService::class);
+        $targetYear = $service->resolveTargetYear();
 
         return Action::make('archivePoints')
             ->label('Arsipkan Poin')
@@ -45,7 +46,13 @@ class ArchivePointsAction
                     return false;
                 }
 
-                return app(PointAnnualArchiveService::class)->canArchiveYear($targetYear);
+                $service = app(PointAnnualArchiveService::class);
+
+                if ($service->isRunInProgress()) {
+                    return false;
+                }
+
+                return $service->canArchiveYear($targetYear);
             })
             ->action(function (): void {
                 /** @var User|null $actor */
@@ -75,6 +82,10 @@ class ArchivePointsAction
                 }
 
                 try {
+                    if ($service->isRunInProgress()) {
+                        throw PointAnnualArchiveException::archiveAlreadyInProgress($targetYear);
+                    }
+
                     if (! $service->canArchiveYear($targetYear)) {
                         throw PointAnnualArchiveException::archiveAlreadyExists($targetYear);
                     }
@@ -89,7 +100,7 @@ class ArchivePointsAction
 
                     Notification::make()
                         ->title('Arsip poin sedang diproses')
-                        ->body('Pengarsipan tahun '.$targetYear.' berjalan di background.')
+                        ->body('Pengarsipan tahun '.$targetYear.' berjalan di background. Pastikan queue worker/Horizon aktif.')
                         ->success()
                         ->send();
                 } catch (PointAnnualArchiveException $exception) {

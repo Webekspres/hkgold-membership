@@ -142,7 +142,7 @@ class DeliverNotificationJob implements ShouldQueue
     private function configurationErrorMessage(NotificationPlatform $platform): string
     {
         return match ($platform) {
-            NotificationPlatform::WebBrowserPush => 'Web Push VAPID tidak dikonfigurasi.',
+            NotificationPlatform::WebBrowserPush => 'Web Push belum dikonfigurasi (VAPID public key + FCM credential).',
             NotificationPlatform::MobileAppPush => 'FCM credential tidak dikonfigurasi.',
             NotificationPlatform::WebAdminInApp => 'Platform in-app tidak memerlukan push.',
         };

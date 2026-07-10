@@ -41,4 +41,13 @@ class PointAnnualArchiveException extends RuntimeException
             'Hanya administrator yang dapat menjalankan arsip poin.',
         );
     }
+
+    public static function archiveAlreadyInProgress(int $archiveYear): self
+    {
+        return new self(
+            'ARCHIVE_ALREADY_IN_PROGRESS',
+            'Arsip poin tahun '.$archiveYear.' sedang diproses. Tunggu hingga selesai.',
+            ['archive_year' => $archiveYear],
+        );
+    }
 }

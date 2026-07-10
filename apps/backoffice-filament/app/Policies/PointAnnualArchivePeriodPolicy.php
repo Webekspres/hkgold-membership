@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\Role;
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\PointAnnualArchivePeriod;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Foundation\Auth\User as AuthUser;
 
 class PointAnnualArchivePeriodPolicy
 {
     use HandlesAuthorization;
-
+    
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:PointAnnualArchivePeriod');
@@ -25,8 +24,7 @@ class PointAnnualArchivePeriodPolicy
 
     public function create(AuthUser $authUser): bool
     {
-        return $authUser->can('Create:PointAnnualArchivePeriod')
-            && $authUser->role === Role::Administrator;
+        return $authUser->can('Create:PointAnnualArchivePeriod');
     }
 
     public function update(AuthUser $authUser, PointAnnualArchivePeriod $pointAnnualArchivePeriod): bool
@@ -73,4 +71,5 @@ class PointAnnualArchivePeriodPolicy
     {
         return $authUser->can('Reorder:PointAnnualArchivePeriod');
     }
+
 }

@@ -63,6 +63,48 @@ class DevicePushTokenRegistry
             ]);
     }
 
+    public function register(
+        User $user,
+        string $token,
+        DevicePushTokenPlatform $platform,
+        ?string $deviceUuid = null,
+    ): DevicePushToken {
+        $existing = DevicePushToken::query()
+            ->where('user_id', $user->id)
+            ->where('token', $token)
+            ->first();
+
+        if ($existing !== null) {
+            $existing->update([
+                'platform' => $platform,
+                'device_uuid' => $deviceUuid ?? $existing->device_uuid,
+                'revoked_at' => null,
+                'last_used_at' => now(),
+            ]);
+
+            return $existing->fresh();
+        }
+
+        if ($deviceUuid !== null) {
+            DevicePushToken::query()
+                ->where('user_id', $user->id)
+                ->where('platform', $platform->value)
+                ->where('device_uuid', $deviceUuid)
+                ->whereNull('revoked_at')
+                ->update([
+                    'revoked_at' => now(),
+                ]);
+        }
+
+        return DevicePushToken::query()->create([
+            'user_id' => $user->id,
+            'device_uuid' => $deviceUuid,
+            'platform' => $platform,
+            'token' => $token,
+            'last_used_at' => now(),
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $criteria
      * @return Collection<int, string>
