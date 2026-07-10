@@ -7,6 +7,7 @@ import { addressRoutes } from "./modules/address/routes/address.routes";
 import { memberRoutes } from "./modules/member/routes/member.routes";
 import { mediaRoutes } from "./modules/media/routes/media.routes";
 import { rewardRoutes } from "./modules/reward/routes/reward.routes";
+import { tierRoutes } from "./modules/tier/routes/tier.routes";
 
 const app = new Elysia()
   .get("/", () => "Hello Elysia")
@@ -18,6 +19,7 @@ const app = new Elysia()
   .use(memberRoutes)
   .use(mediaRoutes)
   .use(rewardRoutes)
+  .use(tierRoutes)
   .listen({
     port: 3000,
     hostname: '0.0.0.0'

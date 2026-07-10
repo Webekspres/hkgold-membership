@@ -38,6 +38,8 @@ tags:
     description: Content (news & events)
   - name: Reward
     description: Reward catalog & redemptions
+  - name: Tier
+    description: Tier levels & member tier management
 
 components:
   securitySchemes:
@@ -691,6 +693,97 @@ components:
             $ref: '#/components/schemas/RewardCatalogItemData'
         pagination:
           $ref: '#/components/schemas/PaginationMeta'
+
+    TierLevelData:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        tierCode:
+          type: string
+          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+          example: "GOLD"
+        tierName:
+          type: string
+          example: "Gold"
+        minPoints:
+          type: number
+          example: 0
+        maxPoints:
+          type: number
+          example: 999999
+        color:
+          type: string
+          example: "#f5c842"
+        icon:
+          type: string
+          example: "gold"
+      required:
+        - id
+        - tierCode
+        - tierName
+        - minPoints
+        - maxPoints
+
+    ConversionRuleData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        transactionTypeId:
+          type: number
+          example: 1
+        transactionTypeKey:
+          type: string
+          example: "PURCHASE"
+        transactionTypeName:
+          type: string
+          example: "Pembelian Emas"
+        tierMemberId:
+          type: number
+          example: 2
+        conversionNominal:
+          type: number
+          format: decimal
+          example: 1.25
+      required:
+        - id
+        - transactionTypeId
+        - transactionTypeKey
+        - transactionTypeName
+        - tierMemberId
+        - conversionNominal
+
+    TierWithConversionRules:
+      allOf:
+        - $ref: '#/components/schemas/TierLevelData'
+        - type: object
+          properties:
+            conversionRules:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConversionRuleData'
+          required:
+            - conversionRules
+
+    MemberTierData:
+      allOf:
+        - $ref: '#/components/schemas/TierLevelData'
+        - type: object
+          properties:
+            currentPoints:
+              type: number
+              example: 12500
+            conversionRules:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConversionRuleData'
+          required:
+            - currentPoints
+            - conversionRules
 
 paths:
   /api/health:
