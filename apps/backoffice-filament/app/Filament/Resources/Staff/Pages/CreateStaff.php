@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Staff\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Enums\Role;
 use App\Filament\Resources\Staff\StaffResource;
 use App\Filament\Resources\Staff\Support\StaffFormSupport;
 use App\Models\Staff;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CreateStaff extends CreateRecord
@@ -21,7 +25,7 @@ class CreateStaff extends CreateRecord
     {
         $state = StaffFormSupport::formState($this->form);
 
-        return DB::transaction(function () use ($data, $state): Staff {
+        $record = DB::transaction(function () use ($data, $state): Staff {
             $profilePhotoId = StaffFormSupport::storeProfilePhoto(
                 $state['profile_photo'] ?? null,
                 (string) $state['full_name'],
@@ -42,5 +46,16 @@ class CreateStaff extends CreateRecord
                 'employee_code' => $data['employee_code'],
             ]);
         });
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::StaffCreated,
+            description: 'Membuat data staff baru',
+            auditable: $record,
+            ipAddress: (string) request()->ip(),
+            after: ActivityLogSanitizer::extract($record),
+            actor: Auth::user(),
+        );
+
+        return $record;
     }
 }

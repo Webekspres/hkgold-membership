@@ -9,6 +9,7 @@ use App\Filament\Resources\PointAnnualArchives\PointAnnualArchiveResource;
 use App\Filament\Resources\PointAnnualArchives\Widgets\PeriodFrozenPointsChartWidget;
 use App\Filament\Resources\PointAnnualArchives\Widgets\PeriodTierDistributionChartWidget;
 use App\Filament\Resources\PointAnnualArchives\Widgets\PeriodTotalMembersChartWidget;
+use App\Filament\Resources\PointAnnualArchives\Widgets\PointAnnualArchiveLastRunStatusWidget;
 use Filament\Resources\Pages\ListRecords;
 
 class ListPointAnnualArchives extends ListRecords
@@ -28,6 +29,7 @@ class ListPointAnnualArchives extends ListRecords
     public function getHeaderWidgets(): array
     {
         return [
+            PointAnnualArchiveLastRunStatusWidget::class,
             PeriodTotalMembersChartWidget::class,
             PeriodFrozenPointsChartWidget::class,
             PeriodTierDistributionChartWidget::class,

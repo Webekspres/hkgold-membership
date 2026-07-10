@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Staff extends Model
 {
     /** @use HasFactory<StaffFactory> */
-    use HasFactory, SoftDeletes;
+    use HasAuditableActivityLogs, HasFactory, SoftDeletes;
 
     protected $table = 'staffs';
 

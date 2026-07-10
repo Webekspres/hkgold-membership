@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Contents;
 
+use App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager;
 use App\Filament\Resources\Contents\Pages\CreateContent;
 use App\Filament\Resources\Contents\Pages\EditContent;
 use App\Filament\Resources\Contents\Pages\ListContents;
@@ -46,7 +47,9 @@ class ContentResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ActivityLogsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -9,6 +9,7 @@ use App\Models\PointInjectionBatch;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -68,8 +69,11 @@ class PointInjectionBatchesTable
                     ->label('Status Penyelesaian')
                     ->trueLabel('Selesai')
                     ->falseLabel('Belum Diselesaikan')
+                    ->placeholder('Semua')
                     ->native(false),
-            ])
+            ], layout: FiltersLayout::Hidden)
+            ->deferFilters(false)
+            ->hiddenFilterIndicators()
             ->actions([
                 Action::make('viewBatch')
                     ->label('Lihat')

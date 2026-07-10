@@ -60,6 +60,19 @@ enum NotificationPlatform {
   WEB_ADMIN_IN_APP // Format khusus database-notifications milik Laravel Filament
 }
 
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum CampaignStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum ContentType {
   NEWS  // Artikel berita seputar emas & promo ritel
   EVENT // Jadwal kalender pameran emas luar kota
@@ -293,6 +306,7 @@ model User {
   member         Member?
   trustedDevices TrustedDevice[]
   notifications  Notification[]
+  notificationCampaigns NotificationCampaign[]
   activityLogs   ActivityLog[]
 
   @@map("users")
@@ -426,20 +440,50 @@ model OtpVerification {
 }
 
 model Notification {
-  id          String               @id @default(uuid()) @db.Char(36)
-  userId      String?              @map("user_id") @db.Char(36)
-  title       String               @map("title") @db.VarChar(150)
-  body        String               @map("body") @db.Text
-  platform    NotificationPlatform @map("platform")
-  dataPayload Json?                @map("data_payload")
-  readAt      DateTime?            @map("read_at")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
+  id              String                     @id @default(uuid()) @db.Char(36)
+  userId          String?                    @map("user_id") @db.Char(36)
+  notificationKey String?                    @map("notification_key") @db.Char(36)
+  title           String                     @map("title") @db.VarChar(150)
+  body            String                     @map("body") @db.Text
+  platform        NotificationPlatform       @map("platform")
+  status          NotificationDeliveryStatus @default(PENDING) @map("status")
+  dataPayload     Json?                      @map("data_payload")
+  readAt          DateTime?                  @map("read_at")
+  sentAt          DateTime?                  @map("sent_at")
+  failedAt        DateTime?                  @map("failed_at")
+  errorMessage    String?                    @map("error_message") @db.VarChar(500)
+  attemptCount    Int                        @default(0) @map("attempt_count")
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
 
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
+  @@index([userId, platform, createdAt])
+  @@index([status, createdAt])
+  @@unique([userId, notificationKey, platform])
   @@map("notifications")
+}
+
+model NotificationCampaign {
+  id            String         @id @default(uuid()) @db.Char(36)
+  title         String         @map("title") @db.VarChar(150)
+  body          String         @map("body") @db.Text
+  platforms     Json           @map("platforms")
+  criteriaJson  Json?          @map("criteria_json")
+  targetedCount Int            @default(0) @map("targeted_count")
+  acceptedCount Int?           @map("accepted_count")
+  failedCount   Int?           @map("failed_count")
+  status        CampaignStatus @default(PENDING) @map("status")
+  errorMessage  String?        @map("error_message") @db.VarChar(500)
+  createdById   String?        @map("created_by_id") @db.Char(36)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("notification_campaigns")
 }
 
 // =============================================================================
@@ -686,6 +730,7 @@ model PointAnnualArchivePeriod {
   name                String               @map("name") @db.VarChar(150)
   totalMembers        Int                  @default(0) @map("total_members")
   frozenPointsTotal   Int                  @default(0) @map("frozen_points_total")
+  earnedPointsTotal   Int                  @default(0) @map("earned_points_total")
   redeemedPointsTotal Int                  @default(0) @map("redeemed_points_total")
   archivedAt          DateTime?            @map("archived_at")
   createdAt           DateTime             @default(now()) @map("created_at")

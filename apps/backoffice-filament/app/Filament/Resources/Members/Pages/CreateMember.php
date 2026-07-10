@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Members\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Enums\Role;
 use App\Filament\Resources\Members\MemberResource;
 use App\Filament\Resources\Members\Support\MemberFormSupport;
 use App\Models\Member;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CreateMember extends CreateRecord
@@ -21,7 +25,7 @@ class CreateMember extends CreateRecord
     {
         $state = MemberFormSupport::formState($this->form);
 
-        return DB::transaction(function () use ($data, $state): Member {
+        $record = DB::transaction(function () use ($data, $state): Member {
             $profilePhotoId = MemberFormSupport::storeProfilePhoto(
                 $state['profile_photo'] ?? null,
                 (string) $state['full_name'],
@@ -52,5 +56,16 @@ class CreateMember extends CreateRecord
                 'is_suspended' => $data['is_suspended'] ?? false,
             ]);
         });
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::MemberCreated,
+            description: 'Membuat data anggota baru',
+            auditable: $record,
+            ipAddress: (string) request()->ip(),
+            after: ActivityLogSanitizer::extract($record),
+            actor: Auth::user(),
+        );
+
+        return $record;
     }
 }

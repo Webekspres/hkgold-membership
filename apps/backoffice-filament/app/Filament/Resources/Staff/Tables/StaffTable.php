@@ -64,6 +64,8 @@ class StaffTable
             ->filters([
                 SelectFilter::make('role')
                     ->label('Role')
+                    ->placeholder('Semua role')
+                    ->native(false)
                     ->options(StaffRoleSupport::staffRoleOptions())
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
@@ -72,8 +74,9 @@ class StaffTable
                             fn (Builder $userQuery): Builder => $userQuery->where('role', $data['value']),
                         ),
                     )),
-            ])
-            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ], layout: FiltersLayout::Hidden)
+            ->deferFilters(false)
+            ->hiddenFilterIndicators()
             ->recordActions([
                 ViewAction::make(),
             ]);

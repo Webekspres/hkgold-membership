@@ -23,46 +23,101 @@ class UserSeeder extends Seeder
         }
 
         $mediaIds = Media::query()->pluck('id')->all();
-        $usedProfilePhotoIds = [];
+        $usedProfilePhotoIds = User::query()
+            ->whereNotNull('profile_photo_id')
+            ->pluck('profile_photo_id')
+            ->all();
 
-        $superAdminPhotoId = $mediaIds[0] ?? null;
+        $availablePhotoIds = array_values(array_diff($mediaIds, $usedProfilePhotoIds));
 
-        $superAdmin = User::factory()->superAdmin()->create([
-            'profile_photo_id' => $superAdminPhotoId,
-        ]);
+        $superAdminUser = $this->seedFixedUser(
+            email: 'superadmin@example.com',
+            role: Role::SuperAdmin,
+            fullName: 'Super Admin HK Gold',
+            profilePhotoId: array_shift($availablePhotoIds),
+        );
 
-        $shieldSuperAdminRole = SpatieRole::query()
-            ->where('name', Utils::getSuperAdminName())
-            ->first();
+        $this->assignShieldRoleByName($superAdminUser, strtolower(Role::SuperAdmin->value));
 
-        if ($shieldSuperAdminRole !== null) {
-            $superAdmin->assignRole($shieldSuperAdminRole);
+        $administratorUser = $this->seedFixedUser(
+            email: 'administrator@example.com',
+            role: Role::Administrator,
+            fullName: 'Administrator HK Gold',
+            profilePhotoId: array_shift($availablePhotoIds),
+        );
+
+        $this->assignShieldRoleByName($administratorUser, Utils::getSuperAdminName());
+
+        if (User::query()->where('role', '!=', Role::Member)->whereNotIn('email', [
+            'superadmin@example.com',
+            'administrator@example.com',
+        ])->count() > 0) {
+            return;
         }
 
-        if ($superAdminPhotoId !== null) {
-            $usedProfilePhotoIds[] = $superAdminPhotoId;
-        }
+        User::factory()->count(3)->staffRole(Role::StoreManager)->create()
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
+        User::factory()->count(2)->staffRole(Role::Marketing)->create()
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
 
-        User::factory()->count(1)->staffRole(Role::Administrator)->create();
-        User::factory()->count(3)->staffRole(Role::StoreManager)->create();
-        User::factory()->count(2)->staffRole(Role::Marketing)->create();
+        $memberUsedPhotoIds = User::query()
+            ->whereNotNull('profile_photo_id')
+            ->pluck('profile_photo_id')
+            ->all();
 
         User::factory()
             ->count(12)
             ->member()
-            ->create(function () use ($mediaIds, &$usedProfilePhotoIds): array {
-                $profilePhotoId = null;
+            ->create(function () use ($mediaIds, &$memberUsedPhotoIds): array {
+                $available = array_values(array_diff($mediaIds, $memberUsedPhotoIds));
 
-                if (fake()->boolean(30)) {
-                    $available = array_values(array_diff($mediaIds, $usedProfilePhotoIds));
-
-                    if ($available !== []) {
-                        $profilePhotoId = fake()->randomElement($available);
-                        $usedProfilePhotoIds[] = $profilePhotoId;
-                    }
+                if ($available === []) {
+                    return ['profile_photo_id' => null];
                 }
 
+                $profilePhotoId = fake()->randomElement($available);
+                $memberUsedPhotoIds[] = $profilePhotoId;
+
                 return ['profile_photo_id' => $profilePhotoId];
-            });
+            })
+            ->each(fn (User $user): User => $this->assignShieldRole($user));
+    }
+
+    private function seedFixedUser(
+        string $email,
+        Role $role,
+        string $fullName,
+        ?string $profilePhotoId,
+    ): User {
+        return User::query()->updateOrCreate(
+            ['email' => $email],
+            [
+                'password' => 'password123',
+                'full_name' => $fullName,
+                'role' => $role,
+                'profile_photo_id' => $profilePhotoId,
+                'is_active' => true,
+            ],
+        );
+    }
+
+    private function assignShieldRoleByName(User $user, string $roleName): User
+    {
+        $shieldRole = SpatieRole::query()->where('name', $roleName)->first();
+
+        if ($shieldRole !== null && ! $user->hasRole($shieldRole)) {
+            $user->syncRoles([$shieldRole]);
+        }
+
+        return $user;
+    }
+
+    private function assignShieldRole(User $user): User
+    {
+        if (! $user->role instanceof Role) {
+            return $user;
+        }
+
+        return $this->assignShieldRoleByName($user, strtolower($user->role->value));
     }
 }

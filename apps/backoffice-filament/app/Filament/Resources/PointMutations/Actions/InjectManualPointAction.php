@@ -31,14 +31,15 @@ class InjectManualPointAction
             ->label('Tambah Poin')
             ->icon('heroicon-o-plus-circle')
             ->color('primary')
-            ->modalWidth(Width::ExtraLarge)
+            ->goldStyle()
+            ->modalWidth(Width::TwoExtraLarge)
             ->modalHeading('Suntik Poin Manual')
             ->closeModalByClickingAway(false)
             ->modalSubmitActionLabel('Konfirmasi Suntik Poin')
             ->steps([
                 Step::make('Data Transaksi')
                     ->description('Isi data transaksi member')
-                    ->columns(1)
+                    ->columns(2)
                     ->schema(self::inputSchema())
                     ->afterValidation(function (Get $get): void {
                         $data = [
@@ -65,7 +66,7 @@ class InjectManualPointAction
                     }),
                 Step::make('Konfirmasi')
                     ->description('Periksa ringkasan sebelum menyimpan')
-                    ->columns(1)
+                    ->columns(2)
                     ->schema([
                         Placeholder::make('summary')
                             ->label('Ringkasan transaksi')

@@ -20,6 +20,7 @@ class PointAnnualArchivePeriod extends Model
         'name',
         'total_members',
         'frozen_points_total',
+        'earned_points_total',
         'redeemed_points_total',
         'archived_at',
     ];
@@ -30,6 +31,7 @@ class PointAnnualArchivePeriod extends Model
             'archive_year' => 'integer',
             'total_members' => 'integer',
             'frozen_points_total' => 'integer',
+            'earned_points_total' => 'integer',
             'redeemed_points_total' => 'integer',
             'archived_at' => 'datetime',
         ];
@@ -75,5 +77,15 @@ class PointAnnualArchivePeriod extends Model
         }
 
         return (($this->redeemed_points_total - $prev->redeemed_points_total) / $prev->redeemed_points_total) * 100;
+    }
+
+    public function getEarnedPointsGrowthPercent(): ?float
+    {
+        $prev = $this->getPreviousPeriod();
+        if ($prev === null || $prev->earned_points_total === 0) {
+            return null;
+        }
+
+        return (($this->earned_points_total - $prev->earned_points_total) / $prev->earned_points_total) * 100;
     }
 }

@@ -13,11 +13,12 @@ return new class extends Migration
         Schema::create('contents', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('type');
-            $table->string('title', 200);
+            $table->string('title', 200)->nullable();
             $table->string('slug', 200)->unique();
-            $table->longText('body_content');
+            $table->longText('body_content')->nullable();
             $table->dateTime('event_date')->nullable();
             $table->string('status', 20)->default('draft');
+            $table->boolean('is_staged')->default(true);
             $table->timestamps();
         });
     }

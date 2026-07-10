@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Rewards;
 
+use App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager;
 use App\Filament\Resources\Rewards\Pages\CreateReward;
 use App\Filament\Resources\Rewards\Pages\EditReward;
 use App\Filament\Resources\Rewards\Pages\ListRewards;
@@ -57,6 +58,7 @@ class RewardResource extends Resource
     {
         return [
             BranchStocksRelationManager::class,
+            ActivityLogsRelationManager::class,
         ];
     }
 

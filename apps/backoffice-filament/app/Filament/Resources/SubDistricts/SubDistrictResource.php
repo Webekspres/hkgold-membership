@@ -9,11 +9,13 @@ use App\Filament\Resources\SubDistricts\Schemas\SubDistrictForm;
 use App\Filament\Resources\SubDistricts\Tables\SubDistrictsTable;
 use App\Models\SubDistrict;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class SubDistrictResource extends Resource
 {
@@ -32,6 +34,13 @@ class SubDistrictResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'nama';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->hasRole(Utils::getSuperAdminName());
+    }
 
     public static function form(Schema $schema): Schema
     {

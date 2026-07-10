@@ -127,9 +127,11 @@ class ViewPointAnnualArchive extends ViewRecord implements HasTable
             'archived_at' => $record->archived_at?->translatedFormat('d M Y, H:i') ?? 'Belum diarsipkan',
             'total_members' => number_format($record->total_members, 0, ',', '.'),
             'frozen_points_total' => number_format($record->frozen_points_total, 0, ',', '.'),
+            'earned_points_total' => number_format($record->earned_points_total, 0, ',', '.'),
             'redeemed_points_total' => number_format($record->redeemed_points_total, 0, ',', '.'),
             'members_growth' => $record->getMembersGrowthPercent(),
             'frozen_growth' => $record->getFrozenPointsGrowthPercent(),
+            'earned_growth' => $record->getEarnedPointsGrowthPercent(),
             'redeemed_growth' => $record->getRedeemedPointsGrowthPercent(),
         ];
     }
