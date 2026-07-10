@@ -333,6 +333,7 @@ model Member {
   highestPoint         Int        @default(0) @map("highest_point")
   lastActivityAt       DateTime   @default(now()) @map("last_activity_at")
   isSuspended          Boolean    @default(false) @map("is_suspended")
+  birthDate            DateTime?  @map("birth_date")
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
   deletedAt            DateTime?  @map("deleted_at")

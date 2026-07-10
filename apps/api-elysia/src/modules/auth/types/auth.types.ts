@@ -17,6 +17,13 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+// Field profil pada tabel User yang boleh diubah pemiliknya sendiri.
+// profilePhotoId di-set null untuk menghapus foto profil.
+export interface UpdateUserProfileRequest {
+  fullName?: string;
+  profilePhotoId?: string | null;
+}
+
 export interface UserData {
   id: string;
   email: string;

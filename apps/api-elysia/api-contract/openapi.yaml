@@ -1,0 +1,2110 @@
+openapi: 3.0.3
+info:
+  title: HK Gold Membership API
+  description: |
+    API backend untuk aplikasi mobile membership HK Gold.
+
+    ## Authentication
+    Sebagian besar endpoint memerlukan JWT token yang didapat dari `/api/auth/login` atau `/api/auth/register`.
+
+    Format header: `Authorization: Bearer <token>`
+
+  version: 1.0.0
+  contact:
+    name: HK Gold Dev Team
+    email: dev@hkgold.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication & authorization
+  - name: Member
+    description: Member profile management
+  - name: Media
+    description: Media upload & retrieval
+  - name: Address
+    description: Address management
+  - name: Branch
+    description: Branch information
+  - name: Content
+    description: Content (news & events)
+  - name: Reward
+    description: Reward catalog & redemptions
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token dari endpoint login/register
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Status operasi
+        message:
+          type: string
+          description: Pesan deskriptif
+        data:
+          type: object
+          description: Data response (opsional)
+      required:
+        - success
+        - message
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message"
+      required:
+        - success
+        - message
+
+    PaginationMeta:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+          description: Base64 encoded cursor untuk halaman berikutnya
+        hasMore:
+          type: boolean
+          description: Apakah masih ada data lanjutan
+        limit:
+          type: number
+          description: Jumlah item per halaman
+      required:
+        - nextCursor
+        - hasMore
+        - limit
+
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, error]
+          example: healthy
+        database:
+          type: string
+          enum: [connected, disconnected]
+          example: connected
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-07-10T04:30:00.000Z"
+      required:
+        - status
+        - database
+        - timestamp
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "password123"
+        fullName:
+          type: string
+          example: "John Doe"
+        phoneNumber:
+          type: string
+          description: "Format Indonesia: 08xxx atau +62xxx"
+          example: "081234567890"
+      required:
+        - email
+        - password
+        - fullName
+        - phoneNumber
+
+    LoginRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: "Email, nomor HP, atau member number"
+          example: "081234567890"
+        password:
+          type: string
+          format: password
+          example: "password123"
+      required:
+        - identifier
+        - password
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          example: "oldpassword123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "newpassword456"
+      required:
+        - oldPassword
+        - newPassword
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      required:
+        - refreshToken
+
+    UserData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [ADMINISTRATOR, SUPERADMIN, MARKETING, STORE_MANAGER, MEMBER]
+        isActive:
+          type: boolean
+
+    MemberData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberNumber:
+          type: string
+          example: "HKA0000001"
+        phoneNumber:
+          type: string
+          example: "+6281234567890"
+        currentTier:
+          type: string
+          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+        pointBalance:
+          type: number
+          example: 1500
+        isSuspended:
+          type: boolean
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/UserData'
+        member:
+          $ref: '#/components/schemas/MemberData'
+      required:
+        - accessToken
+        - refreshToken
+        - user
+        - member
+
+    MemberProfileData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberNumber:
+          type: string
+          example: "HKA0000001"
+        phoneNumber:
+          type: string
+          example: "+6281234567890"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-05-15"
+        currentTier:
+          type: string
+          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+        pointBalance:
+          type: number
+          example: 1500
+        highestPoint:
+          type: number
+          example: 2000
+        isSuspended:
+          type: boolean
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            fullName:
+              type: string
+            role:
+              type: string
+            isActive:
+              type: boolean
+            profilePhoto:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                fileUrl:
+                  type: string
+                  format: uri
+        address:
+          $ref: '#/components/schemas/AddressDetailData'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateMemberProfileRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: "John Doe Updated"
+        email:
+          type: string
+          format: email
+          example: "newemail@example.com"
+        phoneNumber:
+          type: string
+          description: "Format +62xxx atau 08xxx"
+          example: "081234567891"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-05-15"
+        profilePhotoId:
+          type: string
+          format: uuid
+          nullable: true
+        address:
+          $ref: '#/components/schemas/UpdateAddressRequest'
+
+    MediaData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        caption:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+          example: "1720587000_abc123.jpg"
+        fileType:
+          type: string
+          example: "image/jpeg"
+        fileUrl:
+          type: string
+          format: uri
+          example: "http://localhost:9002/mala-emas-media/1720587000_abc123.jpg"
+        fileSize:
+          type: number
+          example: 524288
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AddressRegionData:
+      type: object
+      properties:
+        villageId:
+          type: number
+          example: 1234
+        villageName:
+          type: string
+          example: "Kelurahan ABC"
+        subDistrictName:
+          type: string
+          example: "Kecamatan XYZ"
+        cityName:
+          type: string
+          example: "Jakarta Selatan"
+        provinceName:
+          type: string
+          example: "DKI Jakarta"
+
+    AddressDetailData:
+      type: object
+      nullable: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        street:
+          type: string
+          example: "Jl. Sudirman No. 123"
+        postalCodeId:
+          type: number
+          example: 456
+        kodepos:
+          type: string
+          example: "12190"
+        region:
+          $ref: '#/components/schemas/AddressRegionData'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateAddressRequest:
+      type: object
+      properties:
+        villageId:
+          type: number
+          example: 1234
+        postalCodeId:
+          type: number
+          example: 456
+        street:
+          type: string
+          example: "Jl. Sudirman No. 123"
+      required:
+        - villageId
+        - postalCodeId
+        - street
+
+    UpdateAddressRequest:
+      type: object
+      properties:
+        villageId:
+          type: number
+          example: 1234
+        postalCodeId:
+          type: number
+          example: 456
+        street:
+          type: string
+          example: "Jl. Sudirman No. 123 (updated)"
+
+    BranchImageData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileUrl:
+          type: string
+          format: uri
+        sortOrder:
+          type: number
+          example: 0
+
+    BranchDetailData:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        branchCode:
+          type: string
+          example: "HK01"
+        name:
+          type: string
+          example: "HK Gold Jakarta"
+        address:
+          type: string
+          example: "Jl. Sudirman No. 123, Jakarta Pusat"
+        phone:
+          type: string
+          nullable: true
+          example: "021-12345678"
+        locationUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://maps.google.com/..."
+        isOnlineWarehouse:
+          type: boolean
+          example: false
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchImageData'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BranchListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchDetailData'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ContentCoverImageData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileUrl:
+          type: string
+          format: uri
+        sortOrder:
+          type: number
+          example: 0
+
+    ContentDetailData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [NEWS, EVENT]
+          example: "NEWS"
+        title:
+          type: string
+          example: "Promo Emas Akhir Tahun"
+        slug:
+          type: string
+          example: "promo-emas-akhir-tahun"
+        bodyContent:
+          type: string
+          example: "<p>Konten artikel...</p>"
+        eventDate:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [draft, archived, published]
+          example: "published"
+        coverImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentCoverImageData'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentDetailData'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    RewardCategoryData:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        name:
+          type: string
+          example: "E-Voucher"
+        slug:
+          type: string
+          example: "e-voucher"
+      required:
+        - id
+        - name
+        - slug
+
+    RewardBranchStockData:
+      type: object
+      properties:
+        branchId:
+          type: number
+          example: 1
+        branchName:
+          type: string
+          example: "HK Gold Jakarta Pusat"
+        subdistrict:
+          type: string
+          example: "Kecamatan Setiabudi"
+        city:
+          type: string
+          example: "Jakarta Selatan"
+        locationUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://maps.google.com/?q=-6.2088,106.8456"
+        actualStock:
+          type: number
+          example: 10
+        heldStock:
+          type: number
+          example: 2
+      required:
+        - branchId
+        - branchName
+        - subdistrict
+        - city
+        - actualStock
+        - heldStock
+
+    RewardCatalogItemData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440050"
+        sku:
+          type: string
+          example: "EVC-001"
+        name:
+          type: string
+          example: "Voucher Belanja Rp 100.000"
+        categoryId:
+          type: number
+          example: 1
+        categoryName:
+          type: string
+          example: "E-Voucher"
+        categorySlug:
+          type: string
+          example: "e-voucher"
+        pointsRequired:
+          type: number
+          example: 2500
+        stockRemaining:
+          type: number
+          example: 8
+          description: "Total available stock across all branches (actualStock - heldStock)"
+        image:
+          type: string
+          format: uri
+          nullable: true
+          example: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+      required:
+        - id
+        - sku
+        - name
+        - categoryId
+        - categoryName
+        - categorySlug
+        - pointsRequired
+        - stockRemaining
+
+    RewardDetailData:
+      allOf:
+        - $ref: '#/components/schemas/RewardCatalogItemData'
+        - type: object
+          properties:
+            description:
+              type: string
+              example: "Voucher belanja senilai Rp 100.000 yang dapat digunakan di merchant partner HK Gold."
+            images:
+              type: array
+              items:
+                type: string
+                format: uri
+              example:
+                - "http://localhost:9002/mala-emas-media/reward-evc001-1.jpg"
+                - "http://localhost:9002/mala-emas-media/reward-evc001-2.jpg"
+            branchStocks:
+              type: array
+              items:
+                $ref: '#/components/schemas/RewardBranchStockData'
+          required:
+            - description
+            - images
+            - branchStocks
+
+    RewardCategoryGroupData:
+      allOf:
+        - $ref: '#/components/schemas/RewardCategoryData'
+        - type: object
+          properties:
+            rewards:
+              type: array
+              items:
+                $ref: '#/components/schemas/RewardCatalogItemData'
+          required:
+            - rewards
+
+    RewardListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RewardCatalogItemData'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Cek kesehatan sistem dan koneksi database
+      security: []
+      responses:
+        '200':
+          description: Sistem sehat
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/HealthCheckResponse'
+              example:
+                success: true
+                message: "System healthy"
+                data:
+                  status: "healthy"
+                  database: "connected"
+                  timestamp: "2026-07-10T04:30:00.000Z"
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Database connection failed"
+
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register member baru
+      description: Register member baru dengan email, password, fullName, phoneNumber
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: "john.doe@example.com"
+              password: "password123"
+              fullName: "John Doe"
+              phoneNumber: "081234567890"
+      responses:
+        '200':
+          description: Registrasi sukses
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+              example:
+                success: true
+                message: "Registrasi berhasil"
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "john.doe@example.com"
+                    fullName: "John Doe"
+                    role: "MEMBER"
+                    isActive: true
+                  member:
+                    id: "550e8400-e29b-41d4-a716-446655440001"
+                    memberNumber: "HKA0000001"
+                    phoneNumber: "+6281234567890"
+                    currentTier: "SILVER"
+                    pointBalance: 0
+                    isSuspended: false
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Email sudah terdaftar"
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login member
+      description: Login dengan identifier (email/nomor HP/member number) dan password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              identifier: "081234567890"
+              password: "password123"
+      responses:
+        '200':
+          description: Login sukses
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+              example:
+                success: true
+                message: "Login berhasil"
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "john.doe@example.com"
+                    fullName: "John Doe"
+                    role: "MEMBER"
+                    isActive: true
+                  member:
+                    id: "550e8400-e29b-41d4-a716-446655440001"
+                    memberNumber: "HKA0000001"
+                    phoneNumber: "+6281234567890"
+                    currentTier: "SILVER"
+                    pointBalance: 1500
+                    isSuspended: false
+        '401':
+          description: Unauthorized (wrong password/user not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Password salah"
+        '403':
+          description: Forbidden (account disabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Akun Anda telah dinonaktifkan"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/change-password:
+    post:
+      tags:
+        - Auth
+      summary: Ganti password
+      description: Ganti password dengan konfirmasi password lama. Memerlukan Bearer token.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              oldPassword: "oldpassword123"
+              newPassword: "newpassword456"
+      responses:
+        '200':
+          description: Password berhasil diubah
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+              example:
+                success: true
+                message: "Password berhasil diubah"
+        '401':
+          description: Unauthorized (token invalid atau password salah)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Password lama salah"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh JWT token
+      description: Mendapatkan access token baru menggunakan refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+              example:
+                success: true
+                message: "Token berhasil diperbarui"
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Unauthorized (refresh token tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Refresh token tidak valid"
+        '400':
+          description: Bad request (refreshToken kosong)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/member/me:
+    get:
+      tags:
+        - Member
+      summary: Ambil profil member sendiri
+      description: Mendapatkan data profil lengkap member berdasarkan token yang login
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profil berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MemberProfileData'
+              example:
+                success: true
+                message: "Profil member berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440001"
+                  memberNumber: "HKA0000001"
+                  phoneNumber: "+6281234567890"
+                  birthDate: "1990-05-15T00:00:00.000Z"
+                  currentTier: "GOLD"
+                  pointBalance: 15000
+                  highestPoint: 20000
+                  isSuspended: false
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "john.doe@example.com"
+                    fullName: "John Doe"
+                    role: "MEMBER"
+                    isActive: true
+                    profilePhoto:
+                      id: "550e8400-e29b-41d4-a716-446655440010"
+                      fileUrl: "http://localhost:9002/mala-emas-media/1720587000_abc123.jpg"
+                  address:
+                    id: "550e8400-e29b-41d4-a716-446655440020"
+                    street: "Jl. Sudirman No. 123"
+                    postalCodeId: 456
+                    kodepos: "12190"
+                    region:
+                      villageId: 1234
+                      villageName: "Kelurahan Karet"
+                      subDistrictName: "Kecamatan Setiabudi"
+                      cityName: "Jakarta Selatan"
+                      provinceName: "DKI Jakarta"
+                    createdAt: "2026-06-01T04:30:00.000Z"
+                    updatedAt: "2026-06-01T04:30:00.000Z"
+                  createdAt: "2026-06-01T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Member tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Member tidak ditemukan"
+    patch:
+      tags:
+        - Member
+      summary: Update profil member
+      description: |
+        Update profil member sendiri. Field yang bisa diupdate:
+        - fullName
+        - email (unique)
+        - phoneNumber (unique, format +62xxx)
+        - birthDate (ISO 8601)
+        - profilePhotoId
+        - address
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberProfileRequest'
+            example:
+              fullName: "John Doe Updated"
+              email: "john.updated@example.com"
+              phoneNumber: "081234567891"
+              birthDate: "1990-05-15"
+              address:
+                villageId: 1234
+                postalCodeId: 456
+                street: "Jl. Sudirman No. 456"
+      responses:
+        '200':
+          description: Profil berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MemberProfileData'
+              example:
+                success: true
+                message: "Profil member berhasil diperbarui"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440001"
+                  memberNumber: "HKA0000001"
+                  phoneNumber: "+6281234567891"
+                  birthDate: "1990-05-15T00:00:00.000Z"
+                  currentTier: "GOLD"
+                  pointBalance: 15000
+                  highestPoint: 20000
+                  isSuspended: false
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    email: "john.updated@example.com"
+                    fullName: "John Doe Updated"
+                    role: "MEMBER"
+                    isActive: true
+                  address:
+                    id: "550e8400-e29b-41d4-a716-446655440020"
+                    street: "Jl. Sudirman No. 456"
+                    postalCodeId: 456
+                    kodepos: "12190"
+                    region:
+                      villageId: 1234
+                      villageName: "Kelurahan Karet"
+                      subDistrictName: "Kecamatan Setiabudi"
+                      cityName: "Jakarta Selatan"
+                      provinceName: "DKI Jakarta"
+                  createdAt: "2026-06-01T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noChange:
+                  value:
+                    success: false
+                    message: "Tidak ada data yang diubah"
+                emailUsed:
+                  value:
+                    success: false
+                    message: "Email sudah digunakan oleh user lain"
+                phoneUsed:
+                  value:
+                    success: false
+                    message: "Nomor HP sudah digunakan oleh member lain"
+                invalidBirthDate:
+                  value:
+                    success: false
+                    message: "Format birthDate tidak valid (gunakan ISO 8601)"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/media/upload:
+    post:
+      tags:
+        - Media
+      summary: Upload media (profile picture)
+      description: |
+        Upload file gambar untuk profile picture.
+        
+        - Supported types: image/jpeg, image/jpg, image/png, image/webp
+        - Max size: 5MB
+        - Storage: MinIO (S3-compatible)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File gambar yang akan diupload
+                caption:
+                  type: string
+                  description: Caption opsional untuk media
+              required:
+                - file
+            example:
+              file: "(binary)"
+              caption: "Profile picture"
+      responses:
+        '200':
+          description: Upload berhasil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MediaData'
+              example:
+                success: true
+                message: "File berhasil diupload"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440010"
+                  caption: "Profile picture"
+                  fileName: "1720587000_abc123.jpg"
+                  fileType: "image/jpeg"
+                  fileUrl: "http://localhost:9002/mala-emas-media/1720587000_abc123.jpg"
+                  fileSize: 524288
+                  createdAt: "2026-07-10T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noFile:
+                  value:
+                    success: false
+                    message: "File tidak ditemukan di request"
+                fileTooBig:
+                  value:
+                    success: false
+                    message: "File terlalu besar. Maksimal 5MB"
+                invalidType:
+                  value:
+                    success: false
+                    message: "Tipe file tidak diizinkan. Hanya: image/jpeg, image/jpg, image/png, image/webp"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Upload gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Gagal upload ke S3: connection timeout"
+
+  /api/media/{id}:
+    get:
+      tags:
+        - Media
+      summary: Ambil media by ID
+      description: Mendapatkan metadata media berdasarkan ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID media
+          example: "550e8400-e29b-41d4-a716-446655440010"
+      responses:
+        '200':
+          description: Media ditemukan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MediaData'
+              example:
+                success: true
+                message: "Data media berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440010"
+                  caption: "Profile picture"
+                  fileName: "1720587000_abc123.jpg"
+                  fileType: "image/jpeg"
+                  fileUrl: "http://localhost:9002/mala-emas-media/1720587000_abc123.jpg"
+                  fileSize: 524288
+                  createdAt: "2026-07-10T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '404':
+          description: Media tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Media tidak ditemukan"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/address/{id}:
+    get:
+      tags:
+        - Address
+      summary: Ambil address by ID
+      description: Mendapatkan detail address berdasarkan ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID address
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      responses:
+        '200':
+          description: Address ditemukan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AddressDetailData'
+              example:
+                success: true
+                message: "Address berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440020"
+                  street: "Jl. Sudirman No. 123"
+                  postalCodeId: 456
+                  kodepos: "12190"
+                  region:
+                    villageId: 1234
+                    villageName: "Kelurahan Karet"
+                    subDistrictName: "Kecamatan Setiabudi"
+                    cityName: "Jakarta Selatan"
+                    provinceName: "DKI Jakarta"
+                  createdAt: "2026-06-01T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '404':
+          description: Address tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Address tidak ditemukan"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - Address
+      summary: Update address
+      description: Update address yang sudah ada
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID address
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAddressRequest'
+            example:
+              villageId: 1234
+              postalCodeId: 456
+              street: "Jl. Sudirman No. 456 (updated)"
+      responses:
+        '200':
+          description: Address berhasil diupdate
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AddressDetailData'
+              example:
+                success: true
+                message: "Address berhasil diperbarui"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440020"
+                  street: "Jl. Sudirman No. 456 (updated)"
+                  postalCodeId: 456
+                  kodepos: "12190"
+                  region:
+                    villageId: 1234
+                    villageName: "Kelurahan Karet"
+                    subDistrictName: "Kecamatan Setiabudi"
+                    cityName: "Jakarta Selatan"
+                    provinceName: "DKI Jakarta"
+                  createdAt: "2026-06-01T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:35:00.000Z"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noChange:
+                  value:
+                    success: false
+                    message: "Tidak ada data yang diubah"
+                villageNotFound:
+                  value:
+                    success: false
+                    message: "Village tidak ditemukan"
+        '404':
+          description: Address tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/address:
+    post:
+      tags:
+        - Address
+      summary: Buat address baru
+      description: Membuat address baru
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+            example:
+              villageId: 1234
+              postalCodeId: 456
+              street: "Jl. Sudirman No. 123"
+      responses:
+        '201':
+          description: Address berhasil dibuat
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AddressDetailData'
+              example:
+                success: true
+                message: "Address berhasil dibuat"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440020"
+                  street: "Jl. Sudirman No. 123"
+                  postalCodeId: 456
+                  kodepos: "12190"
+                  region:
+                    villageId: 1234
+                    villageName: "Kelurahan Karet"
+                    subDistrictName: "Kecamatan Setiabudi"
+                    cityName: "Jakarta Selatan"
+                    provinceName: "DKI Jakarta"
+                  createdAt: "2026-07-10T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingField:
+                  value:
+                    success: false
+                    message: "villageId dan postalCodeId wajib diisi"
+                villageNotFound:
+                  value:
+                    success: false
+                    message: "Village tidak ditemukan"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/branch/{id}:
+    get:
+      tags:
+        - Branch
+      summary: Ambil branch by ID
+      description: Mendapatkan detail branch berdasarkan ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID branch
+          example: 1
+      responses:
+        '200':
+          description: Branch ditemukan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BranchDetailData'
+              example:
+                success: true
+                message: "Branch berhasil diambil"
+                data:
+                  id: 1
+                  branchCode: "HK01"
+                  name: "HK Gold Jakarta Pusat"
+                  address: "Jl. Sudirman No. 123, Jakarta Pusat"
+                  phone: "021-12345678"
+                  locationUrl: "https://maps.google.com/?q=-6.2088,106.8456"
+                  isOnlineWarehouse: false
+                  images:
+                    - id: "550e8400-e29b-41d4-a716-446655440030"
+                      fileUrl: "http://localhost:9002/mala-emas-media/branch1_img1.jpg"
+                      sortOrder: 0
+                    - id: "550e8400-e29b-41d4-a716-446655440031"
+                      fileUrl: "http://localhost:9002/mala-emas-media/branch1_img2.jpg"
+                      sortOrder: 1
+                  createdAt: "2026-05-01T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '400':
+          description: Bad request (ID tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "ID tidak valid"
+        '404':
+          description: Branch tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Branch tidak ditemukan"
+
+  /api/branch:
+    get:
+      tags:
+        - Branch
+      summary: List branch (cursor pagination)
+      description: |
+        Mendapatkan daftar branch dengan cursor pagination.
+        
+        Cursor adalah base64-encoded object dengan format: `{"id": number, "name": string}`
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 15
+          description: Jumlah item per halaman (1-50)
+          example: 15
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Base64-encoded cursor untuk halaman berikutnya
+          example: "eyJpZCI6MTUsIm5hbWUiOiJISyBHb2xkIEpha2FydGEifQ=="
+      responses:
+        '200':
+          description: List branch berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BranchListResponse'
+              example:
+                success: true
+                message: "Daftar branch berhasil diambil"
+                data:
+                  data:
+                    - id: 1
+                      branchCode: "HK01"
+                      name: "HK Gold Jakarta Pusat"
+                      address: "Jl. Sudirman No. 123, Jakarta Pusat"
+                      phone: "021-12345678"
+                      locationUrl: "https://maps.google.com/?q=-6.2088,106.8456"
+                      isOnlineWarehouse: false
+                      images: []
+                      createdAt: "2026-05-01T04:30:00.000Z"
+                      updatedAt: "2026-07-10T04:30:00.000Z"
+                    - id: 2
+                      branchCode: "HK02"
+                      name: "HK Gold Jakarta Selatan"
+                      address: "Jl. Fatmawati No. 456, Jakarta Selatan"
+                      phone: "021-87654321"
+                      locationUrl: null
+                      isOnlineWarehouse: false
+                      images: []
+                      createdAt: "2026-05-15T04:30:00.000Z"
+                      updatedAt: "2026-07-10T04:30:00.000Z"
+                  pagination:
+                    nextCursor: "eyJpZCI6MiwibmFtZSI6IkhLIEdvbGQgSmFrYXJ0YSBTZWxhdGFuIn0="
+                    hasMore: true
+                    limit: 15
+        '400':
+          description: Bad request (limit atau cursor tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  value:
+                    success: false
+                    message: "Limit harus antara 1-50"
+                invalidCursor:
+                  value:
+                    success: false
+                    message: "Cursor tidak valid"
+
+  /api/content/{id}:
+    get:
+      tags:
+        - Content
+      summary: Ambil content by ID
+      description: Mendapatkan detail content berdasarkan ID (UUID)
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID content (UUID)
+          example: "550e8400-e29b-41d4-a716-446655440040"
+      responses:
+        '200':
+          description: Content ditemukan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ContentDetailData'
+              example:
+                success: true
+                message: "Content berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440040"
+                  type: "NEWS"
+                  title: "Promo Emas Akhir Tahun 2026"
+                  slug: "promo-emas-akhir-tahun-2026"
+                  bodyContent: "<p>Diskon hingga 15% untuk pembelian emas...</p>"
+                  eventDate: null
+                  status: "published"
+                  coverImages:
+                    - id: "550e8400-e29b-41d4-a716-446655440041"
+                      fileUrl: "http://localhost:9002/mala-emas-media/promo-emas.jpg"
+                      sortOrder: 0
+                  createdAt: "2026-06-15T04:30:00.000Z"
+                  updatedAt: "2026-07-10T04:30:00.000Z"
+        '400':
+          description: Bad request (ID tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "ID format tidak valid (harus UUID)"
+        '404':
+          description: Content tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Content tidak ditemukan"
+
+  /api/content:
+    get:
+      tags:
+        - Content
+      summary: List content (cursor pagination)
+      description: |
+        Mendapatkan daftar content dengan cursor pagination.
+        
+        - Type: NEWS atau EVENT
+        - Cursor format: base64-encoded `{"id": "uuid", "createdAt": "timestamp"}`
+      security: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [NEWS, EVENT]
+            default: NEWS
+          description: Filter berdasarkan type content
+          example: "NEWS"
+        - name: includeArchived
+          in: query
+          schema:
+            type: string
+            enum: [true, false]
+            default: "false"
+          description: Include archived content
+          example: "false"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 15
+          description: Jumlah item per halaman (1-50)
+          example: 15
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Base64-encoded cursor untuk halaman berikutnya
+          example: "eyJpZCI6ImFiYzEyMy0xMjMtNDU2Iiwic2x1ZyI6InByb21vLXRlc3QifQ=="
+      responses:
+        '200':
+          description: List content berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ContentListResponse'
+              example:
+                success: true
+                message: "Daftar content berhasil diambil"
+                data:
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440040"
+                      type: "NEWS"
+                      title: "Promo Emas Akhir Tahun 2026"
+                      slug: "promo-emas-akhir-tahun-2026"
+                      bodyContent: "<p>Diskon hingga 15% untuk pembelian emas...</p>"
+                      eventDate: null
+                      status: "published"
+                      coverImages: []
+                      createdAt: "2026-06-15T04:30:00.000Z"
+                      updatedAt: "2026-07-10T04:30:00.000Z"
+                    - id: "550e8400-e29b-41d4-a716-446655440041"
+                      type: "EVENT"
+                      title: "Pameran Emas Jakarta 2026"
+                      slug: "pameran-emas-jakarta-2026"
+                      bodyContent: "<p>Pameran emas terbesar di Jakarta...</p>"
+                      eventDate: "2026-08-20T10:00:00.000Z"
+                      status: "published"
+                      coverImages: []
+                      createdAt: "2026-07-01T04:30:00.000Z"
+                      updatedAt: "2026-07-10T04:30:00.000Z"
+                  pagination:
+                    nextCursor: "eyJpZCI6ImFiYzEyMy0xMjMtNDU2Iiwic2x1ZyI6InByb21vLXRlc3QifQ=="
+                    hasMore: true
+                    limit: 15
+        '400':
+          description: Bad request (parameter tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidType:
+                  value:
+                    success: false
+                    message: "Type harus NEWS atau EVENT"
+                invalidLimit:
+                  value:
+                    success: false
+                    message: "Limit harus antara 1-50"
+                invalidCursor:
+                  value:
+                    success: false
+                    message: "Cursor tidak valid"
+
+  /api/reward/categories:
+    get:
+      tags:
+        - Reward
+      summary: Get all reward categories
+      description: Mendapatkan semua kategori reward yang tersedia
+      security: []
+      responses:
+        '200':
+          description: Kategori reward berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RewardCategoryData'
+              example:
+                success: true
+                message: "Kategori reward berhasil diambil"
+                data:
+                  - id: 1
+                    name: "E-Voucher"
+                    slug: "e-voucher"
+                  - id: 2
+                    name: "Merchandise"
+                    slug: "merchandise"
+                  - id: 3
+                    name: "Perhiasan"
+                    slug: "perhiasan"
+
+  /api/reward/catalog:
+    get:
+      tags:
+        - Reward
+      summary: Get reward catalog grouped by categories
+      description: |
+        Mendapatkan katalog reward yang dikelompokkan berdasarkan kategori.
+
+        Bisa difilter berdasarkan kategori tertentu menggunakan categoryIds parameter.
+      security: []
+      parameters:
+        - name: categoryIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: true
+          description: Filter berdasarkan category IDs (opsional)
+          example: [1, 2]
+      responses:
+        '200':
+          description: Katalog reward berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RewardCategoryGroupData'
+              example:
+                success: true
+                message: "Katalog reward berhasil diambil"
+                data:
+                  - id: 1
+                    name: "E-Voucher"
+                    slug: "e-voucher"
+                    rewards:
+                      - id: "550e8400-e29b-41d4-a716-446655440050"
+                        sku: "EVC-001"
+                        name: "Voucher Belanja Rp 100.000"
+                        categoryId: 1
+                        categoryName: "E-Voucher"
+                        categorySlug: "e-voucher"
+                        pointsRequired: 2500
+                        stockRemaining: 8
+                        image: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                  - id: 2
+                    name: "Merchandise"
+                    slug: "merchandise"
+                    rewards:
+                      - id: "550e8400-e29b-41d4-a716-446655440052"
+                        sku: "MCH-001"
+                        name: "Tumbler HK Gold Limited Edition"
+                        categoryId: 2
+                        categoryName: "Merchandise"
+                        categorySlug: "merchandise"
+                        pointsRequired: 3500
+                        stockRemaining: 3
+                        image: "http://localhost:9002/mala-emas-media/reward-mch001.jpg"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Gagal mengambil katalog reward"
+
+  /api/reward:
+    get:
+      tags:
+        - Reward
+      summary: Get reward list with filters and pagination
+      description: |
+        Mendapatkan daftar reward dengan filter dan cursor pagination.
+
+        Filter yang tersedia:
+        - categoryIds: filter berdasarkan category IDs (array)
+        - pointsMin/pointsMax: filter berdasarkan rentang poin
+        - branchId: filter berdasarkan stok di cabang tertentu
+        - search: pencarian teks pada nama/deskripsi
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 15
+          description: Jumlah item per halaman (1-50)
+          example: 15
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Base64-encoded cursor untuk halaman berikutnya
+          example: "eyJzY3UiOiJFVkMtMDAxIiwiaWQiOiJhYmMifQ=="
+        - name: categoryIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: true
+          description: Filter berdasarkan category IDs
+          example: [1, 2]
+        - name: pointsMin
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          description: Filter minimal poin yang dibutuhkan
+          example: 1000
+        - name: pointsMax
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          description: Filter maksimal poin yang dibutuhkan
+          example: 5000
+        - name: branchId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter berdasarkan branch ID
+          example: 1
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Pencarian teks pada nama/deskripsi reward
+          example: voucher
+      responses:
+        '200':
+          description: List reward berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RewardListResponse'
+              example:
+                success: true
+                message: "Daftar reward berhasil diambil"
+                data:
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440050"
+                      sku: "EVC-001"
+                      name: "Voucher Belanja Rp 100.000"
+                      categoryId: 1
+                      categoryName: "E-Voucher"
+                      categorySlug: "e-voucher"
+                      pointsRequired: 2500
+                      stockRemaining: 8
+                      image: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                  pagination:
+                    nextCursor: "eyJzY3UiOiJFVkMtMDAyIiwiaWQiOiJkZWYifQ=="
+                    hasMore: true
+                    limit: 15
+        '400':
+          description: Bad request (parameter tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  value:
+                    success: false
+                    message: "Limit harus antara 1-50"
+                invalidCursor:
+                  value:
+                    success: false
+                    message: "Cursor tidak valid"
+
+  /api/reward/{sku}:
+    get:
+      tags:
+        - Reward
+      summary: Get reward detail by SKU
+      description: Mendapatkan detail reward lengkap termasuk gambar dan stok per cabang. Memerlukan autentikasi.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z0-9-]+$"
+          description: SKU reward (alphanumeric dengan hyphen). Contoh: EVC-001, MCH-001, PRH-001
+          example: "EVC-001"
+      responses:
+        '200':
+          description: Detail reward berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RewardDetailData'
+              example:
+                success: true
+                message: "Detail reward berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440050"
+                  sku: "EVC-001"
+                  name: "Voucher Belanja Rp 100.000"
+                  categoryId: 1
+                  categoryName: "E-Voucher"
+                  categorySlug: "e-voucher"
+                  pointsRequired: 2500
+                  stockRemaining: 8
+                  image: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                  description: "Voucher belanja senilai Rp 100.000 yang dapat digunakan di merchant partner HK Gold."
+                  images:
+                    - "http://localhost:9002/mala-emas-media/reward-evc001-1.jpg"
+                    - "http://localhost:9002/mala-emas-media/reward-evc001-2.jpg"
+                  branchStocks:
+                    - branchId: 1
+                      branchName: "HK Gold Jakarta Pusat"
+                      subdistrict: "Kecamatan Setiabudi"
+                      city: "Jakarta Selatan"
+                      locationUrl: "https://maps.google.com/?q=-6.2088,106.8456"
+                      actualStock: 10
+                      heldStock: 2
+        '401':
+          description: Unauthorized (token tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Unauthorized"
+        '404':
+          description: Reward tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Reward tidak ditemukan"

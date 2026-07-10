@@ -4,6 +4,7 @@ import {
   RegisterRequest,
   LoginRequest,
   ChangePasswordRequest,
+  UpdateUserProfileRequest,
   AuthResponse,
   UserData,
   MemberData
@@ -290,6 +291,48 @@ export class AuthService implements IAuthService {
     });
 
     return { message: 'Password berhasil diubah' };
+  }
+
+  async updateUserProfile(userId: string, data: UpdateUserProfileRequest): Promise<UserData> {
+    const { fullName, profilePhotoId } = data;
+
+    // Minimal ada satu field yang diubah
+    if (fullName === undefined && profilePhotoId === undefined) {
+      throw new Error('Tidak ada data yang diubah');
+    }
+
+    if (fullName !== undefined && fullName.trim().length === 0) {
+      throw new Error('Nama lengkap tidak boleh kosong');
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User tidak ditemukan');
+    }
+
+    // Validasi FK media jika foto profil di-set (bukan null)
+    if (profilePhotoId !== undefined && profilePhotoId !== null) {
+      const media = await prisma.media.findUnique({ where: { id: profilePhotoId } });
+      if (!media) {
+        throw new Error('Media foto profil tidak ditemukan');
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(fullName !== undefined ? { fullName: fullName.trim() } : {}),
+        ...(profilePhotoId !== undefined ? { profilePhotoId } : {})
+      }
+    });
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.fullName,
+      role: updated.role,
+      isActive: updated.isActive
+    };
   }
 
   async validateUser(identifier: string, password: string): Promise<AuthResponse> {

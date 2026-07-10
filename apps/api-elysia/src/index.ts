@@ -3,6 +3,10 @@ import { healthRoutes } from "./modules/health/routes/health.routes";
 import { authRoutes } from "./modules/auth/routes/auth.routes";
 import { branchRoutes } from "./modules/branch/routes/branch.routes";
 import { contentRoutes } from "./modules/content/routes/content.routes";
+import { addressRoutes } from "./modules/address/routes/address.routes";
+import { memberRoutes } from "./modules/member/routes/member.routes";
+import { mediaRoutes } from "./modules/media/routes/media.routes";
+import { rewardRoutes } from "./modules/reward/routes/reward.routes";
 
 const app = new Elysia()
   .get("/", () => "Hello Elysia")
@@ -10,6 +14,10 @@ const app = new Elysia()
   .use(authRoutes)
   .use(branchRoutes)
   .use(contentRoutes)
+  .use(addressRoutes)
+  .use(memberRoutes)
+  .use(mediaRoutes)
+  .use(rewardRoutes)
   .listen({
     port: 3000,
     hostname: '0.0.0.0'
