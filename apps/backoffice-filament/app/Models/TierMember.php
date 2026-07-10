@@ -34,4 +34,10 @@ class TierMember extends Model
     {
         return $this->hasMany(ConversionRule::class, 'tier_member_id');
     }
+
+    public function tierBenefits(): HasMany
+    {
+        return $this->hasMany(TierBenefit::class, 'tier_member_id')
+            ->orderBy('sort_order');
+    }
 }
