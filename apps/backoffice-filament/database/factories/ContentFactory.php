@@ -39,6 +39,12 @@ class ContentFactory extends Factory
             'slug' => Str::slug($title).'-'.fake()->unique()->numerify('###'),
             'body_content' => fake('id_ID')->paragraphs(3, true),
             'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
+            'location_address' => $type === ContentType::Event
+                ? fake('id_ID')->address()
+                : null,
+            'location_url' => $type === ContentType::Event
+                ? 'https://maps.google.com/?q='.urlencode(fake('id_ID')->city())
+                : null,
             'status' => fake()->randomElement([
                 ContentStatus::Draft,
                 ContentStatus::Archived,

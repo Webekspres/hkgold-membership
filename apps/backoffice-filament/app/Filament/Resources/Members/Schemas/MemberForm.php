@@ -13,6 +13,7 @@ use App\Models\PostalCode;
 use App\Models\Province;
 use App\Models\SubDistrict;
 use App\Models\Village;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -142,6 +143,11 @@ class MemberForm
                             ->default(TierStatus::Silver)
                             ->required()
                             ->native(false),
+                        DatePicker::make('birth_date')
+                            ->label('Tanggal lahir')
+                            ->native(false)
+                            ->maxDate(now())
+                            ->nullable(),
                         Toggle::make('is_suspended')
                             ->label('Akun ditangguhkan')
                             ->default(false)

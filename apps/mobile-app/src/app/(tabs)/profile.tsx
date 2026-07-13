@@ -10,9 +10,11 @@ import {
   Newspaper,
   Settings,
 } from "lucide-react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
 
 import { ProfileLastRewardCard } from "@/components/profile/profile-last-reward-card";
 import { ProfileMemberCard } from "@/components/profile/profile-member-card";
@@ -34,6 +36,8 @@ import { copyMemberCode } from "@/lib/clipboard/copy-member-code";
 import { toast } from "@/lib/sonner";
 import { getRewardList } from "@/services/rewards";
 
+dayjs.locale("id");
+
 const LAST_REDEEMED_REWARD = getRewardList()[0];
 
 const profileMenus: ProfileMenuItem[] = [
@@ -53,6 +57,12 @@ export default function ProfileScreen() {
   const { card } = useMyProfile();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const birthDateLabel = useMemo(() => {
+    if (!card?.birthDate) return null;
+    const parsed = dayjs(card.birthDate);
+    return parsed.isValid() ? parsed.format("D MMMM YYYY") : null;
+  }, [card?.birthDate]);
 
   function handlePressProfileMenu(item: ProfileMenuItem) {
     switch (item.key) {
@@ -114,6 +124,7 @@ export default function ProfileScreen() {
                 memberCode={card.memberNumber}
                 avatarUri={card.avatarUri}
                 avatarFallback={card.avatarFallback}
+                birthDateLabel={birthDateLabel}
                 onPressMemberCode={() => void copyMemberCode(card.memberNumber)}
               />
 

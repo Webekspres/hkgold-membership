@@ -13,6 +13,8 @@ export interface ContentDetailData {
   slug: string;
   bodyContent: string;
   eventDate: Date | null;
+  locationAddress: string | null;
+  locationUrl: string | null;
   status: 'DRAFT' | 'ARCHIVED' | 'PUBLISHED';
   coverImages: ContentCoverImageData[];
   createdAt: Date;

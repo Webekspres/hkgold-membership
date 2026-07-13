@@ -38,7 +38,31 @@ describe('Content Module - Get Detail', () => {
     expect(result?.slug).toBe('test-content-detail');
     expect(result?.bodyContent).toBe('This is test content body for detail testing.');
     expect(result?.status).toBe('PUBLISHED');
+    expect(result?.locationAddress).toBeNull();
+    expect(result?.locationUrl).toBeNull();
     expect(Array.isArray(result?.coverImages)).toBe(true);
+  });
+
+  test('EVENT detail includes location fields when set', async () => {
+    const event = await prisma.content.create({
+      data: {
+        type: 'EVENT',
+        title: 'Test Event Location',
+        slug: 'test-event-location',
+        bodyContent: 'Event body',
+        eventDate: new Date('2026-08-01T10:00:00.000Z'),
+        locationAddress: 'Gedung Serbaguna HK GOLD VIP',
+        locationUrl: 'https://maps.google.com/?q=HK+GOLD',
+        status: 'PUBLISHED',
+      },
+    });
+
+    const result = await contentService.getById(event.id);
+
+    expect(result?.locationAddress).toBe('Gedung Serbaguna HK GOLD VIP');
+    expect(result?.locationUrl).toBe('https://maps.google.com/?q=HK+GOLD');
+
+    await prisma.content.delete({ where: { id: event.id } });
   });
 
   test('Edge case 1: Non-existent UUID returns null', async () => {

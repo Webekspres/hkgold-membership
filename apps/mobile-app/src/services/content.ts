@@ -120,6 +120,8 @@ export function mapContentToEventDetail(item: ContentDetailData): EventDetail {
     imageUrl: item.coverImages[0]?.fileUrl ?? null,
     bodyContent: item.bodyContent,
     imageUrls: item.coverImages.map((img) => img.fileUrl),
+    locationAddress: item.locationAddress ?? null,
+    locationUrl: item.locationUrl ?? null,
   };
 }
 

@@ -40,6 +40,8 @@ export class ContentService implements IContentService {
       slug: content.slug,
       bodyContent: content.bodyContent,
       eventDate: content.eventDate,
+      locationAddress: content.locationAddress,
+      locationUrl: content.locationUrl,
       status: content.status as 'DRAFT' | 'ARCHIVED' | 'PUBLISHED',
       coverImages: content.contentCoverImages.map(img => ({
         id: img.id,

@@ -32,43 +32,48 @@ Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi s
 
 ## 1. Status Proyek & Roadmap
 
-### Fase saat ini (sudah selesai)
+### Fase saat ini
 
-Struktur folder sudah dievolusi (components per domain, `mocks/` + `config/` + `services/` + `types/`, routing seragam). **Seluruh layar konten member saat ini UI-only** — data dari mock, belum ada panggilan ke `apps/api-elysia`.
+Struktur `src/` stabil. **Auth + sebagian besar konten sudah wired ke `apps/api-elysia`** via `axios` + React Query. Sisa mock: home cabang terdekat, home katalog reward, redeem (tombol dummy).
 
 | Area | Status | Catatan |
 | --- | --- | --- |
 | Struktur `src/` | ✅ | Lihat §3 |
-| Home `(tabs)/index` | ✅ UI mock | Wallet card, shortcut, banner, section event/berita/cabang/reward |
-| List + detail Event | ✅ UI mock | Filter tanggal; detail: slider, lokasi, CTA maps |
-| List + detail Berita | ✅ UI mock | Filter tanggal; detail: kategori, tanggal relatif |
-| List Cabang | ✅ UI mock | Filter kota (dropdown) |
-| List + detail Reward | ✅ UI mock | Filter kategori + rentang poin; redeem dialog (UI saja) |
-| Auth login/register | ✅ UI saja | Belum wired ke API / JWT |
-| Tab Card & Profile | 🔲 placeholder | `ComingSoonScreen` |
-| CMS hub `/cms` | 🔲 placeholder | `ComingSoonScreen` |
-| Integrasi API | 🟡 | Auth sudah wired (`axios` + encrypted storage); konten lain masih mock |
-| Auth gate | ✅ | Root `_layout.tsx` redirect ke `/login` jika tidak ada token |
+| Auth login/register | ✅ API | JWT + secure store; gate di `_layout.tsx` |
+| Profile | ✅ API | `useMyProfile` / `services/member.ts` |
+| Home wallet | ✅ API | dari profile; pattern BG light |
+| Home banner | ✅ API | `usePromotionBanners` (stale 4 jam); hide jika kosong/`error` |
+| Home berita / event | ✅ API | limit 5 / 3; `staleTime` 15 menit |
+| Home cabang terdekat | 🟡 mock | API belum punya lat/lng / nearest |
+| Home katalog reward | 🟡 mock | list tab Reward sudah API |
+| List + detail Berita | ✅ API | search debounce + date filter; detail `/berita/[id]` (UUID) |
+| List + detail Event | ✅ API | sama; detail `/events/[id]`; **tanpa** lokasi/maps (schema `Content` tidak punya) |
+| List Cabang | ✅ API | `q` + filter kota; infinite scroll |
+| List + detail Reward | ✅ API | search + filter kategori/poin + **sort** sku/name/points; redeem UI dummy |
+| Tab Card | 🔲 | `ComingSoonScreen` |
+| CMS hub `/cms` | 🔲 | `ComingSoonScreen` |
 
-### Fitur UI yang sudah dibangun (mock)
+### Gap schema / kontrak (jangan asumsikan field ada)
 
-- **Home:** `MemberWalletCard`, `HomeShortcutGrid` (→ `/events`, `/berita`, `/cabang`, `/reward`), `PromotionBannerSlider`, section event/berita/cabang/reward dengan “Lihat semua”.
-- **Event:** list + `EventFilterModal` (rentang tanggal); detail pakai `ContentDetailScreen` + highlight tanggal/waktu + tombol “Lihat lokasi”.
-- **Berita:** list + filter tanggal; detail pakai `ContentDetailScreen` (tanpa CTA).
-- **Cabang:** list + `BranchCityFilterDropdown`; kartu cabang buka maps via `openLocationUrl`.
-- **Reward:** grid 2 kolom + `RewardFilterModal` (kategori + slider poin `@react-native-community/slider`); detail + stok per cabang + `RewardRedeemDialog`.
+| Kebutuhan UI | Status DB / API | Workaround sekarang |
+| --- | --- | --- |
+| Banner tap URL | ✅ `PromotionBanner.linkUrl` | Slider buka URL jika terisi |
+| Urutan banner CMS | ✅ `PromotionBanner.sortOrder` | Order `sortOrder asc` |
+| Lokasi event + CTA maps | ✅ `Content.locationAddress` + `locationUrl` | Detail event tampil alamat + tombol maps |
+| Cabang terdekat | `Branch` **tanpa** lat/lng | Home nearest tetap mock |
+| Kategori berita | `Content` **tanpa** category | Detail berita tanpa kategori |
+| `Member.birthDate` | ✅ ada di schema + migrasi | Profile tampil jika tidak null |
 
 ### Langkah berikutnya (prioritas wajar)
 
-1. Pasang `axios` + `@tanstack/react-query` + `expo-secure-store`.
-2. Implementasi auth (login API, simpan JWT, auth gate di `_layout.tsx`).
-3. Ganti isi `src/services/*` dari mock ke API; pertahankan signature fungsi facade.
-4. Tambah `services/member.ts` (wallet, tier) — home masih import `MOCK_MEMBER` & `MOCK_PROMOTION_BANNERS` langsung dari `mocks/`.
-5. Wire redeem flow ke API; tab Card & Profile; CMS hub.
+1. Wire home nearest branch + home reward catalog (butuh keputusan API / tetap mock).
+2. Redeem flow nyata (API token) — tombol sekarang toast/dummy.
+3. Tab Card (QR) + CMS hub.
+4. Setelah CMS migrasi: `linkUrl` banner, lokasi event, (opsional) lat/lng cabang, sync `birth_date`.
 
 ### Target jangka panjang (belum diimplementasi)
 
-Auth gate penuh, ledger mutasi poin, pelacakan redeem OTP, proteksi suspended member, demo mode tamu, kalender pameran terintegrasi API. Rute baru mengikuti pola grup Expo Router (`(auth)`, `(tabs)`, `(tracking)`, dll.) tanpa mengubah fondasi stack §2.
+Ledger mutasi poin, pelacakan redeem OTP, proteksi suspended di UI, demo mode tamu. Rute baru ikut pola grup Expo Router tanpa ubah fondasi stack §2.
 
 ### Fondasi teknis (ringkas)
 
@@ -99,14 +104,14 @@ Anda **wajib** mematuhi stack berikut. Jangan mengganti dengan alternatif tanpa 
 | Dropdown | react-native-element-dropdown | Filter kota cabang |
 | Dialog | @rn-primitives/dialog + RNR `dialog` | Redeem confirmation |
 
-### Wajib dipasang saat implementasi fitur terkait
+### Server state & HTTP (sudah terpasang)
 
 | Kategori | Pustaka | Digunakan untuk |
 | --- | --- | --- |
-| Server state | **@tanstack/react-query** | Cache saldo poin, ledger, katalog |
-| HTTP | **axios** | Client API dengan interceptor JWT global |
-| Secure storage | **expo-secure-store** | JWT stay logged in (Keychain / Keystore); cocok Expo Go |
-| QR digital card | **react-native-qrcode-svg** | Kartu member SVG |
+| Server state | **@tanstack/react-query** | List infinite, home cache, profile |
+| HTTP | **axios** | `src/lib/api-client.ts` + interceptor JWT |
+| Secure storage | **expo-secure-store** | JWT |
+| QR digital card | **react-native-qrcode-svg** | Kartu member (tab Card — belum) |
 
 Instal dependensi baru dengan `npx expo install <package>` agar versi kompatibel SDK 56.
 
@@ -147,10 +152,10 @@ apps/mobile-app/
     │   │   └── profile.tsx
     │   ├── events/
     │   │   ├── index.tsx        # List event
-    │   │   └── [slug].tsx       # Detail event
+    │   │   └── [id].tsx         # Detail event (UUID)
     │   ├── berita/
     │   │   ├── index.tsx
-    │   │   └── [slug].tsx
+    │   │   └── [id].tsx         # Detail berita (UUID)
     │   ├── cabang/
     │   │   └── index.tsx
     │   ├── reward/
@@ -160,7 +165,7 @@ apps/mobile-app/
     ├── components/
     │   ├── ui/                  # Komponen RNR (button, text, card, input, …)
     │   ├── auth/                # Shell & field auth
-    │   ├── shared/              # Cross-feature (gold-button, app-tabs, content-detail-*)
+    │   ├── shared/              # Cross-feature (gold-button, app-tabs, search-input, content-detail-*)
     │   ├── home/                # Section homepage
     │   ├── event/
     │   ├── berita/
@@ -169,13 +174,14 @@ apps/mobile-app/
     ├── config/                  # brand, home-shortcuts, theme (Colors/Fonts starter)
     ├── constants/
     │   └── layout/              # grid, carousel, screen-layout tokens
-    ├── mocks/                   # Fixture data (mock-*)
+    ├── mocks/                   # Fixture sisa (home nearest/catalog, dll.)
     ├── types/                   # Shared domain types
-    ├── services/                # Data facade — mock sekarang, API nanti
-    ├── hooks/                   # use-color-scheme (hardcode light), use-theme
+    ├── services/                # Facade HTTP / mock tipis
+    ├── hooks/                   # React Query hooks per domain + use-debounced-value
     ├── lib/
+    │   ├── api-client.ts        # axios + JWT interceptor
     │   ├── filters/             # filter-events, filter-news, filter-rewards, …
-    │   ├── format/              # format-event-date, format-branch-location, …
+    │   ├── format/              # format-event-date, format-news-date, …
     │   ├── utils.ts             # cn() helper
     │   ├── theme.ts             # THEME + NAV_THEME (stone)
     │   ├── date-range-filter.ts
@@ -184,6 +190,8 @@ apps/mobile-app/
 assets/                            # Di root proyek (bukan di src/)
 ├── logo/logo-hkgold.webp
 ├── media/background.webp
+├── media/pattern-horizontal.webp  # profile tier card
+├── media/pattern-vertical.webp    # auth + tier benefit
 └── mockImage/                     # Gambar fixture list/detail
 ```
 
@@ -191,10 +199,11 @@ assets/                            # Di root proyek (bukan di src/)
 
 | Lapisan | Import dari | Catatan |
 | --- | --- | --- |
-| **Screen** (`src/app/`) | `@/services/*` | Jangan import `@/mocks/*` di route — **kecuali** sementara: home memakai `MOCK_MEMBER`, `MOCK_PROMOTION_BANNERS` |
+| **Screen** (`src/app/`) | `@/hooks/*` dan/atau `@/services/*` | Jangan import `@/mocks/*` di route kecuali sisa mock (home nearest / reward catalog) |
 | **Komponen** | props dari parent | Import `@/types/*` untuk tipe props; jangan panggil service di komponen presentasional |
-| **Services** | `@/mocks/*` (sekarang) | Satu-satunya lapisan yang tahu sumber data; nanti swap ke axios/React Query |
-| **Mocks** | `@/types/*` | Export data & helper (`getEventDetailBySlug`, dll.); tipe domain di `types/` |
+| **Hooks** | `@/services/*` | React Query (`useQuery` / `useInfiniteQuery`); `staleTime` sesuai domain |
+| **Services** | `apiClient` atau `@/mocks/*` | Facade HTTP; mock hanya untuk yang belum API |
+| **Mocks** | `@/types/*` | Fixture sisa; tipe domain di `types/` |
 | **Filter/format** | `@/lib/filters/*`, `@/lib/format/*` | Pure functions; boleh dipakai screen & komponen filter modal |
 
 **Jangan** buat barrel `index.ts` untuk re-export — import langsung ke file (konvensi repo).
@@ -203,18 +212,22 @@ assets/                            # Di root proyek (bukan di src/)
 
 | File | Fungsi utama |
 | --- | --- |
-| `events.ts` | `getEventList`, `getUpcomingEvents`, `getEventBySlug` |
-| `news.ts` | `getNewsList`, `getLatestNews`, `getNewsBySlug` |
-| `branches.ts` | `getBranchList`, `getNearestBranch` |
-| `rewards.ts` | `getRewardList`, `getRewardCategories`, `getRewardCatalog`, `getRewardBySku` |
+| `auth.ts` | login/register/logout + token storage |
+| `member.ts` | profile member |
+| `content.ts` | shared `fetchContentPage` / detail content |
+| `events.ts` | list/upcoming/detail EVENT via content API |
+| `news.ts` | list/latest/detail NEWS via content API |
+| `banners.ts` | `fetchActivePromotionBanners` |
+| `branches.ts` | list + cities + `getNearestBranch` (masih mock) |
+| `rewards.ts` | catalog page (sort/filter), categories, detail by sku; catalog home mock |
 
 ### Types (`src/types/`)
 
-`event.ts`, `news.ts`, `branch.ts`, `reward.ts`, `filter.ts` (`DateRange`, `RewardFilterState`, dll.).
+`event.ts`, `news.ts`, `branch.ts`, `reward.ts`, `banner.ts`, `member.ts`, `auth.ts`, `filter.ts` (`DateRange`, `RewardFilterState` + `sortBy`/`sortOrder`, dll.).
 
 ### Mocks (`src/mocks/`)
 
-`mock-events`, `mock-event-details`, `mock-news`, `mock-news-details`, `mock-branches`, `mock-rewards`, `mock-banners`, `mock-member` — 12 item reward, 12 event, 12 berita, dll.
+Sisa: nearest branch, reward catalog home, redeem history, member fallback bila perlu. List berita/event/reward/banner **jangan** di-mock lagi di screen yang sudah API.
 
 ### Root Stack (`src/app/_layout.tsx`)
 
@@ -224,8 +237,9 @@ Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, 
 
 - **Detail konten:** `ContentDetailScreen` + `ContentDetailImageSlider` (rasio 1:1) — dipakai event, berita, reward.
 - **CTA emas:** `GoldButton` (`@/components/shared/gold-button`) — gradien dari `@/config/brand`.
-- **Placeholder:** `ComingSoonScreen` — tab Card/Profile, CMS, fallback detail tidak ditemukan.
+- **Placeholder:** `ComingSoonScreen` — tab Card, CMS, fallback detail tidak ditemukan.
 - **Filter tanggal:** `DateRangeFilterModal` → state `DateRange` dari `@/lib/date-range-filter`.
+- **Search list:** `SearchInput` + debounce 500ms; kirim `q` hanya jika panjang **> 2**.
 - **Layout horizontal:** `SCREEN_HORIZONTAL_PADDING` dari `@/constants/layout/screen-layout`.
 
 ### Peta routing aktual
@@ -233,13 +247,14 @@ Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, 
 | URL | File | Keterangan |
 | --- | --- | --- |
 | `/` | `(tabs)/index` | Home member |
-| `/card`, `/profile` | `(tabs)/card`, `(tabs)/profile` | Coming soon |
+| `/card` | `(tabs)/card` | Coming soon |
+| `/profile` | `(tabs)/profile` | Profile + tier (API) |
 | `/login`, `/register` | `(auth)/login`, `(auth)/register` | Route group — URL tanpa `(auth)` |
 | `/events` | `events/index` | List event |
-| `/events/[slug]` | `events/[slug]` | Detail event (**bukan** `/event/...`) |
-| `/berita`, `/berita/[slug]` | `berita/index`, `berita/[slug]` | |
+| `/events/[id]` | `events/[id]` | Detail event (UUID; **bukan** `/event/...`) |
+| `/berita`, `/berita/[id]` | `berita/index`, `berita/[id]` | Detail berita (UUID) |
 | `/cabang` | `cabang/index` | |
-| `/reward`, `/reward/[sku]` | `reward/index`, `reward/[sku]` | Param detail: `sku` |
+| `/reward`, `/reward/[sku]` | `reward/index` (atau tab), `reward/[sku]` | Param detail: `sku` |
 | `/cms` | `cms.tsx` | Hub CMS — coming soon |
 
 Shortcut home (`@/config/home-shortcuts.ts`): Event → `/events`, Berita → `/berita`, Cabang → `/cabang`, Reward → `/reward`.
@@ -249,7 +264,7 @@ Shortcut home (`@/config/home-shortcuts.ts`): Event → `/events`, Berita → `/
 - `@/*` → `./src/*`
 - `@/assets/*` → `./assets/*`
 
-**Penamaan file:** kebab-case untuk komponen (`event-list-card.tsx`); lowercase untuk route Expo Router (`login.tsx`, `events/[slug].tsx`).
+**Penamaan file:** kebab-case untuk komponen (`event-list-card.tsx`); lowercase untuk route Expo Router (`login.tsx`, `events/[id].tsx`).
 
 **Typed routes:** `experiments.typedRoutes` aktif — setelah menambah/mindah route, jalankan `npx expo start` agar `.expo/types/router.d.ts` ter-regenerate.
 
@@ -331,16 +346,26 @@ Akses di kode: `process.env.EXPO_PUBLIC_API_URL`
 
 Jangan ubah import di screen saat API siap — **ganti implementasi di `src/services/*` saja**. Pertahankan signature fungsi facade; tambahkan React Query di dalam service atau hook terpisah jika perlu cache/refetch.
 
-### Auth (target)
+### Auth (sudah)
 
-- Login member → JWT access token (+ refresh jika disediakan backend).
-- Simpan token di `expo-secure-store`; jangan `AsyncStorage` untuk JWT.
-- Axios interceptor: attach `Authorization: Bearer <token>`; pada `401` → clear session & redirect ke `login`.
-- Auth gate di root layout: cek session sebelum render `(tabs)`.
+- Login member → JWT; simpan di secure store (jangan `AsyncStorage` untuk JWT).
+- Axios interceptor: `Authorization: Bearer <token>`; `401` → clear session & redirect login.
+- Auth gate di root `_layout.tsx`.
+
+### Endpoint yang dipakai (ringkas)
+
+| Domain | Endpoint |
+| --- | --- |
+| Auth | `POST /api/auth/login`, register, dll. |
+| Profile | `GET /api/member/me` (atau setara di member routes) |
+| Konten | `GET /api/content?type=NEWS\|EVENT` (`q`, `dateFrom`, `dateTo`, cursor); `GET /api/content/:id` |
+| Banner | `GET /api/promotion-banner` |
+| Cabang | `GET /api/branch`, `GET /api/branch/cities` |
+| Reward | `GET /api/reward` (`search`, filter, `sortBy`/`sortOrder`), `GET /api/reward/categories`, `GET /api/reward/:sku` |
 
 ### Domain data (referensi schema)
 
-Member, poin, tier (`SILVER` / `GOLD` / `PLATINUM` / `SAPPHIRE`), redeem token & invoice, konten CMS, banner promosi — model ada di `packages/database/schema.prisma`. Koordinasikan shape response API dengan tim backend sebelum mengunci tipe TypeScript di mobile.
+Member, poin, tier (`SILVER` / `GOLD` / `PLATINUM` / `SAPPHIRE`), redeem token & invoice, konten CMS, banner promosi — model di `packages/database/schema.prisma`. Lihat gap schema di §1 sebelum menambah field UI.
 
 ### Media
 
@@ -408,6 +433,7 @@ Verifikasi navigasi manual setelah ubah route: Home → shortcut → list → de
 - [ ] String UI dalam Bahasa Indonesia
 - [ ] Tidak menyimpan secret di `EXPO_PUBLIC_*`
 - [ ] Screen baru mengikuti konvensi import: data dari `@/services/*`, tipe dari `@/types/*`
-- [ ] Perubahan route selaras dengan struktur `src/app/` yang ada; pathname event detail = `/events/[slug]`
+- [ ] Perubahan route selaras dengan struktur `src/app/` yang ada; detail konten = `/events/[id]`, `/berita/[id]`
+- [ ] Screen list pakai hook React Query + service; jangan reintroduksi mock di area yang sudah API
 - [ ] `npx tsc --noEmit` lulus
 - [ ] `npx @react-native-reusables/cli@latest doctor` lulus jika menyentuh setup UI

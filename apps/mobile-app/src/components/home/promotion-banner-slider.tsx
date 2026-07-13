@@ -17,6 +17,7 @@ import {
   CAROUSEL_PEEK,
   CAROUSEL_SNAP_INTERVAL,
 } from '@/constants/layout/carousel-layout';
+import { openLocationUrl } from '@/lib/open-location-url';
 import { cn } from '@/lib/utils';
 
 type PromotionBannerSliderProps = {
@@ -53,12 +54,11 @@ export function PromotionBannerSlider({
       <View
         style={{ width: CAROUSEL_ITEM_WIDTH, marginRight: CAROUSEL_ITEM_GAP }}
         className="overflow-hidden rounded-xl">
-        {/* ponytail: linkUrl null → no Pressable; aktifkan CTA saat CMS punya link */}
         {item.linkUrl ? (
           <Pressable
             accessibilityRole="link"
             onPress={() => {
-              // Placeholder — wire Linking.openURL(item.linkUrl) nanti
+              void openLocationUrl(item.linkUrl);
             }}>
             {image}
           </Pressable>

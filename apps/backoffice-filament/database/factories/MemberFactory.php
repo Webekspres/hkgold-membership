@@ -59,6 +59,7 @@ class MemberFactory extends Factory
             'highest_point' => $highestPoint,
             'last_activity_at' => now(),
             'is_suspended' => false,
+            'birth_date' => fake()->dateTimeBetween('-60 years', '-18 years'),
         ];
     }
 }

@@ -12,6 +12,8 @@ export type UpcomingEvent = EventItem;
 export type EventDetail = EventItem & {
   bodyContent: string;
   imageUrls: string[];
+  locationAddress: string | null;
+  locationUrl: string | null;
 };
 
 export type EventPage = {

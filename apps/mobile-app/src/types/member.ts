@@ -19,6 +19,7 @@ export type MemberProfile = {
   id: string;
   memberNumber: string;
   phoneNumber: string;
+  birthDate: string | null;
   currentTier: MemberTier | string;
   pointBalance: number;
   highestPoint: number;

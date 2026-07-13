@@ -75,9 +75,7 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// ponytail: jangan SELECT kolom yang belum ada di MySQL (schema Prisma lebih maju).
-// Ceiling: endpoint member profile yang baca birthDate tetap gagal sampai kolom di-migrate.
-// Upgrade: ALTER TABLE members ADD COLUMN birth_date DATETIME(3) NULL;
+// Auth select: field yang dibutuhkan login/JWT saja (bukan full profile).
 const authUserSelect = {
   id: true,
   email: true,
