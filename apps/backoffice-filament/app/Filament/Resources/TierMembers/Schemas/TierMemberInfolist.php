@@ -10,6 +10,7 @@ use App\Filament\Resources\TierMembers\Support\TierSupport;
 use App\Filament\Support\IndonesianDateTimeFormatter;
 use App\Models\TierMember;
 use App\Models\TransactionType;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -62,6 +63,21 @@ class TierMemberInfolist
                     ->description('Nominal transaksi (Rp) yang dibutuhkan untuk mendapatkan 1 poin')
                     ->columns(2)
                     ->schema($conversionEntries),
+
+                Section::make('Benefit')
+                    ->schema([
+                        RepeatableEntry::make('tierBenefits')
+                            ->label('Daftar Benefit')
+                            ->schema([
+                                TextEntry::make('title')
+                                    ->label('Benefit'),
+                                TextEntry::make('description')
+                                    ->label('Keterangan'),
+                            ])
+                            ->columns(2)
+                            ->placeholder('Belum ada benefit')
+                            ->columnSpanFull(),
+                    ]),
 
                 Section::make('Metadata')
                     ->columns(2)
