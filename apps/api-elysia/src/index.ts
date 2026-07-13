@@ -1,6 +1,29 @@
 import { Elysia } from "elysia";
+import { healthRoutes } from "./modules/health/routes/health.routes";
+import { authRoutes } from "./modules/auth/routes/auth.routes";
+import { branchRoutes } from "./modules/branch/routes/branch.routes";
+import { contentRoutes } from "./modules/content/routes/content.routes";
+import { addressRoutes } from "./modules/address/routes/address.routes";
+import { memberRoutes } from "./modules/member/routes/member.routes";
+import { mediaRoutes } from "./modules/media/routes/media.routes";
+import { rewardRoutes } from "./modules/reward/routes/reward.routes";
+import { tierRoutes } from "./modules/tier/routes/tier.routes";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const app = new Elysia()
+  .get("/", () => "Hello Elysia")
+  .use(healthRoutes)
+  .use(authRoutes)
+  .use(branchRoutes)
+  .use(contentRoutes)
+  .use(addressRoutes)
+  .use(memberRoutes)
+  .use(mediaRoutes)
+  .use(rewardRoutes)
+  .use(tierRoutes)
+  .listen({
+    port: 3000,
+    hostname: '0.0.0.0'
+  });
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
