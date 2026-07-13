@@ -32,6 +32,7 @@ class Member extends Model
         'highest_point',
         'last_activity_at',
         'is_suspended',
+        'birth_date',
     ];
 
     protected function casts(): array
@@ -42,6 +43,7 @@ class Member extends Model
             'highest_point' => 'integer',
             'last_activity_at' => 'datetime',
             'is_suspended' => 'boolean',
+            'birth_date' => 'date',
         ];
     }
 

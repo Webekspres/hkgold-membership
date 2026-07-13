@@ -17,6 +17,7 @@ class PromotionBanner extends Model
     protected $fillable = [
         'name',
         'media_id',
+        'link_url',
         'is_active',
         'sort_order',
     ];

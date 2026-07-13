@@ -255,6 +255,18 @@ app/Exceptions/                 # domain exception + error code
 - Branch code: `HK01`, `HK02`, … — use `BranchFormSupport::generateBranchCode()`. Disable `branch_code` on edit.
 - `is_online_warehouse` for online warehouse flag.
 - `address` (text) for display; `address_id` → normalized `Address` model.
+- Belum ada lat/lng di schema — “cabang terdekat” di mobile masih mock sampai kolom geo + API nearest ada.
+
+### CMS gaps yang diminta kontrak mobile
+
+| Entity | Field | Status |
+| --- | --- | --- |
+| Banner Promosi | `link_url`, `sort_order` | ✅ Ada — form Banner Promosi + reorder repeater |
+| Konten EVENT | `location_address`, `location_url` | ✅ Ada — visible hanya saat type EVENT |
+| Konten NEWS | kategori | Belum ada |
+| Member | `birth_date` | ✅ Ada — DatePicker di form Member |
+
+Setelah migrasi baru: jalankan `php artisan migrate` lalu pastikan API Elysia map field yang sama.
 
 ### Points, Redeem, Rewards
 

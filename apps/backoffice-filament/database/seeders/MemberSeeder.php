@@ -39,6 +39,7 @@ class MemberSeeder extends Seeder
                 'point_balance' => 0,
                 'highest_point' => 0,
                 'is_suspended' => false,
+                'birth_date' => '1995-06-15',
             ]);
         }
 

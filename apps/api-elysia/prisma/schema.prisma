@@ -522,15 +522,17 @@ model RewardBranchStock {
 // =============================================================================
 
 model Content {
-  id          String        @id @default(uuid()) @db.Char(36)
-  type        ContentType   @map("type")
-  title       String        @map("title") @db.VarChar(200)
-  slug        String        @unique @map("slug") @db.VarChar(200)
-  bodyContent String        @map("body_content") @db.LongText
-  eventDate   DateTime?     @map("event_date")
-  status      ContentStatus @default(DRAFT) @map("status")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid()) @db.Char(36)
+  type            ContentType   @map("type")
+  title           String        @map("title") @db.VarChar(200)
+  slug            String        @unique @map("slug") @db.VarChar(200)
+  bodyContent     String        @map("body_content") @db.LongText
+  eventDate       DateTime?     @map("event_date")
+  locationAddress String?       @map("location_address") @db.Text
+  locationUrl     String?       @map("location_url") @db.VarChar(500)
+  status          ContentStatus @default(DRAFT) @map("status")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   contentCoverImages ContentCoverImage[]
 
@@ -556,6 +558,8 @@ model PromotionBanner {
   id        String   @id @default(uuid()) @db.Char(36)
   name      String   @map("name") @db.VarChar(150)
   mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  linkUrl   String?  @map("link_url") @db.VarChar(500)
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

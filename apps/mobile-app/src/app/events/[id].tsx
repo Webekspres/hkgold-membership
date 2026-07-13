@@ -2,11 +2,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GoldButton } from '@/components/shared/gold-button';
 import { ContentDetailHighlightBox } from '@/components/shared/content-detail-highlight-box';
 import { ContentDetailScreen } from '@/components/shared/content-detail-screen';
 import { Text } from '@/components/ui/text';
 import { useEventDetail } from '@/hooks/use-event-detail';
 import { formatEventDateTimeHighlight } from '@/lib/format/format-event-datetime';
+import { openLocationUrl } from '@/lib/open-location-url';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +42,8 @@ export default function EventDetailScreen() {
     );
   }
 
+  const hasLocation = Boolean(event.locationAddress || event.locationUrl);
+
   return (
     <ContentDetailScreen images={event.imageUrls} title={event.title}>
       <View className="gap-2">
@@ -51,6 +55,26 @@ export default function EventDetailScreen() {
           {formatEventDateTimeHighlight(event.eventDate)}
         </Text>
       </ContentDetailHighlightBox>
+
+      {hasLocation ? (
+        <View className="gap-3">
+          {event.locationAddress ? (
+            <ContentDetailHighlightBox label="Lokasi">
+              <Text className="mt-1 text-sm leading-relaxed text-stone-800">
+                {event.locationAddress}
+              </Text>
+            </ContentDetailHighlightBox>
+          ) : null}
+          {event.locationUrl ? (
+            <GoldButton
+              variant="outline"
+              width="full"
+              label="Lihat lokasi"
+              onPress={() => void openLocationUrl(event.locationUrl)}
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       <Text className="text-sm leading-relaxed text-stone-700">{event.bodyContent}</Text>
     </ContentDetailScreen>
