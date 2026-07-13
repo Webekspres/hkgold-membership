@@ -64,13 +64,17 @@ export default function LoginScreen() {
         <CardTitle className="text-lg text-stone-600">Masuk</CardTitle>
       </CardHeader>
       <CardContent className="gap-4">
-        <AuthField label="Nomor HP, Email, atau Nomor Member">
+        <AuthField
+          label="Email"
+          helperText="Bisa juga masuk dengan nomor HP atau kode member.">
           <Input
             className={AUTH_INPUT_CLASSNAME}
-            placeholder="081234xxxx / email@... / HKA0000001"
+            placeholder="email@example.com"
             placeholderTextColor={AUTH_PLACEHOLDER_COLOR}
             autoCapitalize="none"
             autoCorrect={false}
+            keyboardType="email-address"
+            autoComplete="email"
             value={identifier}
             onChangeText={setIdentifier}
             editable={!isSubmitting}

@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { ContentDetailImageSlider } from '@/components/shared/content-detail-image-slider';
+import {
+  ContentDetailImageSlider,
+  type ContentDetailImage,
+} from '@/components/shared/content-detail-image-slider';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 
 type ContentDetailScreenProps = {
-  images: number[];
+  images: ContentDetailImage[];
   title: string;
   children: ReactNode;
 };

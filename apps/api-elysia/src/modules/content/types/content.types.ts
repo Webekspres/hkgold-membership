@@ -33,6 +33,11 @@ export interface ContentListItemData {
 export interface GetContentsParams extends CursorPaginationParams {
   type?: 'NEWS' | 'EVENT';
   includeArchived?: boolean;
+  /** Search title; apply only when length > 2 */
+  q?: string;
+  /** ISO date YYYY-MM-DD or full ISO */
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export type ContentDetailResponse = {

@@ -25,6 +25,15 @@ async function persistSession(data: AuthResponse) {
   await SecureStore.setItemAsync(KEYS.member, JSON.stringify(data.member));
 }
 
+/** Update user+member di SecureStore setelah refresh profil (tanpa sentuh token). */
+export async function persistProfileSnapshot(
+  user: AuthUser,
+  member: AuthMember
+): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.user, JSON.stringify(user));
+  await SecureStore.setItemAsync(KEYS.member, JSON.stringify(member));
+}
+
 function messageFromError(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
     const payload = error.response?.data as ApiEnvelope<unknown> | undefined;

@@ -75,6 +75,27 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
+// ponytail: jangan SELECT kolom yang belum ada di MySQL (schema Prisma lebih maju).
+// Ceiling: endpoint member profile yang baca birthDate tetap gagal sampai kolom di-migrate.
+// Upgrade: ALTER TABLE members ADD COLUMN birth_date DATETIME(3) NULL;
+const authUserSelect = {
+  id: true,
+  email: true,
+  fullName: true,
+  password: true,
+  role: true,
+  isActive: true,
+} as const;
+
+const authMemberSelect = {
+  id: true,
+  memberNumber: true,
+  phoneNumber: true,
+  currentTier: true,
+  pointBalance: true,
+  isSuspended: true,
+} as const;
+
 export class AuthService implements IAuthService {
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password, fullName, phoneNumber } = data;
@@ -97,7 +118,8 @@ export class AuthService implements IAuthService {
 
     // Check duplicate email
     const existingEmail = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: { id: true },
     });
     if (existingEmail) {
       throw new Error('Email sudah terdaftar');
@@ -105,7 +127,8 @@ export class AuthService implements IAuthService {
 
     // Check duplicate phone
     const existingPhone = await prisma.member.findUnique({
-      where: { phoneNumber: normalizedPhone }
+      where: { phoneNumber: normalizedPhone },
+      select: { id: true },
     });
     if (existingPhone) {
       throw new Error('Nomor HP sudah terdaftar');
@@ -126,7 +149,8 @@ export class AuthService implements IAuthService {
           fullName,
           role: 'MEMBER',
           isActive: true
-        }
+        },
+        select: authUserSelect,
       });
 
       const member = await tx.member.create({
@@ -137,7 +161,8 @@ export class AuthService implements IAuthService {
           currentTier: 'SILVER',
           pointBalance: 0,
           highestPoint: 0
-        }
+        },
+        select: authMemberSelect,
       });
 
       return { user, member };
@@ -198,23 +223,8 @@ export class AuthService implements IAuthService {
       isSuspended: boolean;
     };
 
-    // ponytail: select only auth fields — DB may lag schema (e.g. birth_date missing)
-    const userSelect = {
-      id: true,
-      email: true,
-      fullName: true,
-      password: true,
-      role: true,
-      isActive: true,
-    } as const;
-    const memberSelect = {
-      id: true,
-      memberNumber: true,
-      phoneNumber: true,
-      currentTier: true,
-      pointBalance: true,
-      isSuspended: true,
-    } as const;
+    const userSelect = authUserSelect;
+    const memberSelect = authMemberSelect;
 
     if (trimmed.includes('@')) {
       // Login via email

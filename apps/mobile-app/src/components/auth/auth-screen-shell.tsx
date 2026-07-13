@@ -1,11 +1,13 @@
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ScrollView,
   StyleSheet,
   View,
+  type KeyboardEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,30 +24,65 @@ function AuthCard({ children }: PropsWithChildren) {
   return <Card className={CARD_CLASSNAME}>{children}</Card>;
 }
 
+/**
+ * Expo Go (Android): windowSoftInputMode project tidak berlaku — keyboard
+ * menutupi layar tanpa resize. KeyboardAvoidingView sering tidak mengecilkan
+ * viewport cukup, jadi ScrollView anggap konten "muat" dan tidak bisa scroll.
+ *
+ * Pola yang reliable di Expo Go: ScrollView penuh + paddingBottom = tinggi
+ * keyboard. Konten jadi lebih tinggi dari layar → user bisa scroll sampai
+ * CTA/footer di atas keyboard.
+ */
 export function AuthScreenShell({ children, scrollable = false }: AuthScreenShellProps) {
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const onShow = (e: KeyboardEvent) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    };
+    const onHide = () => {
+      setKeyboardHeight(0);
+    };
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const keyboardOpen = keyboardHeight > 0;
+
   return (
     <View style={styles.container}>
       <Image
-        source={require('@/assets/media/background.webp')}
+        source={require('@/assets/media/pattern-vertical.webp')}
         style={styles.background}
         contentFit="cover"
       />
-      <SafeAreaView style={styles.overlay}>
+      <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']}>
         {scrollable ? (
-          <KeyboardAvoidingView
+          <ScrollView
             style={styles.scroll}
-            behavior={Platform.select({ ios: 'padding', android: 'height' })}
-            keyboardVerticalOffset={Platform.select({ ios: 0, android: 24 })}>
-            <ScrollView
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}>
-              <View style={styles.cardSlot}>
-                <AuthCard>{children}</AuthCard>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+            contentContainerStyle={[
+              styles.scrollContent,
+              keyboardOpen && styles.scrollContentKeyboard,
+              {
+                paddingBottom: keyboardOpen ? keyboardHeight + 24 : 24,
+              },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            automaticallyAdjustKeyboardInsets={false}
+            bounces>
+            <View style={styles.cardSlot}>
+              <AuthCard>{children}</AuthCard>
+            </View>
+          </ScrollView>
         ) : (
           <View style={styles.cardSlot}>
             <AuthCard>{children}</AuthCard>
@@ -75,11 +112,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    opacity: 0.25,
+    transform: [{ scale: 1.25 }],
   },
   overlay: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 24,
     backgroundColor: 'transparent',
   },
@@ -90,8 +128,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingVertical: 24,
+    paddingTop: 24,
     width: '100%',
+  },
+  scrollContentKeyboard: {
+    justifyContent: 'flex-start',
   },
   cardSlot: {
     width: '100%',

@@ -32,11 +32,11 @@ export function ProfilePointsTierCard({
       style={{ borderRadius: 16 }}
     >
       <Image
-        source={require("@/assets/media/background.webp")}
+        source={require("@/assets/media/pattern-horizontal.webp")}
         style={{
           position: "absolute",
           inset: 0,
-          opacity: 0.25,
+          opacity: 0.75,
           borderRadius: 16,
         }}
         contentFit="cover"

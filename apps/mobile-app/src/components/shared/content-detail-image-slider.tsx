@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -15,17 +15,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const PLACEHOLDER_IMAGE = require('@/assets/mockImage/mock-image-news.webp');
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 
+export type ContentDetailImage = string | number;
+
 type ContentDetailImageSliderProps = {
-  images: number[];
+  images: ContentDetailImage[];
   title: string;
 };
+
+function resolveSource(image: ContentDetailImage) {
+  return typeof image === 'string' ? { uri: image } : image;
+}
 
 export function ContentDetailImageSlider({ images, title }: ContentDetailImageSliderProps) {
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const slides = useMemo(
+    () => (images.length > 0 ? images : [PLACEHOLDER_IMAGE as number]),
+    [images],
+  );
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -33,26 +45,22 @@ export function ContentDetailImageSlider({ images, title }: ContentDetailImageSl
     setActiveIndex(index);
   }, []);
 
-  const renderItem: ListRenderItem<number> = useCallback(
+  const renderItem: ListRenderItem<ContentDetailImage> = useCallback(
     ({ item }) => (
       <Image
-        source={item}
+        source={resolveSource(item)}
         style={{ width: SCREEN_WIDTH, aspectRatio: 1 }}
         contentFit="cover"
         accessibilityLabel={title}
       />
     ),
-    [title]
+    [title],
   );
-
-  if (images.length === 0) {
-    return null;
-  }
 
   return (
     <View className="relative">
       <FlatList
-        data={images}
+        data={slides}
         keyExtractor={(_, index) => `content-image-${index}`}
         renderItem={renderItem}
         horizontal
@@ -73,9 +81,9 @@ export function ContentDetailImageSlider({ images, title }: ContentDetailImageSl
         </Button>
       </View>
 
-      {images.length > 1 ? (
+      {slides.length > 1 ? (
         <View className="absolute bottom-3 w-full flex-row items-center justify-center gap-2">
-          {images.map((_, index) => (
+          {slides.map((_, index) => (
             <View
               key={`dot-${index}`}
               className={`h-1.5 rounded-full ${

@@ -1,5 +1,4 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Crown } from "lucide-react-native";
 import { Pressable, View } from "react-native";
@@ -10,6 +9,7 @@ import {
   GOLD_GRADIENT_COLORS,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
+  GOLD_TAB_SELECTED,
 } from "@/config/brand";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ const TIER_STYLES: Record<
   },
   GOLD: {
     label: "Gold",
-    panelClassName: "bg-amber-100/90",
+    panelClassName: "bg-amber-50",
     iconClassName: "text-amber-600",
     textClassName: "text-[#b45309]",
   },
@@ -98,11 +98,11 @@ function MemberNumber({
   if (onPressMemberNumber) {
     return (
       <Pressable
-        className="self-start rounded-full bg-stone-100 px-3 py-1 active:opacity-80"
+        className="self-start rounded-full bg-amber-50 px-3 py-1 active:opacity-80"
         onPress={onPressMemberNumber}
         accessibilityRole="button"
         accessibilityLabel="Salin nomor member">
-        <Text variant="small" className="text-stone-700">
+        <Text variant="small" style={{ color: GOLD_TAB_SELECTED }}>
           {memberNumber}
         </Text>
       </Pressable>
@@ -110,9 +110,11 @@ function MemberNumber({
   }
 
   return (
-    <Text variant="small" className="text-stone-500">
-      {memberNumber}
-    </Text>
+    <View className="self-start rounded-full bg-amber-50 px-3 py-1">
+      <Text variant="small" style={{ color: GOLD_TAB_SELECTED }}>
+        {memberNumber}
+      </Text>
+    </View>
   );
 }
 
@@ -135,16 +137,6 @@ export function MemberWalletCard({
         end={GOLD_GRADIENT_END}
         style={{ borderRadius: 20, padding: 2 }}>
         <View className="rounded-[18px] bg-white px-5 py-5">
-          <Image
-            source={require("@/assets/media/background.webp")}
-            style={{
-              position: "absolute",
-              inset: 0,
-              opacity: 0.06,
-              borderRadius: 18,
-            }}
-            contentFit="cover"
-          />
           <View className="mb-1">
             <Text className="text-xl font-semibold text-stone-900" numberOfLines={2}>
               {fullName}
@@ -157,7 +149,7 @@ export function MemberWalletCard({
                 memberNumber={memberNumber}
                 onPressMemberNumber={onPressMemberNumber}
               />
-              <View className="my-4 h-0.5 w-full rounded-full bg-stone-100" />
+              <View className="my-4 h-px w-full bg-stone-200" />
 
               <Text variant="muted" className="text-xs uppercase tracking-wide">
                 Saldo poin
@@ -180,6 +172,9 @@ export function MemberWalletCard({
                 variant="small"
                 className={cn("mt-1.5 font-semibold", tier.textClassName)}>
                 {tier.label}
+              </Text>
+              <Text variant="small" className="text-stone-500">
+                Member
               </Text>
             </View>
           </View>

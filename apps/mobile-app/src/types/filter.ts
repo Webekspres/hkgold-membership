@@ -5,10 +5,15 @@ export type DateRange = {
   endDate: DateType;
 };
 
+export type RewardSortBy = 'sku' | 'name' | 'points';
+export type RewardSortOrder = 'asc' | 'desc';
+
 export type RewardFilterState = {
   categoryIds: number[];
   pointsMin: number;
   pointsMax: number;
+  sortBy: RewardSortBy;
+  sortOrder: RewardSortOrder;
 };
 
 export type RewardPointsBounds = {

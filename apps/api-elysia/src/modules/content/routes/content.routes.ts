@@ -1,6 +1,11 @@
 import { Elysia } from 'elysia';
 import { contentService } from '../services/content.service';
 
+function isValidDateParam(value: string): boolean {
+  const t = Date.parse(value);
+  return !Number.isNaN(t);
+}
+
 export const contentRoutes = new Elysia({ prefix: '/api/content' })
   .get('/:id', async ({ params, set }) => {
     const { id } = params;
@@ -36,6 +41,9 @@ export const contentRoutes = new Elysia({ prefix: '/api/content' })
     const includeArchived = query.includeArchived === 'true';
     const limit = query.limit ? Number(query.limit) : 15;
     const cursor = query.cursor as string | undefined;
+    const q = typeof query.q === 'string' ? query.q : undefined;
+    const dateFrom = typeof query.dateFrom === 'string' ? query.dateFrom : undefined;
+    const dateTo = typeof query.dateTo === 'string' ? query.dateTo : undefined;
 
     // Validate type
     if (type !== 'NEWS' && type !== 'EVENT') {
@@ -52,6 +60,22 @@ export const contentRoutes = new Elysia({ prefix: '/api/content' })
       return {
         success: false,
         message: 'Limit harus antara 1-50'
+      };
+    }
+
+    if (dateFrom && !isValidDateParam(dateFrom)) {
+      set.status = 400;
+      return {
+        success: false,
+        message: 'dateFrom tidak valid'
+      };
+    }
+
+    if (dateTo && !isValidDateParam(dateTo)) {
+      set.status = 400;
+      return {
+        success: false,
+        message: 'dateTo tidak valid'
       };
     }
 
@@ -75,7 +99,15 @@ export const contentRoutes = new Elysia({ prefix: '/api/content' })
       }
     }
 
-    const result = await contentService.getAll({ type, includeArchived, limit, cursor });
+    const result = await contentService.getAll({
+      type,
+      includeArchived,
+      limit,
+      cursor,
+      q,
+      dateFrom,
+      dateTo,
+    });
 
     return {
       success: true,

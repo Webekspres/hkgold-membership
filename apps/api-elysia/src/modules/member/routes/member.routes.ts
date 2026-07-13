@@ -11,10 +11,15 @@ const statusFromMessage = (message: string): number => {
 export const memberRoutes = new Elysia({ prefix: '/api/member' })
   .use(requireActiveUser)
   .get('/me', async ({ auth, set }) => {
-    // requireActiveUser menjamin auth non-null, tapi tetap guard demi TypeScript
-    const userId = auth!.userId;
+    if (!auth?.userId) {
+      set.status = 401;
+      return {
+        success: false,
+        message: 'Unauthorized - Silakan login terlebih dahulu'
+      };
+    }
 
-    const profile = await memberService.getProfileByUserId(userId);
+    const profile = await memberService.getProfileByUserId(auth.userId);
 
     if (!profile) {
       set.status = 404;
@@ -32,7 +37,14 @@ export const memberRoutes = new Elysia({ prefix: '/api/member' })
   })
   .patch('/me', async ({ auth, body, set }) => {
     try {
-      const userId = auth!.userId;
+      if (!auth?.userId) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Unauthorized - Silakan login terlebih dahulu'
+        };
+      }
+      const userId = auth.userId;
       const data = body as UpdateMemberProfileRequest;
       const result = await memberService.updateProfileByUserId(userId, data);
 

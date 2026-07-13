@@ -1,22 +1,28 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DateRangeFilterModal } from '@/components/shared/date-range-filter-modal';
+import { SearchInput } from '@/components/shared/search-input';
 import { NewsArticleCard } from '@/components/berita/news-article-card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { getNewsList } from '@/services/news';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useNewsList } from '@/hooks/use-news-list';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 import {
   EMPTY_DATE_RANGE,
+  dateRangeToApiParams,
   hasActiveDateRange,
   type DateRange,
 } from '@/lib/date-range-filter';
-import { filterNewsByDateRange } from '@/lib/filters/filter-news-by-date-range';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 const FILTER_ICON = {
@@ -25,17 +31,29 @@ const FILTER_ICON = {
   web: 'filter_list',
 } as const;
 
-const newsList = getNewsList();
-
 export default function NewsListScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [appliedRange, setAppliedRange] = useState<DateRange>(EMPTY_DATE_RANGE);
   const [draftRange, setDraftRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 500);
 
-  const filteredArticles = useMemo(
-    () => filterNewsByDateRange(newsList, appliedRange),
-    [appliedRange]
-  );
+  const q = useMemo(() => {
+    const trimmed = debouncedSearch.trim();
+    return trimmed.length > 2 ? trimmed : undefined;
+  }, [debouncedSearch]);
+
+  const dateParams = useMemo(() => dateRangeToApiParams(appliedRange), [appliedRange]);
+
+  const {
+    articles,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNewsList({ q, ...dateParams });
 
   const openFilter = () => {
     setDraftRange(appliedRange);
@@ -63,11 +81,10 @@ export default function NewsListScreen() {
             <SymbolView name={BACK_ICON} size={20} tintColor="#44403c" />
           </Button>
 
-          <Input
-            className="min-w-0 flex-1"
+          <SearchInput
             placeholder="Cari berita..."
-            placeholderTextColor="#a8a29e"
-            editable
+            value={search}
+            onChangeText={setSearch}
           />
 
           <Button
@@ -84,7 +101,7 @@ export default function NewsListScreen() {
         </View>
 
         <FlatList
-          data={filteredArticles}
+          data={articles}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <NewsArticleCard article={item} fullWidth />}
           ItemSeparatorComponent={() => <View className="h-4" />}
@@ -92,11 +109,38 @@ export default function NewsListScreen() {
             paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
             paddingVertical: 16,
             paddingBottom: 24,
+            flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              void fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View className="items-center py-4">
+                <ActivityIndicator color="#b45309" />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
-            <View className="items-center py-12">
-              <Text variant="muted">Tidak ada berita pada rentang tanggal ini.</Text>
+            <View className="items-center justify-center py-12">
+              {isLoading ? (
+                <ActivityIndicator color="#b45309" />
+              ) : isError ? (
+                <View className="items-center gap-3 px-4">
+                  <Text variant="muted" className="text-center">
+                    Gagal memuat berita. Periksa koneksi lalu coba lagi.
+                  </Text>
+                  <Pressable onPress={() => void refetch()} className="active:opacity-70">
+                    <Text className="font-semibold text-[#c4841a]">Coba lagi</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Text variant="muted">Belum ada berita.</Text>
+              )}
             </View>
           }
         />

@@ -3,6 +3,16 @@ import { IContentService } from '../interfaces/content.interface';
 import { ContentDetailData, ContentListItemData, GetContentsParams } from '../types/content.types';
 import { PaginatedResponse, encodeCursor, decodeCursor } from '../../../shared/types/pagination.types';
 
+function startOfDay(iso: string): Date {
+  const day = iso.slice(0, 10);
+  return new Date(`${day}T00:00:00.000Z`);
+}
+
+function endOfDay(iso: string): Date {
+  const day = iso.slice(0, 10);
+  return new Date(`${day}T23:59:59.999Z`);
+}
+
 export class ContentService implements IContentService {
   async getById(id: string): Promise<ContentDetailData | null> {
     const content = await prisma.content.findUnique({
@@ -46,66 +56,81 @@ export class ContentService implements IContentService {
     const type = params.type || 'NEWS';
     const includeArchived = params.includeArchived || false;
 
-    // Status filter: PUBLISHED, atau PUBLISHED + ARCHIVED
     const statusFilter = includeArchived
       ? { in: ['PUBLISHED', 'ARCHIVED'] as const }
       : { equals: 'PUBLISHED' as const };
 
-    // Decode cursor untuk pagination
-    let whereClause: any = {
-      type,
-      status: statusFilter
-    };
+    const andFilters: Record<string, unknown>[] = [
+      { type },
+      { status: statusFilter },
+    ];
+
+    const q = params.q?.trim();
+    if (q && q.length > 2) {
+      andFilters.push({
+        title: { contains: q },
+      });
+    }
+
+    const dateField = type === 'EVENT' ? 'eventDate' : 'createdAt';
+    if (params.dateFrom || params.dateTo) {
+      const range: { gte?: Date; lte?: Date } = {};
+      if (params.dateFrom) {
+        range.gte = startOfDay(params.dateFrom);
+      }
+      if (params.dateTo) {
+        range.lte = endOfDay(params.dateTo);
+      }
+      andFilters.push({ [dateField]: range });
+    }
 
     if (params.cursor) {
       const decoded = decodeCursor(params.cursor);
       if (decoded && decoded.id && decoded.createdAt) {
-        // Cursor pagination: createdAt < lastItem.createdAt OR (createdAt = lastItem.createdAt AND id < lastItem.id)
-        whereClause = {
-          ...whereClause,
+        andFilters.push({
           OR: [
             { createdAt: { lt: new Date(decoded.createdAt) } },
             {
               AND: [
                 { createdAt: new Date(decoded.createdAt) },
-                { id: { lt: decoded.id } }
-              ]
-            }
-          ]
-        };
+                { id: { lt: decoded.id } },
+              ],
+            },
+          ],
+        });
       }
     }
 
-    // Query limit+1 untuk check hasMore
+    const whereClause = { AND: andFilters };
+
     const contents = await prisma.content.findMany({
       where: whereClause,
       take: limit + 1,
       orderBy: [
         { createdAt: 'desc' },
-        { id: 'desc' }
+        { id: 'desc' },
       ],
       include: {
         contentCoverImages: {
           include: {
-            media: true
+            media: true,
           },
           orderBy: {
-            sortOrder: 'asc'
-          }
-        }
-      }
+            sortOrder: 'asc',
+          },
+        },
+      },
     });
 
     const hasMore = contents.length > limit;
     const data = contents.slice(0, limit);
 
-    // Generate nextCursor dari last item
     let nextCursor: string | null = null;
     if (hasMore && data.length > 0) {
       const lastItem = data[data.length - 1];
       nextCursor = encodeCursor({
         id: lastItem.id,
-        createdAt: lastItem.createdAt.toISOString()
+        createdAt: lastItem.createdAt.toISOString(),
       });
     }
 
@@ -115,20 +140,22 @@ export class ContentService implements IContentService {
         type: content.type as 'NEWS' | 'EVENT',
         title: content.title,
         slug: content.slug,
-        excerpt: content.bodyContent.substring(0, 200) + (content.bodyContent.length > 200 ? '...' : ''),
+        excerpt:
+          content.bodyContent.substring(0, 200) +
+          (content.bodyContent.length > 200 ? '...' : ''),
         eventDate: content.eventDate,
         coverImages: content.contentCoverImages.map(img => ({
           id: img.id,
           fileUrl: img.media.fileUrl,
-          sortOrder: img.sortOrder
+          sortOrder: img.sortOrder,
         })),
-        createdAt: content.createdAt
+        createdAt: content.createdAt,
       })),
       pagination: {
         nextCursor,
         hasMore,
-        limit
-      }
+        limit,
+      },
     };
   }
 }

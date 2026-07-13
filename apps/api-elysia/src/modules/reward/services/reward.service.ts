@@ -118,95 +118,88 @@ export class RewardService implements IRewardService {
   async getRewards(params: GetRewardsParams): Promise<PaginationResponse<RewardCatalogItemData>> {
     const limit = Math.min(params.limit || 15, 50);
     const now = new Date();
+    const sortBy = params.sortBy ?? 'sku';
+    const sortOrder = params.sortOrder ?? 'asc';
 
-    // Build where clause
-    let whereClause: any = {
-      isActive: true,
-      startAt: { lte: now },
-      endAt: { gte: now }
-    };
+    const andFilters: Record<string, unknown>[] = [
+      { isActive: true },
+      { startAt: { lte: now } },
+      { endAt: { gte: now } },
+    ];
 
-    // Cursor pagination
+    if (params.categoryIds && params.categoryIds.length > 0) {
+      andFilters.push({ categoryId: { in: params.categoryIds } });
+    }
+
+    if (params.pointsMin !== undefined || params.pointsMax !== undefined) {
+      const pointsRange: { gte?: number; lte?: number } = {};
+      if (params.pointsMin !== undefined) pointsRange.gte = params.pointsMin;
+      if (params.pointsMax !== undefined) pointsRange.lte = params.pointsMax;
+      andFilters.push({ pointsRequired: pointsRange });
+    }
+
+    if (params.search) {
+      andFilters.push({
+        OR: [
+          { name: { contains: params.search } },
+          { description: { contains: params.search } },
+        ],
+      });
+    }
+
+    if (params.branchId) {
+      andFilters.push({
+        rewardBranchStocks: {
+          some: {
+            branchId: params.branchId,
+            actualStock: { gt: 0 },
+          },
+        },
+      });
+    }
+
     if (params.cursor) {
       const decoded = decodeCursor(params.cursor);
       if (decoded) {
-        whereClause.OR = [
-          { sku: { gt: decoded.sku } },
-          {
-            AND: [
-              { sku: decoded.sku },
-              { id: { gt: decoded.id } }
-            ]
-          }
-        ];
+        const cursorWhere = this.buildSortCursorWhere(sortBy, sortOrder, decoded);
+        if (cursorWhere) {
+          andFilters.push(cursorWhere);
+        }
       }
     }
 
-    // Category filter
-    if (params.categoryIds && params.categoryIds.length > 0) {
-      whereClause.categoryId = { in: params.categoryIds };
-    }
+    const orderBy = this.buildOrderBy(sortBy, sortOrder);
 
-    // Point range filter
-    if (params.pointsMin !== undefined) {
-      whereClause.pointsRequired = { ...whereClause.pointsRequired, gte: params.pointsMin };
-    }
-    if (params.pointsMax !== undefined) {
-      whereClause.pointsRequired = { ...whereClause.pointsRequired, lte: params.pointsMax };
-    }
-
-    // Search filter
-    if (params.search) {
-      whereClause.OR = [
-        { name: { contains: params.search, mode: 'insensitive' } },
-        { description: { contains: params.search, mode: 'insensitive' } }
-      ];
-    }
-
-    // Branch filter - only include rewards with stock in specific branch
-    if (params.branchId) {
-      whereClause.rewardBranchStocks = {
-        some: {
-          branchId: params.branchId,
-          actualStock: { gt: 0 }
-        }
-      };
-    }
-
-    // Query limit+1 to check hasMore
     const rewards = await prisma.reward.findMany({
-      where: whereClause,
+      where: { AND: andFilters },
       take: limit + 1,
-      orderBy: [
-        { sku: 'asc' },
-        { id: 'asc' }
-      ],
+      orderBy,
       include: {
         category: true,
         rewardImages: {
           include: { media: true },
           orderBy: { sortOrder: 'asc' },
-          take: 1
+          take: 1,
         },
-        rewardBranchStocks: true
-      }
+        rewardBranchStocks: true,
+      },
     });
 
     const hasMore = rewards.length > limit;
     const data = rewards.slice(0, limit);
 
-    // Generate nextCursor
     let nextCursor: string | null = null;
     if (hasMore && data.length > 0) {
       const lastItem = data[data.length - 1];
       nextCursor = encodeCursor({
+        id: lastItem.id,
         sku: lastItem.sku,
-        id: lastItem.id
+        name: lastItem.name,
+        pointsRequired: lastItem.pointsRequired,
       });
     }
 
-    // Map to catalog items
-    const catalogItems: RewardCatalogItemData[] = data.map(reward => {
+    const catalogItems: RewardCatalogItemData[] = data.map((reward) => {
       const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
         const available = Math.max(stock.actualStock - stock.heldStock, 0);
         return total + available;
@@ -221,7 +214,7 @@ export class RewardService implements IRewardService {
         categorySlug: reward.category.slug,
         pointsRequired: reward.pointsRequired,
         stockRemaining,
-        image: reward.rewardImages[0]?.media.fileUrl || null
+        image: reward.rewardImages[0]?.media.fileUrl || null,
       };
     });
 
@@ -230,9 +223,64 @@ export class RewardService implements IRewardService {
       pagination: {
         nextCursor,
         hasMore,
-        limit
-      }
+        limit,
+      },
     };
+  }
+
+  private buildOrderBy(
+    sortBy: 'sku' | 'name' | 'points',
+    sortOrder: 'asc' | 'desc',
+  ): Array<Record<string, 'asc' | 'desc'>> {
+    if (sortBy === 'name') {
+      return [{ name: sortOrder }, { id: sortOrder }];
+    }
+    if (sortBy === 'points') {
+      return [{ pointsRequired: sortOrder }, { id: sortOrder }];
+    }
+    return [{ sku: sortOrder }, { id: sortOrder }];
+  }
+
+  private buildSortCursorWhere(
+    sortBy: 'sku' | 'name' | 'points',
+    sortOrder: 'asc' | 'desc',
+    cursor: { id: string; sku?: string; name?: string; pointsRequired?: number },
+  ): Record<string, unknown> | null {
+    const op = sortOrder === 'asc' ? 'gt' : 'lt';
+
+    if (sortBy === 'name' && cursor.name != null) {
+      return {
+        OR: [
+          { name: { [op]: cursor.name } },
+          { AND: [{ name: cursor.name }, { id: { [op]: cursor.id } }] },
+        ],
+      };
+    }
+
+    if (sortBy === 'points' && cursor.pointsRequired != null) {
+      return {
+        OR: [
+          { pointsRequired: { [op]: cursor.pointsRequired } },
+          {
+            AND: [
+              { pointsRequired: cursor.pointsRequired },
+              { id: { [op]: cursor.id } },
+            ],
+          },
+        ],
+      };
+    }
+
+    if (cursor.sku != null) {
+      return {
+        OR: [
+          { sku: { [op]: cursor.sku } },
+          { AND: [{ sku: cursor.sku }, { id: { [op]: cursor.id } }] },
+        ],
+      };
+    }
+
+    return null;
   }
 
   /**

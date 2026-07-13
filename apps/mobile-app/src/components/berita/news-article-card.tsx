@@ -8,6 +8,8 @@ import type { NewsArticle } from "@/types/news";
 import { CAROUSEL_ITEM_WIDTH } from "@/constants/layout/carousel-layout";
 import { cn } from "@/lib/utils";
 
+const PLACEHOLDER_IMAGE = require("@/assets/mockImage/mock-image-news.webp");
+
 type NewsArticleCardProps = {
   article: NewsArticle;
   fullWidth?: boolean;
@@ -27,7 +29,9 @@ export function NewsArticleCard({
     >
       <View className="overflow-hidden rounded-xl bg-white">
         <Image
-          source={article.image}
+          source={
+            article.imageUrl ? { uri: article.imageUrl } : PLACEHOLDER_IMAGE
+          }
           style={{ width: "100%", aspectRatio: 16 / 9 }}
           contentFit="cover"
           accessibilityLabel={article.title}
@@ -52,8 +56,8 @@ export function NewsArticleCard({
             label="Lihat sekarang"
             onPress={() =>
               router.push({
-                pathname: "/berita/[slug]",
-                params: { slug: article.slug },
+                pathname: "/berita/[id]",
+                params: { id: article.id },
               })
             }
           />
