@@ -4,12 +4,24 @@ Anda adalah Claude Code, AI Collaborator Senior yang bertindak sebagai Core Back
 
 ---
 
+## Agent Tooling (Cursor)
+
+Wajib memakai keempat tools berikut di setiap sesi Cursor:
+
+- **graphify** — sebelum pertanyaan arsitektur/alur: `graphify query "..."`, `graphify path "A" "B"`, atau `graphify explain "..."` bila `graphify-out/graph.json` ada (root monorepo atau `apps/api-elysia/graphify-out/`). Setelah ubah kode: `graphify update .` (AST-only).
+- **rtk** — prefix CLI verbose: `rtk git …`, `rtk rg …`, `rtk prisma …`, `rtk bun …`. Jika gagal, fallback perintah biasa.
+- **ponytail** — ladder YAGNI / reuse / min diff (root `AGENTS.md` + `.cursor/rules/ponytail.mdc`).
+- **caveman** — jawaban ringkas (full; Bahasa Indonesia). Code fence, error, path, CLI: byte-exact.
+
+---
+
 ## 🏗️ 1. Lingkungan Infrastruktur & Konektivitas Jaringan
 
 Seluruh layanan pendukung (Infrastruktur Docker) dijalankan pada laptop terpisah di jaringan lokal yang sama dengan detail koneksi berikut:
-* **IP Server Node Eksternal:** `192.168.0.109`
-* **Koneksi Database (MySQL):** Anda diizinkan mengeksekusi migrasi data langsung (`bunx prisma migrate dev`) menuju target database eksternal. Jangan menuliskan atau menebak nilai variabel lingkungan (*environment variables*) ke dalam baris kode program secara statis; Anda wajib selalu membaca konfigurasi koneksi tersebut secara dinamis langsung dari berkas `.env` lokal tempat project ini dieksekusi.
-* **S3 Object Storage Blueprint:** Pengerjaan media S3 harus menggunakan abstraksi standard AWS SDK v3 / Client S3 yang membaca seluruh konfigurasi akun dari variabel `.env` secara dinamis. Parameter *environment* saat ini disimulasikan menggunakan MinIO lokal di laptop server tersebut, namun kodenya harus *framework-agnostic* agar siap diarahkan ke Cloudflare R2 di produksi tanpa mengubah baris kode logikanya.
+* **IP Server Node Eksternal:** `192.168.0.193`
+* **Env (Doppler):** Project `hkgoldvip`, config `dev_backend` (`doppler.yaml`). Jangan commit secret. Template keys: `.env.example`. Jalankan API dengan `bun run dev` / `bun run start` (script membungkus `doppler run`). Perintah one-off (Prisma, dll.): `doppler run -- bunx prisma …`. Jangan hardcode env di kode — baca dari `process.env`.
+* **Koneksi Database (MySQL):** Migrasi boleh (`doppler run -- bunx prisma migrate dev`) ke DB eksternal sesuai secret Doppler. Jangan menebak/menulis nilai secret ke kode.
+* **S3 Object Storage Blueprint:** Media memakai AWS SDK v3 / Client S3; semua kredensial dari env (Doppler). Lokal = MinIO; produksi = Cloudflare R2 tanpa ubah logic.
 
 ---
 
@@ -30,7 +42,7 @@ Setiap kali Anda membuat modul atau agregator baru, Anda wajib menuliskan kontra
 
 ## 🧠 3. Kebijakan Autentikasi & Keamanan (JWT Stateless Strategy)
 
-Gerbang login aplikasi mobile React Native melayani pelanggan (Member) menggunakan kombinasi Nomor HP atau ID Member.
+Gerbang login aplikasi mobile React Native melayani pelanggan (Member) menggunakan kombinasi Email, Nomor HP, atau ID Member.
 * **Mekanisme Token:** Wajib menggunakan strategi **JWT Stateless murni** melalui `@elysiajs/jwt`. Jangan melakukan pengecekan token ganda atau daftar hitam (*revoked tokens*) ke Redis.
 * **Layer Otomatisasi Penonaktifan Global (`User.is_active`):** Jika Administrator pusat menonaktifkan pengguna (`is_active = false`), token JWT yang dibawa oleh *client request* harus otomatis ditolak pada lapisan otorisasi global selanjutnya (ketika token kedaluwarsa atau saat parsing muatan klaim user id tidak lagi valid di database).
 
@@ -48,7 +60,7 @@ Sistem ini menganut prinsip *Single Currency, Multi-Path* (1 Saldo Wallet Terpus
 
 Saat pelanggan memicu proses klaim kupon hadiah fisik di aplikasi seluler:
 * **Penerbitan Kode:** Lahirkan string acak alfanumerik 6–8 digit yang unik di tabel `RedeemToken`.
-* **Batas Waktu Dinamis (Durasi Kedaluwarsa):** Batas waktu ideal di kolom `expired_at` wajib dikunci sebesar **30 menit**. Durasi ini harus membaca variabel lingkungan pembantu di berkas `.env` secara dinamis agar nilainya dapat diubah sewaktu-waktu oleh tim operasional tanpa membongkar fungsionalitas kode program.
+* **Batas Waktu Dinamis (Durasi Kedaluwarsa):** Batas waktu ideal di kolom `expired_at` wajib dikunci sebesar **30 menit**. Durasi ini harus membaca variabel lingkungan (Doppler / `process.env`) secara dinamis agar nilainya dapat diubah sewaktu-waktu oleh tim operasional tanpa membongkar fungsionalitas kode program.
 
 ---
 
@@ -80,5 +92,6 @@ Aplikasi harus merespons kode payload status keuangan member secara terpisah dem
 ## 🛠️ 8. Perintah Eksekusi Pertama Anda
 
 Sebelum Anda mulai menulis kode endpoint baru, membuat interface, atau memodifikasi fungsionalitas pengontrol (*controller*), eksekusi langkah-langkah diagnostik berikut:
-1. Periksa kelancaran koneksi database ke target IP laptop eksternal server lokal yang tertera di dalam berkas konfigurasi `.env`.
-2. Lakukan introspeksi database (`bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `TransactionType`) siap melayani endpoint mobile app.92
+1. Pastikan Doppler CLI login (`doppler login`) dan `doppler.yaml` mengarah ke `hkgoldvip` / `dev_backend`. Verifikasi secret ter-inject: `doppler secrets`.
+2. Periksa kelancaran koneksi database ke target di secret Doppler (`DATABASE_URL`).
+3. Lakukan introspeksi database (`doppler run -- bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `TransactionType`) siap melayani endpoint mobile app.92

@@ -182,7 +182,8 @@ Guidelines below are specific to this app (`apps/backoffice-filament`). They ext
 - **Schema source of truth:** Always read `packages/database/schema.prisma` **before** writing migrations, models, or Filament resources. Laravel migrations and Eloquent models must stay in sync with Prisma (`@@map`, column names, types, relations).
 - **Prisma → Laravel mapping:** Follow `.cursor/rules/make-resource.mdc` for UUID keys, `HasUuids`, `@@map` table names, soft deletes only when Prisma has `deletedAt`, and realistic Indonesian faker context.
 - **Local stack:** Docker provides MySQL (`33068`), Redis (`6381`), MinIO (`9002` API / `9003` console). Object storage uses disk name `r2` — MinIO locally, Cloudflare R2 in production (env-only difference).
-- **Dev server:** `php artisan serve --port=8800` from `apps/backoffice-filament/`.
+- **Env (Doppler):** Project `hkgoldvip`, config `dev_backoffice` (`doppler.yaml`). Template keys: `.env.example` — jangan commit `.env`. Jalankan `composer dev` / `composer dev:flyenv` (script membungkus `doppler run`). One-off: `doppler run -- php artisan …`.
+- **Dev server:** `composer dev` (atau `php artisan serve --port=8800` di dalam `doppler run -- …`) dari `apps/backoffice-filament/`.
 - **R2 wipe on fresh seed:** `migrate:fresh --seed` may wipe the `r2` bucket when `wipe_r2_on_fresh_seed` is enabled (local default).
 
 ## Git Workflow
@@ -191,9 +192,14 @@ Guidelines below are specific to this app (`apps/backoffice-filament`). They ext
 - Do **not** create documentation files unless requested.
 - Keep changes scoped — avoid unrelated refactors in the same task.
 
-## RTK (Rust Token Killer)
+## Agent Tooling (Cursor)
 
-Prefix perintah terminal dengan `rtk` untuk output ringkas (`rtk git status`, `rtk php artisan test --compact`). Boost MCP tools tetap prioritas; jika `rtk` gagal, jalankan perintah biasa. Setup: `rtk init --global --agent cursor`.
+Wajib memakai keempat tools berikut di setiap sesi Cursor:
+
+- **graphify** — sebelum pertanyaan arsitektur/alur: `graphify query "..."`, `graphify path "A" "B"`, atau `graphify explain "..."` bila `graphify-out/graph.json` ada. Setelah ubah kode: `graphify update .` (AST-only).
+- **rtk** — prefix CLI verbose: `rtk git status`, `rtk php artisan test --compact`, `rtk rg …`. Boost MCP tools tetap prioritas; jika `rtk` gagal, jalankan perintah biasa. Setup: `rtk init -g --agent cursor`.
+- **ponytail** — ladder YAGNI / reuse / min diff (root `AGENTS.md` + `.cursor/rules/ponytail.mdc`).
+- **caveman** — jawaban ringkas (full; Bahasa Indonesia). Code fence, error, path, CLI: byte-exact. Label Filament UI tetap Bahasa Indonesia penuh (bukan caveman).
 
 ## UI Language & Navigation
 
