@@ -8,6 +8,8 @@ use App\Filament\Resources\TierMembers\Support\TierMemberFormSupport;
 use App\Filament\Resources\TierMembers\Support\TierSupport;
 use App\Models\TierMember;
 use App\Models\TransactionType;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -30,8 +32,8 @@ class TierMemberForm
                             ->numeric()
                             ->validationMessages([
                                 'required' => 'Min poin wajib diisi.',
-                                'integer'  => 'Min poin harus berupa bilangan bulat.',
-                                'min'      => 'Min poin tidak boleh negatif.',
+                                'integer' => 'Min poin harus berupa bilangan bulat.',
+                                'min' => 'Min poin tidak boleh negatif.',
                             ]),
 
                         TextInput::make('max_points')
@@ -43,13 +45,13 @@ class TierMemberForm
                             ->rules(fn (Get $get, ?TierMember $record): array => [
                                 'required',
                                 'integer',
-                                'min:' . ((int) ($get('min_points') ?? 0) + 1),
+                                'min:'.((int) ($get('min_points') ?? 0) + 1),
                                 TierSupport::noOverlapRule($record, (int) ($get('min_points') ?? 0)),
                             ])
                             ->validationMessages([
                                 'required' => 'Max poin wajib diisi.',
-                                'integer'  => 'Max poin harus berupa bilangan bulat.',
-                                'min'      => 'Max poin harus lebih besar dari min poin.',
+                                'integer' => 'Max poin harus berupa bilangan bulat.',
+                                'min' => 'Max poin harus lebih besar dari min poin.',
                             ]),
                     ]),
 
@@ -67,11 +69,43 @@ class TierMemberForm
                                     ->prefix('Rp')
                                     ->validationMessages([
                                         'required' => "Konversi {$type->display_name} wajib diisi.",
-                                        'min'      => "Konversi {$type->display_name} harus lebih dari 0.",
+                                        'min' => "Konversi {$type->display_name} harus lebih dari 0.",
                                     ]);
                             })
                             ->all();
                     }),
+
+                Section::make('Benefit')
+                    ->description('Daftar benefit yang berlaku untuk tier ini')
+                    ->schema([
+                        Repeater::make('benefits')
+                            ->label('Daftar Benefit')
+                            ->schema([
+                                Hidden::make('id'),
+                                TextInput::make('title')
+                                    ->label('Benefit')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->validationMessages([
+                                        'required' => 'Benefit wajib diisi.',
+                                        'max' => 'Benefit maksimal 255 karakter.',
+                                    ]),
+                                TextInput::make('description')
+                                    ->label('Keterangan')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->validationMessages([
+                                        'required' => 'Keterangan wajib diisi.',
+                                        'max' => 'Keterangan maksimal 255 karakter.',
+                                    ]),
+                            ])
+                            ->columns(2)
+                            ->reorderable()
+                            ->reorderableWithButtons()
+                            ->addActionLabel('Tambah benefit')
+                            ->defaultItems(0)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 }

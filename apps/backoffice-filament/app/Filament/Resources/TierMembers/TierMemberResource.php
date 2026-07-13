@@ -73,7 +73,7 @@ class TierMemberResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['conversionRules.transactionType'])
+            ->with(['conversionRules.transactionType', 'tierBenefits'])
             ->orderByRaw("FIELD(tier_code, 'SILVER', 'GOLD', 'PLATINUM', 'SAPPHIRE')");
     }
 }
