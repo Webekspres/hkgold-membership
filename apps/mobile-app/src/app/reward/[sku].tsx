@@ -1,12 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentDetailScreen } from '@/components/shared/content-detail-screen';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { RewardBranchStockCard } from '@/components/reward/reward-branch-stock-card';
 import { RewardRedeemDialog } from '@/components/reward/reward-redeem-dialog';
 import { Text } from '@/components/ui/text';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useRewardDetail } from '@/hooks/use-reward-detail';
 import { toast } from '@/lib/sonner';
 import type { RewardBranchStockItem } from '@/types/reward';
@@ -20,6 +22,9 @@ export default function RewardDetailScreen() {
   const { reward, isLoading, isError, refetch } = useRewardDetail(
     typeof sku === 'string' ? sku : undefined,
   );
+
+  const refresh = useCallback(() => refetch(), [refetch]);
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   const openRedeemDialog = (stock: RewardBranchStockItem) => {
     setSelectedBranchStock(stock);
@@ -60,7 +65,13 @@ export default function RewardDetailScreen() {
 
   return (
     <>
-      <ContentDetailScreen images={reward.images} title={reward.name}>
+      <ContentDetailScreen
+        images={reward.images}
+        title={reward.name}
+        refreshControl={createPullToRefreshControl({
+          refreshing,
+          onRefresh,
+        })}>
         <View className="gap-2">
           <Text variant="muted" className="text-xs uppercase tracking-wide">
             {reward.categoryName}

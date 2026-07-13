@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import {
@@ -11,12 +11,18 @@ type ContentDetailScreenProps = {
   images: ContentDetailImage[];
   title: string;
   children: ReactNode;
+  refreshControl?: ReactElement;
 };
 
-export function ContentDetailScreen({ images, title, children }: ContentDetailScreenProps) {
+export function ContentDetailScreen({
+  images,
+  title,
+  children,
+  refreshControl,
+}: ContentDetailScreenProps) {
   return (
     <View className="flex-1 bg-background">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} refreshControl={refreshControl}>
         <ContentDetailImageSlider images={images} title={title} />
 
         <View

@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,12 +10,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DateRangeFilterModal } from '@/components/shared/date-range-filter-modal';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { SearchInput } from '@/components/shared/search-input';
 import { NewsArticleCard } from '@/components/berita/news-article-card';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useNewsList } from '@/hooks/use-news-list';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 import {
   EMPTY_DATE_RANGE,
@@ -54,6 +56,9 @@ export default function NewsListScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useNewsList({ q, ...dateParams });
+
+  const refresh = useCallback(() => refetch(), [refetch]);
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   const openFilter = () => {
     setDraftRange(appliedRange);
@@ -112,6 +117,10 @@ export default function NewsListScreen() {
             flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={createPullToRefreshControl({
+            refreshing,
+            onRefresh,
+          })}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) {
               void fetchNextPage();

@@ -8,13 +8,28 @@ import { cn } from "@/lib/utils";
 
 type RewardCatalogSectionProps = {
   categories: RewardCategoryGroup[];
+  isError?: boolean;
   className?: string;
 };
 
 export function RewardCatalogSection({
   categories,
+  isError = false,
   className,
 }: RewardCatalogSectionProps) {
+  if (isError) {
+    return (
+      <View className={cn("gap-1 px-4", className)}>
+        <Text className="text-base font-semibold text-stone-900">
+          Katalog Hadiah
+        </Text>
+        <Text variant="muted" className="text-sm">
+          Gagal memuat katalog hadiah.
+        </Text>
+      </View>
+    );
+  }
+
   if (categories.length === 0) {
     return null;
   }
