@@ -339,6 +339,80 @@ export class RewardService implements IRewardService {
   }
 
   /**
+   * Home teaser: 3 categories with freshest eligible rewards × 2 newest each.
+   */
+  async getHomePreview(): Promise<RewardCategoryGroupData[]> {
+    const now = new Date();
+    const eligibleWhere = {
+      isActive: true,
+      startAt: { lte: now },
+      endAt: { gte: now },
+    };
+
+    const topCategories = await prisma.reward.groupBy({
+      by: ['categoryId'],
+      where: eligibleWhere,
+      _max: { updatedAt: true },
+      orderBy: { _max: { updatedAt: 'desc' } },
+      take: 3,
+    });
+
+    if (topCategories.length === 0) {
+      return [];
+    }
+
+    const groups = await Promise.all(
+      topCategories.map(async ({ categoryId }) => {
+        const rewards = await prisma.reward.findMany({
+          where: { categoryId, ...eligibleWhere },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+          take: 2,
+          include: {
+            category: true,
+            rewardImages: {
+              include: { media: true },
+              orderBy: { sortOrder: 'asc' },
+              take: 1,
+            },
+            rewardBranchStocks: true,
+          },
+        });
+
+        if (rewards.length === 0) {
+          return null;
+        }
+
+        const category = rewards[0].category;
+        return {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          rewards: rewards.map((reward) => {
+            const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
+              const available = Math.max(stock.actualStock - stock.heldStock, 0);
+              return total + available;
+            }, 0);
+
+            return {
+              id: reward.id,
+              sku: reward.sku,
+              name: reward.name,
+              categoryId: reward.categoryId,
+              categoryName: category.name,
+              categorySlug: category.slug,
+              pointsRequired: reward.pointsRequired,
+              stockRemaining,
+              image: reward.rewardImages[0]?.media.fileUrl || null,
+            };
+          }),
+        };
+      }),
+    );
+
+    return groups.filter((g): g is RewardCategoryGroupData => g != null);
+  }
+
+  /**
    * Get catalog grouped by categories
    */
   async getCatalog(params?: { categoryIds?: number[] }): Promise<RewardCategoryGroupData[]> {

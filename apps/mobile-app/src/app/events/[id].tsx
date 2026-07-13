@@ -1,12 +1,15 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GoldButton } from '@/components/shared/gold-button';
 import { ContentDetailHighlightBox } from '@/components/shared/content-detail-highlight-box';
 import { ContentDetailScreen } from '@/components/shared/content-detail-screen';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { Text } from '@/components/ui/text';
 import { useEventDetail } from '@/hooks/use-event-detail';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { formatEventDateTimeHighlight } from '@/lib/format/format-event-datetime';
 import { openLocationUrl } from '@/lib/open-location-url';
 
@@ -15,6 +18,9 @@ export default function EventDetailScreen() {
   const { event, isLoading, isError, refetch } = useEventDetail(
     typeof id === 'string' ? id : undefined,
   );
+
+  const refresh = useCallback(() => refetch(), [refetch]);
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   if (isLoading) {
     return (
@@ -45,7 +51,13 @@ export default function EventDetailScreen() {
   const hasLocation = Boolean(event.locationAddress || event.locationUrl);
 
   return (
-    <ContentDetailScreen images={event.imageUrls} title={event.title}>
+    <ContentDetailScreen
+      images={event.imageUrls}
+      title={event.title}
+      refreshControl={createPullToRefreshControl({
+        refreshing,
+        onRefresh,
+      })}>
       <View className="gap-2">
         <Text className="text-2xl font-semibold leading-snug text-stone-900">{event.title}</Text>
       </View>

@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,12 +11,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BranchCityFilterDropdown } from '@/components/branch/branch-city-filter-dropdown';
 import { BranchListCard } from '@/components/branch/branch-list-card';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { SearchInput } from '@/components/shared/search-input';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useBranchCities } from '@/hooks/use-branch-cities';
 import { useBranchesList } from '@/hooks/use-branches-list';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
@@ -34,7 +36,7 @@ export default function BranchListScreen() {
   const city = selectedCity && selectedCity !== 'all' ? selectedCity : undefined;
   const hasActiveFilter = Boolean(city);
 
-  const { options: cityOptions } = useBranchCities();
+  const { options: cityOptions, refetch: refetchCities } = useBranchCities();
   const {
     branches,
     isLoading,
@@ -44,6 +46,12 @@ export default function BranchListScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useBranchesList({ q, city });
+
+  const refresh = useCallback(
+    () => Promise.all([refetch(), refetchCities()]),
+    [refetch, refetchCities],
+  );
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   return (
     <View className="flex-1 bg-background">
@@ -83,6 +91,10 @@ export default function BranchListScreen() {
             flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={createPullToRefreshControl({
+            refreshing,
+            onRefresh,
+          })}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) {
               void fetchNextPage();

@@ -15,4 +15,7 @@ export interface IRewardService {
   getBySku(sku: string): Promise<RewardDetailData | null>;
 
   getCatalog(params?: { categoryIds?: number[] }): Promise<RewardCategoryGroupData[]>;
+
+  /** Home teaser: top 3 categories by max reward.updatedAt × 2 newest rewards each */
+  getHomePreview(): Promise<RewardCategoryGroupData[]>;
 }

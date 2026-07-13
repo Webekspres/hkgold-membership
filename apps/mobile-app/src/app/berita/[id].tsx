@@ -1,16 +1,22 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentDetailScreen } from '@/components/shared/content-detail-screen';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { Text } from '@/components/ui/text';
 import { useNewsDetail } from '@/hooks/use-news-detail';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 
 export default function NewsDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { article, isLoading, isError, refetch } = useNewsDetail(
     typeof id === 'string' ? id : undefined,
   );
+
+  const refresh = useCallback(() => refetch(), [refetch]);
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   if (isLoading) {
     return (
@@ -39,7 +45,13 @@ export default function NewsDetailScreen() {
   }
 
   return (
-    <ContentDetailScreen images={article.imageUrls} title={article.title}>
+    <ContentDetailScreen
+      images={article.imageUrls}
+      title={article.title}
+      refreshControl={createPullToRefreshControl({
+        refreshing,
+        onRefresh,
+      })}>
       <View className="gap-2">
         <Text className="text-2xl font-semibold leading-snug text-stone-900">
           {article.title}
