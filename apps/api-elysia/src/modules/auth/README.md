@@ -45,15 +45,20 @@ Register user baru (otomatis membuat User + Member).
 ```
 
 ### POST /api/auth/login
-Login dengan phone number atau member number.
+Login dengan email, phone number, atau member number.
 
 **Request Body:**
 ```json
 {
-  "identifier": "081234567890",  // atau "HKA0000001"
+  "identifier": "user@example.com",  // atau "081234567890" / "HKA0000001"
   "password": "password123"
 }
 ```
+
+`identifier` diterima dalam tiga bentuk:
+- **Email** — mengandung `@` (contoh: `user@example.com`)
+- **Nomor HP** — `08xxx` atau `+62xxx` (dinormalisasi ke `+62xxx`)
+- **Nomor Member** — contoh `HKA0000001`
 
 **Response:** Same as register
 

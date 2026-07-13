@@ -26,6 +26,7 @@
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.14",
     "expo-router": "~56.2.11",
+    "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
@@ -37,7 +38,6 @@
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
     "react-native-element-dropdown": "^2.12.4",
-    "react-native-encrypted-storage": "^4.0.3",
     "react-native-gesture-handler": "~2.31.1",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "^4.3.1",
@@ -61,11 +61,11 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "doppler run -- npx expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "android": "doppler run -- npx expo start --android",
+    "ios": "doppler run -- npx expo start --ios",
+    "web": "doppler run -- npx expo start --web",
     "lint": "expo lint"
   },
   "private": true

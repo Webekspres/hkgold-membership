@@ -9,6 +9,8 @@ export type ProfileMenuItem = {
   key: string;
   title: string;
   icon: LucideIcon;
+  /** Merah — dipakai menu destructive seperti Logout */
+  destructive?: boolean;
 };
 
 type ProfileMenuListProps = {
@@ -27,10 +29,26 @@ export function ProfileMenuList({ title = "Menu", items, onPressItem }: ProfileM
             key={item.key}
             className="flex-row items-center gap-3 px-4 py-3 active:opacity-80"
             onPress={() => onPressItem(item)}>
-            <View className="size-8 items-center justify-center rounded-full bg-amber-100">
-              <Icon as={item.icon} size={16} className="text-amber-700" />
+            <View
+              className={
+                item.destructive
+                  ? "size-8 items-center justify-center rounded-full bg-red-100"
+                  : "size-8 items-center justify-center rounded-full bg-amber-100"
+              }>
+              <Icon
+                as={item.icon}
+                size={16}
+                className={item.destructive ? "text-red-600" : "text-amber-700"}
+              />
             </View>
-            <Text className="flex-1 text-sm text-stone-800">{item.title}</Text>
+            <Text
+              className={
+                item.destructive
+                  ? "flex-1 text-sm text-red-600"
+                  : "flex-1 text-sm text-stone-800"
+              }>
+              {item.title}
+            </Text>
             <Icon as={ChevronRight} size={14} className="text-stone-400" />
             {index < items.length - 1 ? (
               <View className="absolute bottom-0 left-14 right-4 h-px bg-stone-100" />
