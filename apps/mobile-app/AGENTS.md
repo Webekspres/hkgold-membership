@@ -2,6 +2,15 @@
 
 Anda adalah **Expert React Native & TypeScript Developer** yang membangun aplikasi seluler berperforma tinggi, aman, dan bernuansa premium (_luxury aesthetic_).
 
+## Agent Tooling (Cursor)
+
+Wajib memakai keempat tools berikut di setiap sesi Cursor:
+
+- **graphify** — sebelum pertanyaan arsitektur/alur: `graphify query "..."`, `graphify path "A" "B"`, atau `graphify explain "..."` bila `graphify-out/graph.json` ada. Setelah ubah kode: `graphify update .` (AST-only).
+- **rtk** — prefix CLI verbose: `rtk git …`, `rtk rg …`, `rtk npm …`, `rtk npx …`. Jika gagal, fallback perintah biasa.
+- **ponytail** — ladder YAGNI / reuse / min diff (root `AGENTS.md` + `.cursor/rules/ponytail.mdc`).
+- **caveman** — jawaban ringkas (full; Bahasa Indonesia). Code fence, error, path, CLI: byte-exact. String UI app tetap Bahasa Indonesia penuh (bukan caveman).
+
 Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi seluler **HK GOLD VIP (Mala Emas)** — program loyalitas ritel perhiasan emas nasional. Aplikasi ini beroperasi paralel dengan:
 
 | Aplikasi | Path monorepo | Peran |
@@ -38,8 +47,8 @@ Struktur folder sudah dievolusi (components per domain, `mocks/` + `config/` + `
 | Auth login/register | ✅ UI saja | Belum wired ke API / JWT |
 | Tab Card & Profile | 🔲 placeholder | `ComingSoonScreen` |
 | CMS hub `/cms` | 🔲 placeholder | `ComingSoonScreen` |
-| Integrasi API | ❌ | `axios`, React Query, encrypted storage belum dipasang |
-| Auth gate | ❌ | Belum ada cek session di root layout |
+| Integrasi API | 🟡 | Auth sudah wired (`axios` + encrypted storage); konten lain masih mock |
+| Auth gate | ✅ | Root `_layout.tsx` redirect ke `/login` jika tidak ada token |
 
 ### Fitur UI yang sudah dibangun (mock)
 
@@ -51,7 +60,7 @@ Struktur folder sudah dievolusi (components per domain, `mocks/` + `config/` + `
 
 ### Langkah berikutnya (prioritas wajar)
 
-1. Pasang `axios` + `@tanstack/react-query` + `react-native-encrypted-storage`.
+1. Pasang `axios` + `@tanstack/react-query` + `expo-secure-store`.
 2. Implementasi auth (login API, simpan JWT, auth gate di `_layout.tsx`).
 3. Ganti isi `src/services/*` dari mock ke API; pertahankan signature fungsi facade.
 4. Tambah `services/member.ts` (wallet, tier) — home masih import `MOCK_MEMBER` & `MOCK_PROMOTION_BANNERS` langsung dari `mocks/`.
@@ -96,7 +105,7 @@ Anda **wajib** mematuhi stack berikut. Jangan mengganti dengan alternatif tanpa 
 | --- | --- | --- |
 | Server state | **@tanstack/react-query** | Cache saldo poin, ledger, katalog |
 | HTTP | **axios** | Client API dengan interceptor JWT global |
-| Secure storage | **react-native-encrypted-storage** | JWT _stay logged in_ (Keychain / Keystore) |
+| Secure storage | **expo-secure-store** | JWT stay logged in (Keychain / Keystore); cocok Expo Go |
 | QR digital card | **react-native-qrcode-svg** | Kartu member SVG |
 
 Instal dependensi baru dengan `npx expo install <package>` agar versi kompatibel SDK 56.
@@ -297,7 +306,7 @@ Gunakan `@/components/ui/text` dengan variant RNR (`h1`, `small`, `muted`, `code
 - **Komponen:** function component; export named untuk utilitas, default export untuk screen route.
 - **Hooks:** prefix `use`, letakkan di `src/hooks/`.
 - **API & bisnis logic:** `src/lib/` untuk utilitas murni; `src/services/` untuk akses data (mock → API).
-- **Jangan** commit `.env`, secret, atau token; gunakan `EXPO_PUBLIC_*` hanya untuk nilai yang aman diekspos ke client.
+- **Jangan** commit secret/token; env dari Doppler (`hkgoldvip` / `dev_mobile`). Template: `.env.example`. `EXPO_PUBLIC_*` hanya untuk nilai aman di client.
 - **Lint:** `npm run lint` (Expo ESLint).
 - **Scope perubahan:** minimal diff; jangan refactor file tidak terkait task.
 
@@ -309,9 +318,11 @@ API mobile masih dalam tahap awal. Ikuti konvensi berikut saat mengintegrasikan:
 
 ### Environment
 
+Sumber: Doppler project `hkgoldvip`, config `dev_mobile` (`doppler.yaml`). Script `npm start` / `android` / `ios` / `web` memakai `doppler run`.
+
 ```env
-# .env.local (jangan di-commit)
-EXPO_PUBLIC_API_URL=http://localhost:3000
+# .env.example (template saja — secret di Doppler)
+EXPO_PUBLIC_API_URL=http://192.168.0.193:3000
 ```
 
 Akses di kode: `process.env.EXPO_PUBLIC_API_URL`
@@ -323,7 +334,7 @@ Jangan ubah import di screen saat API siap — **ganti implementasi di `src/serv
 ### Auth (target)
 
 - Login member → JWT access token (+ refresh jika disediakan backend).
-- Simpan token di `react-native-encrypted-storage`; jangan `AsyncStorage` untuk JWT.
+- Simpan token di `expo-secure-store`; jangan `AsyncStorage` untuk JWT.
 - Axios interceptor: attach `Authorization: Bearer <token>`; pada `401` → clear session & redirect ke `login`.
 - Auth gate di root layout: cek session sebelum render `(tabs)`.
 
@@ -376,7 +387,9 @@ Nuansa **emas premium** di atas fondasi **stone** (RNR neutral).
 ```bash
 cd apps/mobile-app
 npm install
-npm start                    # Expo dev server (+ regenerate typed routes)
+# sekali per mesin: doppler login + doppler setup --no-interactive
+# WAJIB pakai npm start (doppler run) — jangan `npx expo start` tanpa Doppler
+npm start                    # Expo via doppler run (+ regenerate typed routes)
 npm run ios
 npm run android
 npm run lint

@@ -54,16 +54,6 @@ export default function HomeScreen() {
 
           <LatestNewsSection articles={latestNews} />
 
-          <View className="px-4">
-            <Button
-              variant="outline"
-              className="self-stretch"
-              onPress={() => router.push("/login")}
-            >
-              <Text>Masuk</Text>
-            </Button>
-          </View>
-
           <RewardCatalogSection categories={rewardCatalog} />
         </ScrollView>
       </SafeAreaView>

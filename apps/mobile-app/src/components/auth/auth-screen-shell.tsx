@@ -1,6 +1,12 @@
 import { Image } from 'expo-image';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui/card';
@@ -26,15 +32,20 @@ export function AuthScreenShell({ children, scrollable = false }: AuthScreenShel
       />
       <SafeAreaView style={styles.overlay}>
         {scrollable ? (
-          <ScrollView
+          <KeyboardAvoidingView
             style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.cardSlot}>
-              <AuthCard>{children}</AuthCard>
-            </View>
-          </ScrollView>
+            behavior={Platform.select({ ios: 'padding', android: 'height' })}
+            keyboardVerticalOffset={Platform.select({ ios: 0, android: 24 })}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.cardSlot}>
+                <AuthCard>{children}</AuthCard>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         ) : (
           <View style={styles.cardSlot}>
             <AuthCard>{children}</AuthCard>
