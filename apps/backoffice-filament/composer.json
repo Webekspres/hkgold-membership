@@ -46,19 +46,16 @@
     "scripts": {
         "setup": [
             "composer install",
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
-            "@php artisan key:generate",
-            "@php artisan migrate --force",
             "npm install --ignore-scripts",
             "npm run build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#86efac,#fdba74\" \"php artisan serve --host=0.0.0.0 --port=8800\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"npm run dev\" --names='server,bulk-queue,activity-queue,vite'"
+            "doppler run -- npx concurrently -c \"#93c5fd,#c4b5fd,#86efac,#fdba74\" \"php artisan serve --host=0.0.0.0 --port=8800\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"npm run dev\" --names='server,bulk-queue,activity-queue,vite'"
         ],
         "dev:flyenv": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#86efac,#fdba74\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"npm run dev\" --names='bulk-queue,activity-queue,vite'"
+            "doppler run -- npx concurrently -c \"#c4b5fd,#86efac,#fdba74\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"npm run dev\" --names='bulk-queue,activity-queue,vite'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
@@ -74,11 +71,9 @@
             "@php artisan boost:update --ansi"
         ],
         "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+            "@php -r \"echo 'Env dari Doppler (project hkgoldvip / config dev_backoffice). Lihat .env.example + doppler.yaml.' . PHP_EOL;\""
         ],
         "post-create-project-cmd": [
-            "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [

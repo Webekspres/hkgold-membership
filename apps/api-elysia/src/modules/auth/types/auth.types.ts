@@ -8,7 +8,7 @@ export interface RegisterRequest {
 }
 
 export interface LoginRequest {
-  identifier: string; // phone number atau member number
+  identifier: string; // email, phone number, atau member number
   password: string;
 }
 

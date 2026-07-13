@@ -180,71 +180,125 @@ export class AuthService implements IAuthService {
       throw new Error('Identifier dan password wajib diisi');
     }
 
-    // Normalize identifier if it's a phone number
-    let searchIdentifier = identifier;
-    if (identifier.match(/^[0-9+]/)) {
-      try {
-        searchIdentifier = normalizePhoneNumber(identifier);
-      } catch {
-        // Not a valid phone, might be member number
+    const trimmed = identifier.trim();
+    let authUser: {
+      id: string;
+      email: string;
+      fullName: string;
+      password: string;
+      role: string;
+      isActive: boolean;
+    };
+    let authMember: {
+      id: string;
+      memberNumber: string;
+      phoneNumber: string;
+      currentTier: string;
+      pointBalance: number;
+      isSuspended: boolean;
+    };
+
+    // ponytail: select only auth fields — DB may lag schema (e.g. birth_date missing)
+    const userSelect = {
+      id: true,
+      email: true,
+      fullName: true,
+      password: true,
+      role: true,
+      isActive: true,
+    } as const;
+    const memberSelect = {
+      id: true,
+      memberNumber: true,
+      phoneNumber: true,
+      currentTier: true,
+      pointBalance: true,
+      isSuspended: true,
+    } as const;
+
+    if (trimmed.includes('@')) {
+      // Login via email
+      const user = await prisma.user.findUnique({
+        where: { email: trimmed },
+        select: {
+          ...userSelect,
+          member: { select: memberSelect },
+        },
+      });
+
+      if (!user || !user.member) {
+        throw new Error('User tidak ditemukan');
       }
+
+      authUser = user;
+      authMember = user.member;
+    } else {
+      // Login via phone number atau member number
+      let searchIdentifier = trimmed;
+      if (trimmed.match(/^[0-9+]/)) {
+        try {
+          searchIdentifier = normalizePhoneNumber(trimmed);
+        } catch {
+          // Not a valid phone, might be member number
+        }
+      }
+
+      const member = await prisma.member.findFirst({
+        where: {
+          OR: [
+            { phoneNumber: searchIdentifier },
+            { memberNumber: searchIdentifier },
+          ],
+        },
+        select: {
+          ...memberSelect,
+          user: { select: userSelect },
+        },
+      });
+
+      if (!member || !member.user) {
+        throw new Error('User tidak ditemukan');
+      }
+
+      authUser = member.user;
+      authMember = member;
     }
 
-    // Find user by phone number OR member number
-    const member = await prisma.member.findFirst({
-      where: {
-        OR: [
-          { phoneNumber: searchIdentifier },
-          { memberNumber: searchIdentifier }
-        ]
-      },
-      include: {
-        user: true
-      }
-    });
-
-    if (!member || !member.user) {
-      throw new Error('User tidak ditemukan');
-    }
-
-    // Verify password
-    const isValid = await Bun.password.verify(password, member.user.password);
+    const isValid = await Bun.password.verify(password, authUser.password);
     if (!isValid) {
       throw new Error('Password salah');
     }
 
-    // Check if user is active
-    if (!member.user.isActive) {
+    if (!authUser.isActive) {
       throw new Error('Akun Anda telah dinonaktifkan');
     }
 
     // Note: isSuspended does NOT block login (per AGENTS.md)
-    // Generate tokens
     const tokens = await jwtService.generateTokenPair({
-      userId: member.user.id,
-      memberId: member.id,
-      role: member.user.role,
-      isActive: member.user.isActive,
-      isSuspended: member.isSuspended
+      userId: authUser.id,
+      memberId: authMember.id,
+      role: authUser.role,
+      isActive: authUser.isActive,
+      isSuspended: authMember.isSuspended
     });
 
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: {
-        id: member.user.id,
-        email: member.user.email,
-        fullName: member.user.fullName,
-        role: member.user.role,
-        isActive: member.user.isActive
+        id: authUser.id,
+        email: authUser.email,
+        fullName: authUser.fullName,
+        role: authUser.role,
+        isActive: authUser.isActive
       },
       member: {
-        id: member.id,
-        memberNumber: member.memberNumber,
-        phoneNumber: member.phoneNumber,
-        currentTier: member.currentTier,
-        pointBalance: member.pointBalance,
-        isSuspended: member.isSuspended
+        id: authMember.id,
+        memberNumber: authMember.memberNumber,
+        phoneNumber: authMember.phoneNumber,
+        currentTier: authMember.currentTier,
+        pointBalance: authMember.pointBalance,
+        isSuspended: authMember.isSuspended
       }
     };
   }

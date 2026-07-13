@@ -2,9 +2,10 @@
   "name": "api-elysia",
   "version": "1.0.50",
   "scripts": {
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "dev": "bun run --watch src/index.ts"
+    "test": "doppler run -- bun test",
+    "test:watch": "doppler run -- bun test --watch",
+    "dev": "doppler run -- bun run --watch src/index.ts",
+    "start": "doppler run -- bun run src/index.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1084.0",

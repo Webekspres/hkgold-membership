@@ -1,0 +1,17 @@
+---
+description: RTK — prefix verbose CLI with rtk to shrink tool output tokens.
+alwaysApply: true
+---
+
+# RTK (Rust Token Killer)
+
+When running Shell commands that produce verbose output, prefer the `rtk` proxy:
+
+- `git status|diff|log|add|commit|push|pull` → `rtk git …`
+- `ls` / `tree` → `rtk ls` / `rtk tree`
+- `cat|head|tail` / file read via shell → `rtk read …`
+- `grep` / `rg` → `rtk grep` / `rtk rg`
+- `npm` / `npx` / `bun` / `prisma` / `tsc` / `docker` → `rtk <cmd> …`
+- Tests / lint → `rtk test …` / `rtk lint …` when applicable
+
+If `rtk` fails or has no wrapper for the command, run the plain command. Cursor hook (`rtk hook cursor` on Shell) may auto-rewrite; still prefer explicit `rtk` prefixes when writing commands yourself.
