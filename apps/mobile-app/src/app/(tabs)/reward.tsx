@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RewardCatalogCard } from '@/components/reward/reward-catalog-card';
 import { RewardFilterModal } from '@/components/reward/reward-filter-modal';
+import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
 import { SearchInput } from '@/components/shared/search-input';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -13,6 +14,7 @@ import {
   GRID_HORIZONTAL_PADDING,
 } from '@/constants/layout/grid-layout';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useRewardCatalog } from '@/hooks/use-reward-catalog';
 import { useRewardCategories } from '@/hooks/use-reward-categories';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
@@ -48,7 +50,7 @@ export default function RewardTabScreen() {
     createDefaultRewardFilter(POINTS_BOUNDS),
   );
 
-  const { categories } = useRewardCategories();
+  const { categories, refetch: refetchCategories } = useRewardCategories();
   const {
     rewards,
     isLoading,
@@ -62,6 +64,12 @@ export default function RewardTabScreen() {
     appliedFilter,
     pointsBounds: POINTS_BOUNDS,
   });
+
+  const refresh = useCallback(
+    () => Promise.all([refetch(), refetchCategories()]),
+    [refetch, refetchCategories],
+  );
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   const filterActive = hasActiveRewardFilter(appliedFilter, POINTS_BOUNDS);
 
@@ -157,6 +165,10 @@ export default function RewardTabScreen() {
             }
             contentContainerStyle={{ paddingVertical: 16, paddingBottom: 24, flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
+            refreshControl={createPullToRefreshControl({
+              refreshing,
+              onRefresh,
+            })}
           />
         )}
       </SafeAreaView>

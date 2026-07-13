@@ -1,7 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import {
   getRewardDetailBySku,
-  MOCK_REWARD_CATALOG,
   MOCK_REWARD_CATEGORIES,
   MOCK_REWARD_LIST,
 } from '@/mocks/mock-rewards';
@@ -9,6 +8,7 @@ import type { ApiEnvelope } from '@/types/auth';
 import type {
   RewardCatalogPage,
   RewardCategory,
+  RewardCategoryGroup,
   RewardDetail,
 } from '@/types/reward';
 
@@ -18,11 +18,6 @@ export function getRewardList() {
 
 export function getRewardCategories() {
   return MOCK_REWARD_CATEGORIES;
-}
-
-/** Home catalog — tetap mock (out of scope). */
-export function getRewardCatalog() {
-  return MOCK_REWARD_CATALOG;
 }
 
 /** @deprecated Prefer fetchRewardBySku */
@@ -52,6 +47,18 @@ function buildRewardListQuery(params: FetchRewardCatalogParams): string {
   if (params.sortOrder) sp.set('sortOrder', params.sortOrder);
   params.categoryIds?.forEach((id) => sp.append('categoryIds', String(id)));
   return sp.toString();
+}
+
+export async function fetchHomeRewardPreview(): Promise<RewardCategoryGroup[]> {
+  const { data } = await apiClient.get<ApiEnvelope<RewardCategoryGroup[]>>(
+    '/api/reward/home',
+  );
+
+  if (!data.success || !data.data) {
+    throw new Error(data.message || 'Gagal mengambil preview reward');
+  }
+
+  return data.data;
 }
 
 export async function fetchRewardCatalogPage(

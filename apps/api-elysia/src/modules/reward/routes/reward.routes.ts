@@ -24,6 +24,33 @@ export const rewardRoutes = new Elysia({ prefix: '/api/reward' })
   })
 
   /**
+   * GET /api/reward/home
+   * Public — home teaser: 3 freshest categories × 2 newest rewards
+   */
+  .get('/home', async ({ set }) => {
+    try {
+      const preview = await rewardService.getHomePreview();
+
+      return {
+        success: true,
+        message: 'Preview reward homepage berhasil diambil',
+        data: preview,
+      };
+    } catch {
+      set.status = 500;
+      return {
+        success: false,
+        message: 'Gagal mengambil preview reward homepage',
+      };
+    }
+  }, {
+    detail: {
+      summary: 'Get home reward preview (3 categories × 2 rewards)',
+      tags: ['Reward'],
+    },
+  })
+
+  /**
    * GET /api/reward/catalog
    * Public endpoint - no auth required
    * Returns rewards grouped by categories

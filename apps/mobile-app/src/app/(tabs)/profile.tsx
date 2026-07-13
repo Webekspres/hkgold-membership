@@ -10,7 +10,7 @@ import {
   Newspaper,
   Settings,
 } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import dayjs from "dayjs";
@@ -20,6 +20,7 @@ import { ProfileLastRewardCard } from "@/components/profile/profile-last-reward-
 import { ProfileMemberCard } from "@/components/profile/profile-member-card";
 import { ProfileMenuList, type ProfileMenuItem } from "@/components/profile/profile-menu-list";
 import { ProfilePointsTierCard } from "@/components/profile/profile-points-tier-card";
+import { createPullToRefreshControl } from "@/components/shared/pull-to-refresh";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,7 @@ import {
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/hooks/use-auth";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { copyMemberCode } from "@/lib/clipboard/copy-member-code";
 import { toast } from "@/lib/sonner";
 import { getRewardList } from "@/services/rewards";
@@ -54,9 +56,12 @@ const profileMenus: ProfileMenuItem[] = [
 
 export default function ProfileScreen() {
   const { logout } = useAuth();
-  const { card } = useMyProfile();
+  const { card, refetch: refetchProfile } = useMyProfile();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const refresh = useCallback(() => refetchProfile(), [refetchProfile]);
+  const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   const birthDateLabel = useMemo(() => {
     if (!card?.birthDate) return null;
@@ -116,7 +121,11 @@ export default function ProfileScreen() {
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-4 px-4 pb-8 pt-4"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          refreshControl={createPullToRefreshControl({
+            refreshing,
+            onRefresh,
+          })}>
           {card ? (
             <>
               <ProfileMemberCard

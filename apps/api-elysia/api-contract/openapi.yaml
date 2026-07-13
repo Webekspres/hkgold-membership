@@ -2024,6 +2024,54 @@ paths:
                     name: "Perhiasan"
                     slug: "perhiasan"
 
+  /api/reward/home:
+    get:
+      tags:
+        - Reward
+      summary: Get home reward preview (3 categories × 2 rewards)
+      description: |
+        Teaser homepage: 3 kategori dengan MAX(reward.updatedAt) tertinggi
+        (reward eligible: isActive + dalam startAt/endAt), masing-masing 2 reward
+        terbaru by updatedAt. Urutan kategori paling segar dulu.
+      security: []
+      responses:
+        '200':
+          description: Preview reward homepage berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RewardCategoryGroupData'
+              example:
+                success: true
+                message: "Preview reward homepage berhasil diambil"
+                data:
+                  - id: 1
+                    name: "E-Voucher"
+                    slug: "e-voucher"
+                    rewards:
+                      - id: "550e8400-e29b-41d4-a716-446655440050"
+                        sku: "EVC-001"
+                        name: "Voucher Belanja Rp 100.000"
+                        categoryId: 1
+                        categoryName: "E-Voucher"
+                        categorySlug: "e-voucher"
+                        pointsRequired: 2500
+                        stockRemaining: 8
+                        image: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/reward/catalog:
     get:
       tags:
