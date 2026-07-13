@@ -6,27 +6,34 @@ namespace App\Services\Loyalty;
 
 use App\Data\Loyalty\ManualPointInjectionData;
 use App\Data\Loyalty\ManualPointInjectionResult;
+use App\Enums\ActivityLogAction;
+use App\Enums\NotificationPlatform;
 use App\Exceptions\Loyalty\ManualPointInjectionException;
-use App\Models\ActivityLog;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\PointMutation;
 use App\Models\TransactionType;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ManualPointInjectionService
 {
     public function __construct(
         private readonly PointCalculationService $pointCalculation,
+        private readonly ActivityLogger $activityLogger,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function inject(ManualPointInjectionData $data, User $actor, string $ipAddress): ManualPointInjectionResult
     {
         $this->validatePayload($data);
 
-        return DB::transaction(function () use ($data, $actor, $ipAddress): ManualPointInjectionResult {
+        $result = DB::transaction(function () use ($data, $actor, $ipAddress): ManualPointInjectionResult {
             $member = Member::query()
                 ->with('user')
                 ->whereKey($data->memberId)
@@ -95,27 +102,25 @@ class ManualPointInjectionService
                 'last_activity_at' => $data->transactionDate,
             ]);
 
-            ActivityLog::query()->create([
-                'user_id' => $actor->id,
-                'action' => 'manual_point_injection',
-                'description' => 'Suntik poin manual oleh staff',
-                'auditable_type' => 'PointMutation',
-                'auditable_id' => $mutation->id,
-                'before_json' => [
+            $this->activityLogger->log(
+                action: ActivityLogAction::ManualPointInjection,
+                description: 'Suntik poin manual oleh staff',
+                auditable: $mutation,
+                ipAddress: $ipAddress,
+                before: [
                     'point_balance' => $previousBalance,
                     'highest_point' => $previousHighest,
                     'current_tier' => $previousTier->value,
                     'last_activity_at' => $previousLastActivity?->toIso8601String(),
                 ],
-                'after_json' => [
+                after: [
                     'point_balance' => $newBalance,
                     'highest_point' => $newHighest,
                     'current_tier' => $newTier->value,
                     'last_activity_at' => $data->transactionDate->toIso8601String(),
                 ],
-                'ip_address' => $ipAddress,
-                'created_at' => now(),
-            ]);
+                actor: $actor,
+            );
 
             return new ManualPointInjectionResult(
                 mutationId: $mutation->id,
@@ -137,6 +142,10 @@ class ManualPointInjectionService
                 transactionDate: $data->transactionDate,
             );
         });
+
+        $this->dispatchInjectionNotifications($result, $actor);
+
+        return $result;
     }
 
     /**
@@ -212,6 +221,46 @@ class ManualPointInjectionService
 
         if ($data->transactionDate->copy()->startOfDay()->gt(Carbon::today())) {
             throw ManualPointInjectionException::invalidTransactionDate();
+        }
+    }
+
+    private function dispatchInjectionNotifications(ManualPointInjectionResult $result, User $actor): void
+    {
+        try {
+            $memberUser = Member::query()
+                ->with('user')
+                ->find($result->memberId)
+                ?->user;
+
+            if ($memberUser !== null) {
+                $this->notificationService->notifyUser(
+                    user: $memberUser,
+                    title: 'Poin berhasil ditambahkan',
+                    body: "{$result->pointsIssued} poin dari transaksi {$result->transactionType} telah ditambahkan. Saldo: {$result->newBalance} poin.",
+                    platforms: [NotificationPlatform::MobileAppPush],
+                    payload: [
+                        'type' => 'point_injection',
+                        'mutation_id' => $result->mutationId,
+                    ],
+                );
+            }
+
+            $this->notificationService->notifyUser(
+                user: $actor,
+                title: 'Suntik poin berhasil',
+                body: "{$result->pointsIssued} poin untuk {$result->memberName} berhasil dicatat.",
+                platforms: [NotificationPlatform::WebAdminInApp],
+                payload: [
+                    'type' => 'point_injection_confirmation',
+                    'mutation_id' => $result->mutationId,
+                ],
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Notifikasi suntik poin gagal diantre.', [
+                'mutation_id' => $result->mutationId,
+                'member_id' => $result->memberId,
+                'message' => $exception->getMessage(),
+            ]);
         }
     }
 

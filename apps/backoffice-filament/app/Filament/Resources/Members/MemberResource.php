@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Members;
 
+use App\Enums\Role;
+use App\Filament\Resources\ActivityLogs\RelationManagers\ActivityLogsRelationManager;
 use App\Filament\Resources\Members\Pages\CreateMember;
 use App\Filament\Resources\Members\Pages\EditMember;
 use App\Filament\Resources\Members\Pages\ListMembers;
@@ -13,12 +15,14 @@ use App\Filament\Resources\Members\Schemas\MemberInfolist;
 use App\Filament\Resources\Members\Tables\MembersTable;
 use App\Models\Member;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class MemberResource extends Resource
 {
@@ -38,6 +42,29 @@ class MemberResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'member_number';
 
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->hasRole(Utils::getSuperAdminName())) {
+            return true;
+        }
+
+        if ($user->hasAnyRole([
+            strtolower(Role::SuperAdmin->value),
+            strtolower(Role::Marketing->value),
+            strtolower(Role::StoreManager->value),
+        ])) {
+            return false;
+        }
+
+        return $user->can('ViewAny:Member');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MemberForm::configure($schema);
@@ -55,7 +82,9 @@ class MemberResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            ActivityLogsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

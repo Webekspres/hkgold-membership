@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Rewards\RelationManagers;
 
+use App\Enums\ActivityLogAction;
 use App\Models\Branch;
 use App\Models\BranchRewardStock;
+use App\Services\ActivityLog\ActivityLogger;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
@@ -13,6 +15,8 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class BranchStocksRelationManager extends RelationManager
@@ -24,7 +28,7 @@ class BranchStocksRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->query(function (): \Illuminate\Database\Eloquent\Builder {
+            ->query(function (): Builder {
                 $rewardId = $this->getOwnerRecord()->getKey();
 
                 return Branch::query()
@@ -38,7 +42,7 @@ class BranchStocksRelationManager extends RelationManager
                     ])
                     ->leftJoin('reward_branch_stocks as rbs', function ($join) use ($rewardId): void {
                         $join->on('branches.id', '=', 'rbs.branch_id')
-                             ->where('rbs.reward_id', '=', $rewardId);
+                            ->where('rbs.reward_id', '=', $rewardId);
                     });
             })
             ->heading(null)
@@ -58,14 +62,13 @@ class BranchStocksRelationManager extends RelationManager
                 TextColumn::make('available_stock')
                     ->label('Tersedia')
                     ->numeric()
-                    ->sortable(query: fn ($query, string $direction): \Illuminate\Database\Eloquent\Builder =>
-                        $query->orderByRaw("(COALESCE(rbs.actual_stock, 0) - COALESCE(rbs.held_stock, 0)) {$direction}")
+                    ->sortable(query: fn ($query, string $direction): Builder => $query->orderByRaw("(COALESCE(rbs.actual_stock, 0) - COALESCE(rbs.held_stock, 0)) {$direction}")
                     )
                     ->badge()
                     ->color(fn (int $state): string => match (true) {
-                        $state > 10  => 'success',
-                        $state > 0   => 'warning',
-                        default      => 'danger',
+                        $state > 10 => 'success',
+                        $state > 0 => 'warning',
+                        default => 'danger',
                     }),
             ])
             ->defaultSort('available_stock', 'desc')
@@ -100,14 +103,33 @@ class BranchStocksRelationManager extends RelationManager
                         'actual_stock' => $record->actual_stock,
                     ])
                     ->action(function (Branch $record, array $data): void {
+                        $ownerRecord = $this->getOwnerRecord();
+                        $before = [
+                            'branch_id' => $record->id,
+                            'actual_stock' => (int) $record->actual_stock,
+                        ];
+
                         BranchRewardStock::updateOrCreate(
                             [
-                                'reward_id' => $this->getOwnerRecord()->getKey(),
+                                'reward_id' => $ownerRecord->getKey(),
                                 'branch_id' => $record->id,
                             ],
                             [
                                 'actual_stock' => (int) $data['actual_stock'],
                             ]
+                        );
+
+                        app(ActivityLogger::class)->log(
+                            action: ActivityLogAction::RewardStockUpdated,
+                            description: "Memperbarui stok reward untuk cabang {$record->name}",
+                            auditable: $ownerRecord,
+                            ipAddress: (string) request()->ip(),
+                            before: $before,
+                            after: [
+                                'branch_id' => $record->id,
+                                'actual_stock' => (int) $data['actual_stock'],
+                            ],
+                            actor: Auth::user(),
                         );
                     })
                     ->successNotificationTitle('Stok berhasil diperbarui'),

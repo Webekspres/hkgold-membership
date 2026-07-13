@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Filament\Pages\Support\PromotionBannerSupport;
 use App\Filament\Resources\Contents\Support\ContentFormSupport;
 use App\Models\PromotionBanner;
+use App\Services\ActivityLog\ActivityLogger;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -25,6 +27,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 use Throwable;
 use UnitEnum;
 
@@ -48,6 +51,20 @@ class PromotionBannerPage extends Page
     protected static ?string $slug = 'banner-promosi';
 
     protected string $view = 'filament.pages.promotion-banner-page';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->can('View:PromotionBannerPage');
+    }
+
+    protected function canManageBanners(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->can('Update:PromotionBannerPage');
+    }
 
     /**
      * @var array<string, mixed>|null
@@ -80,6 +97,8 @@ class PromotionBannerPage extends Page
 
     public function save(): void
     {
+        abort_unless($this->canManageBanners(), 403);
+
         try {
             $this->beginDatabaseTransaction();
 
@@ -88,6 +107,15 @@ class PromotionBannerPage extends Page
             PromotionBannerSupport::syncBanners($data['banners'] ?? []);
 
             $this->commitDatabaseTransaction();
+
+            app(ActivityLogger::class)->logWithKey(
+                action: ActivityLogAction::PromotionBannerUpdated,
+                description: 'Memperbarui konfigurasi banner promosi',
+                auditableType: 'PromotionBannerPage',
+                auditableId: 'global',
+                ipAddress: (string) request()->ip(),
+                actor: Auth::user(),
+            );
         } catch (Halt $exception) {
             $exception->shouldRollbackDatabaseTransaction() ?
                 $this->rollBackDatabaseTransaction() :
@@ -110,6 +138,8 @@ class PromotionBannerPage extends Page
 
     public function resetForm(): void
     {
+        abort_unless($this->canManageBanners(), 403);
+
         $this->fillForm();
 
         Notification::make()
@@ -126,10 +156,15 @@ class PromotionBannerPage extends Page
 
     public function form(Schema $schema): Schema
     {
+        $canManage = $this->canManageBanners();
+
         return $schema
             ->components([
                 Repeater::make('banners')
                     ->label('Daftar Banner')
+                    ->disabled(! $canManage)
+                    ->deletable($canManage)
+                    ->reorderable($canManage)
                     ->schema([
                         Hidden::make('id'),
                         Grid::make(4)
@@ -138,11 +173,13 @@ class PromotionBannerPage extends Page
                                     ->label('Nama')
                                     ->required()
                                     ->maxLength(150)
+                                    ->disabled(! $canManage)
                                     ->columnSpan(3),
                                 Toggle::make('is_active')
                                     ->label('Aktif')
                                     ->default(true)
                                     ->inline(false)
+                                    ->disabled(! $canManage)
                                     ->columnSpan(1),
                             ]),
                         FileUpload::make('image')
@@ -159,13 +196,14 @@ class PromotionBannerPage extends Page
                             ->directory('temp')
                             ->maxSize(512)
                             ->required()
+                            ->disabled(! $canManage)
                             ->columnSpanFull(),
                     ])
-                    ->reorderable()
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
                     ->columnSpanFull()
-                    ->addActionLabel('Tambah Banner'),
+                    ->addActionLabel('Tambah Banner')
+                    ->addable($canManage),
             ]);
     }
 
@@ -174,6 +212,10 @@ class PromotionBannerPage extends Page
      */
     protected function getHeaderActions(): array
     {
+        if (! $this->canManageBanners()) {
+            return [];
+        }
+
         return [
             Action::make('reset')
                 ->label('Reset')
@@ -196,16 +238,20 @@ class PromotionBannerPage extends Page
 
     public function getFormContentComponent(): Component
     {
+        $formActions = [];
+
+        if ($this->canManageBanners()) {
+            $formActions[] = Action::make('save')
+                ->label('Simpan')
+                ->submit('save')
+                ->keyBindings(['mod+s']);
+        }
+
         return Form::make([EmbeddedSchema::make('form')])
             ->id('form')
             ->livewireSubmitHandler('save')
             ->footer([
-                Actions::make([
-                    Action::make('save')
-                        ->label('Simpan')
-                        ->submit('save')
-                        ->keyBindings(['mod+s']),
-                ])
+                Actions::make($formActions)
                     ->alignment($this->getFormActionsAlignment())
                     ->fullWidth($this->hasFullWidthFormActions())
                     ->sticky($this->areFormActionsSticky())

@@ -8,6 +8,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -37,9 +38,13 @@ class CitiesTable
                 SelectFilter::make('province_id')
                     ->label('Provinsi')
                     ->relationship('province', 'nama')
+                    ->placeholder('Semua provinsi')
+                    ->native(false)
                     ->searchable()
                     ->preload(),
-            ])
+            ], layout: FiltersLayout::Hidden)
+            ->deferFilters(false)
+            ->hiddenFilterIndicators()
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),

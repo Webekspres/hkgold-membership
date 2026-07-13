@@ -6,21 +6,28 @@ namespace App\Services\Loyalty;
 
 use App\Data\Loyalty\ProcessBatchResult;
 use App\Data\Loyalty\ProcessBatchSummary;
+use App\Enums\ActivityLogAction;
 use App\Enums\InjectionStatus;
+use App\Enums\NotificationPlatform;
 use App\Exceptions\Loyalty\ProcessBatchException;
-use App\Models\ActivityLog;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\PointInjectionBatch;
 use App\Models\PointInjectionDetail;
 use App\Models\PointMutation;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ProcessBatchService
 {
     public function __construct(
         private readonly PointCalculationService $pointCalculation,
+        private readonly ActivityLogger $activityLogger,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function assertBatchCanProcess(PointInjectionBatch $batch, bool $ignoreProcessingFlag = false): void
@@ -90,7 +97,7 @@ class ProcessBatchService
 
     public function process(PointInjectionBatch $batch, User $actor, string $ipAddress): ProcessBatchResult
     {
-        return DB::transaction(function () use ($batch, $actor, $ipAddress): ProcessBatchResult {
+        $result = DB::transaction(function () use ($batch, $actor, $ipAddress): ProcessBatchResult {
             $lockedBatch = PointInjectionBatch::query()
                 ->whereKey($batch->id)
                 ->lockForUpdate()
@@ -184,24 +191,22 @@ class ProcessBatchService
                 'processing_started_at' => null,
             ]);
 
-            ActivityLog::query()->create([
-                'user_id' => $actor->id,
-                'action' => 'bulk_point_injection',
-                'description' => 'Proses injeksi poin massal batch',
-                'auditable_type' => 'PointInjectionBatch',
-                'auditable_id' => $lockedBatch->id,
-                'before_json' => [
+            $this->activityLogger->log(
+                action: ActivityLogAction::BulkPointInjection,
+                description: 'Proses injeksi poin massal batch',
+                auditable: $lockedBatch,
+                ipAddress: $ipAddress,
+                before: [
                     'resolved' => $previousResolved,
                     'total_points_injected' => $previousTotalPointsInjected,
                 ],
-                'after_json' => [
+                after: [
                     'resolved' => true,
                     'total_points_injected' => $totalPointsInjected,
                     'rows_processed' => $details->count(),
                 ],
-                'ip_address' => $ipAddress,
-                'created_at' => now(),
-            ]);
+                actor: $actor,
+            );
 
             return new ProcessBatchResult(
                 batchId: $lockedBatch->id,
@@ -210,6 +215,31 @@ class ProcessBatchService
                 uniqueMembers: count($processedMemberNumbers),
             );
         });
+
+        $this->dispatchBatchNotifications($result, $actor);
+
+        return $result;
+    }
+
+    private function dispatchBatchNotifications(ProcessBatchResult $result, User $actor): void
+    {
+        try {
+            $this->notificationService->broadcastMass(
+                title: 'Poin batch telah diproses',
+                body: "Batch {$result->batchId} selesai diproses. Cek saldo poin Anda.",
+                criteria: [
+                    'type' => 'batch',
+                    'batch_id' => $result->batchId,
+                ],
+                platforms: [NotificationPlatform::MobileAppPush],
+                createdBy: $actor,
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Notifikasi batch gagal diantre.', [
+                'batch_id' => $result->batchId,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function resolveBranchId(?string $rawBranchCode): ?int

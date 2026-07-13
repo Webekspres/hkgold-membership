@@ -21,7 +21,8 @@ class PointAnnualArchiveSeeder extends Seeder
         }
 
         $currentYear = (int) date('Y');
-        $years = [$currentYear - 3, $currentYear - 2, $currentYear - 1];
+        // Jangan seed tahun target arsip (tahun sebelumnya) agar tombol "Arsipkan Poin" tetap bisa diuji.
+        $years = [$currentYear - 3, $currentYear - 2];
 
         $members = Member::query()->limit(12)->get();
         if ($members->count() === 0) {
@@ -35,6 +36,7 @@ class PointAnnualArchiveSeeder extends Seeder
                     'name' => 'Arsip Poin '.$year,
                     'total_members' => 0,
                     'frozen_points_total' => 0,
+                    'earned_points_total' => 0,
                     'redeemed_points_total' => 0,
                     'archived_at' => now()->subYears($currentYear - $year)->subDays(rand(1, 10)),
                 ]
@@ -45,6 +47,7 @@ class PointAnnualArchiveSeeder extends Seeder
 
             $totalMembers = 0;
             $totalFrozen = 0;
+            $totalEarned = 0;
             $totalRedeemed = 0;
 
             foreach ($subset as $member) {
@@ -53,6 +56,7 @@ class PointAnnualArchiveSeeder extends Seeder
                 $frozen = (int) ($member->point_balance > 0 ? $member->point_balance : $baseMultiplier);
                 $highest = max($member->highest_point, $frozen);
                 $redeemed = (int) ($frozen * (0.35 + ($index * 0.05)));
+                $earned = $frozen + $redeemed + (int) ($frozen * 0.2);
 
                 $archive = PointAnnualArchive::query()->firstOrCreate(
                     [
@@ -70,6 +74,7 @@ class PointAnnualArchiveSeeder extends Seeder
                 if ($archive->wasRecentlyCreated) {
                     $totalMembers++;
                     $totalFrozen += $frozen;
+                    $totalEarned += $earned;
                     $totalRedeemed += $redeemed;
                 }
             }
@@ -77,6 +82,7 @@ class PointAnnualArchiveSeeder extends Seeder
             if ($totalMembers > 0) {
                 $period->increment('total_members', $totalMembers);
                 $period->increment('frozen_points_total', $totalFrozen);
+                $period->increment('earned_points_total', $totalEarned);
                 $period->increment('redeemed_points_total', $totalRedeemed);
             }
         }

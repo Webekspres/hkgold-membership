@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Branches\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Filament\Resources\Branches\BranchResource;
 use App\Filament\Resources\Branches\Support\BranchFormSupport;
 use App\Filament\Resources\Members\Support\MemberFormSupport;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class EditBranch extends EditRecord
@@ -51,8 +55,9 @@ class EditBranch extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $state = BranchFormSupport::formState($this->form);
+        $before = ActivityLogSanitizer::extract($record);
 
-        return DB::transaction(function () use ($record, $data, $state): Model {
+        $updatedRecord = DB::transaction(function () use ($record, $data, $state): Model {
             $addressId = BranchFormSupport::upsertAddress(
                 $state,
                 $record->normalizedAddress,
@@ -72,5 +77,17 @@ class EditBranch extends EditRecord
 
             return $record->refresh();
         });
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::BranchUpdated,
+            description: 'Memperbarui data cabang',
+            auditable: $updatedRecord,
+            ipAddress: (string) request()->ip(),
+            before: $before,
+            after: ActivityLogSanitizer::extract($updatedRecord),
+            actor: Auth::user(),
+        );
+
+        return $updatedRecord;
     }
 }

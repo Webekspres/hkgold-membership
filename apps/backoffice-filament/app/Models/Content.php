@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ContentStatus;
 use App\Enums\ContentType;
+use App\Models\Concerns\HasAuditableActivityLogs;
 use App\Observers\ContentObserver;
 use Database\Factories\ContentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Content extends Model
 {
     /** @use HasFactory<ContentFactory> */
-    use HasFactory, HasUuids;
+    use HasAuditableActivityLogs, HasFactory, HasUuids;
 
     protected $table = 'contents';
 

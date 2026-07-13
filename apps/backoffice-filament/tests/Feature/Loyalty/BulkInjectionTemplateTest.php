@@ -71,7 +71,10 @@ it('validates template-format sample row when demo member exists', function (): 
     ]);
 
     if (! Branch::query()->where('branch_code', 'HK01')->exists()) {
-        Branch::factory()->create(['branch_code' => 'HK01']);
+        Branch::factory()->create([
+            'branch_code' => 'HK01',
+            'address_id' => null,
+        ]);
     }
 
     $csv = bulkCsvHeader().implode(',', [

@@ -28,7 +28,8 @@ class ListContents extends ListRecords
         return [
             CreateAction::make()
                 ->label('Tambah Konten')
-                ->goldStyle(),
+                ->goldStyle()
+                ->authorize(fn (): bool => auth()->user()?->can('Create:Content') ?? false),
         ];
     }
 

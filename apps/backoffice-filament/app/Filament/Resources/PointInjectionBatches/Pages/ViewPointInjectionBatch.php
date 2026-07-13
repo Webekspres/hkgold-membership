@@ -19,9 +19,12 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\Width;
+use Filament\Support\Facades\FilamentView;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Filament\Tables\View\TablesRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
@@ -31,11 +34,56 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
 
     private const STALE_PROCESSING_MINUTES = 10;
 
+    protected static bool $statusFilterHookRegistered = false;
+
+    public bool $showValidatedSummary = true;
+
+    public bool $showFailedSummary = true;
+
+    public bool $showViewOnlyAlert = true;
+
+    public bool $showFailedValidationAlert = true;
+
     protected static string $resource = PointInjectionBatchResource::class;
 
     public function getView(): string
     {
         return 'filament.resources.point-injection-batches.view-point-injection-batch';
+    }
+
+    public function boot(): void
+    {
+        if (static::$statusFilterHookRegistered) {
+            return;
+        }
+
+        static::$statusFilterHookRegistered = true;
+
+        FilamentView::registerRenderHook(
+            TablesRenderHook::TOOLBAR_START,
+            fn (): View => view('filament.resources.point-injection-batches.partials.status-filter'),
+            static::class,
+        );
+    }
+
+    public function dismissValidatedSummary(): void
+    {
+        $this->showValidatedSummary = false;
+    }
+
+    public function dismissFailedSummary(): void
+    {
+        $this->showFailedSummary = false;
+    }
+
+    public function dismissViewOnlyAlert(): void
+    {
+        $this->showViewOnlyAlert = false;
+    }
+
+    public function dismissFailedValidationAlert(): void
+    {
+        $this->showFailedValidationAlert = false;
     }
 
     protected function getHeaderActions(): array
@@ -56,7 +104,7 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
         $record = $this->record;
 
         return PointInjectionDetailsTable::configure($table)
-            ->query(fn() => PointInjectionDetail::query()
+            ->query(fn () => PointInjectionDetail::query()
                 ->where('batch_id', $record->id)
                 ->with(['transactionType', 'member.user', 'batch']))
             ->heading('Daftar Baris Injeksi')
@@ -67,9 +115,9 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
                     ->button()
                     ->goldStyle()
                     ->color('primary')
-                    ->disabled(fn(): bool => ! $this->canProcess())
-                    ->visible(fn(): bool => ! $this->record->resolved)
-                    ->tooltip(fn(): ?string => $this->processDisabledReason())
+                    ->disabled(fn (): bool => ! $this->canProcess())
+                    ->visible(fn (): bool => ! $this->record->resolved)
+                    ->tooltip(fn (): ?string => $this->processDisabledReason())
                     ->modalHeading('Proses Injeksi Poin')
                     ->modalDescription('Periksa ringkasan berikut sebelum memproses batch ke PointMutation.')
                     ->modalWidth(Width::TwoExtraLarge)
@@ -317,10 +365,11 @@ class ViewPointInjectionBatch extends ViewRecord implements HasTable
 
         return [
             'total_points_injected' => number_format((int) $batch->total_points_injected, 0, ',', '.'),
-            'total_purchase_nominal' => 'Rp ' . number_format((float) $totalPurchaseNominal, 0, ',', '.'),
+            'total_purchase_nominal' => 'Rp '.number_format((float) $totalPurchaseNominal, 0, ',', '.'),
             'total_unique_members' => number_format($totalUniqueMember, 0, ',', '.'),
             'uploaded_at' => $batch->uploaded_at?->translatedFormat('d M Y, H:i'),
             'media_file_name' => $batch->media?->file_name,
+            'media_download_url' => $batch->media?->file_url,
             'staff_name' => $batch->staff?->user?->full_name ?? '-',
         ];
     }

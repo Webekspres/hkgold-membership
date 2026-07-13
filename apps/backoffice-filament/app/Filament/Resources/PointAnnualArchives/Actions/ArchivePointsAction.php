@@ -4,30 +4,118 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PointAnnualArchives\Actions;
 
+use App\Enums\Role;
+use App\Exceptions\Loyalty\PointAnnualArchiveException;
+use App\Jobs\ProcessPointAnnualArchiveJob;
+use App\Models\User;
+use App\Services\Loyalty\PointAnnualArchiveService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 class ArchivePointsAction
 {
     public static function make(): Action
     {
+        $service = app(PointAnnualArchiveService::class);
+        $targetYear = $service->resolveTargetYear();
+
         return Action::make('archivePoints')
             ->label('Arsipkan Poin')
             ->icon('heroicon-o-archive-box')
             ->color('warning')
             ->modalHeading('Arsipkan Poin Tahunan')
-            ->modalDescription('Apakah Anda yakin ingin menjalankan proses pengarsipan poin tahunan secara masal? Tindakan ini tidak dapat dibatalkan.')
+            ->modalDescription('Proses ini akan membuat snapshot seluruh member serta mereset saldo poin dan poin tertinggi aktif menjadi 0. Tindakan ini tidak dapat dibatalkan.')
             ->modalSubmitActionLabel('Jalankan')
             ->form([
                 Placeholder::make('info')
-                    ->content('Ini adalah aksi simulasi/dummy untuk pengarsipan poin tahunan.'),
+                    ->content('Target tahun arsip: '.$targetYear.'. Proses akan berjalan di background.'),
             ])
+            ->requiresConfirmation()
+            ->visible(function () use ($targetYear): bool {
+                /** @var User|null $actor */
+                $actor = Auth::user();
+
+                if ($actor === null || $actor->role !== Role::Administrator) {
+                    return false;
+                }
+
+                if (! $actor->can('Create:PointAnnualArchivePeriod')) {
+                    return false;
+                }
+
+                $service = app(PointAnnualArchiveService::class);
+
+                if ($service->isRunInProgress()) {
+                    return false;
+                }
+
+                return $service->canArchiveYear($targetYear);
+            })
             ->action(function (): void {
-                Notification::make()
-                    ->title('Pengarsipan poin berhasil dijalankan (Simulasi)')
-                    ->success()
-                    ->send();
+                /** @var User|null $actor */
+                $actor = Auth::user();
+
+                if ($actor === null) {
+                    Notification::make()
+                        ->title('Autentikasi gagal')
+                        ->body('Silakan login ulang lalu coba lagi.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                $service = app(PointAnnualArchiveService::class);
+                $targetYear = $service->resolveTargetYear();
+
+                if ($actor->role !== Role::Administrator || ! $actor->can('Create:PointAnnualArchivePeriod')) {
+                    Notification::make()
+                        ->title('Akses ditolak')
+                        ->body('Hanya administrator yang boleh menjalankan arsip poin.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                try {
+                    if ($service->isRunInProgress()) {
+                        throw PointAnnualArchiveException::archiveAlreadyInProgress($targetYear);
+                    }
+
+                    if (! $service->canArchiveYear($targetYear)) {
+                        throw PointAnnualArchiveException::archiveAlreadyExists($targetYear);
+                    }
+
+                    $service->markRunQueued($actor, $targetYear);
+
+                    ProcessPointAnnualArchiveJob::dispatch(
+                        actor: $actor,
+                        ipAddress: request()->ip() ?? '127.0.0.1',
+                        archiveYear: $targetYear,
+                    );
+
+                    Notification::make()
+                        ->title('Arsip poin sedang diproses')
+                        ->body('Pengarsipan tahun '.$targetYear.' berjalan di background. Pastikan queue worker/Horizon aktif.')
+                        ->success()
+                        ->send();
+                } catch (PointAnnualArchiveException $exception) {
+                    Notification::make()
+                        ->title('Arsip poin gagal dijalankan')
+                        ->body($exception->getMessage())
+                        ->danger()
+                        ->send();
+                } catch (Throwable) {
+                    Notification::make()
+                        ->title('Arsip poin gagal dijalankan')
+                        ->body('Terjadi kesalahan saat mengantre proses arsip poin.')
+                        ->danger()
+                        ->send();
+                }
             });
     }
 }

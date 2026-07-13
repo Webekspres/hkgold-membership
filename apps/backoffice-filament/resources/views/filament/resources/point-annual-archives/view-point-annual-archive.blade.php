@@ -1,16 +1,21 @@
 <x-filament-panels::page>
     <style>
+        .period-archive-view {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
         /* Period Details Header (Top Section) */
         .period-header-container {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.5rem;
             background-color: rgb(255 255 255);
             border: 1px solid rgb(229 231 235);
             border-radius: 0.75rem;
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
         }
 
         .period-header-left {
@@ -55,8 +60,7 @@
         .period-middle-grid {
             display: grid;
             grid-template-columns: repeat(1, minmax(0, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
         }
 
         @media (min-width: 1024px) {
@@ -65,15 +69,21 @@
             }
         }
 
-        /* Stats Cards Column (Left) */
-        .period-stats-column {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        /* Stats Cards Grid (2x2 on large screens) */
+        .period-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .period-stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         .period-stat-card {
-            padding: 1.25rem 1.5rem;
+            padding: 1.5rem;
             background-color: rgb(255 255 255);
             border: 1px solid rgb(229 231 235);
             border-radius: 0.75rem;
@@ -96,8 +106,9 @@
         }
 
         .period-stat-value {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
+            letter-spacing: -0.025em;
             color: rgb(17 24 39);
             margin-top: 0.25rem;
         }
@@ -124,11 +135,6 @@
 
         /* Pie Chart Column (Right) */
         .period-chart-column {
-            padding: 1.5rem;
-            background-color: rgb(255 255 255);
-            border: 1px solid rgb(229 231 235);
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             min-height: 320px;
             display: flex;
             flex-direction: column;
@@ -137,8 +143,7 @@
 
         /* Dark Mode Support */
         .dark .period-header-container,
-        .dark .period-stat-card,
-        .dark .period-chart-column {
+        .dark .period-stat-card {
             border-color: var(--gray-800, rgb(39 39 42));
             background-color: var(--gray-900, rgb(24 24 27));
         }
@@ -163,82 +168,101 @@
         }
     </style>
 
-    <!-- 1. Header Info Row -->
-    <div class="period-header-container">
-        <div class="period-header-left">
-            <h2 class="period-header-title">{{ $this->getStats()['name'] }}</h2>
-            <span class="period-header-year">Tahun Arsip: {{ $this->getStats()['archive_year'] }}</span>
-        </div>
-        <div class="period-header-right">
-            <span class="period-header-label">Waktu Diarsipkan</span>
-            <span class="period-header-value">{{ $this->getStats()['archived_at'] }}</span>
-        </div>
-    </div>
+    @php
+        $stats = $this->getStats();
+    @endphp
 
-    <!-- 2. Middle Row: 2 Columns Layout -->
-    <div class="period-middle-grid">
-        <!-- Left: Stats Stacked Cards -->
-        <div class="period-stats-column">
-            <!-- Card 1 -->
-            <div class="period-stat-card">
-                <div>
-                    <span class="period-stat-label">Total Member</span>
-                    <h3 class="period-stat-value">{{ $this->getStats()['total_members'] }}</h3>
-                </div>
-                <div class="period-stat-growth">
-                    @if($this->getStats()['members_growth'] === null)
-                        <span class="growth-none">Tidak ada data pembanding</span>
-                    @elseif($this->getStats()['members_growth'] >= 0)
-                        <span class="growth-up">▲ +{{ number_format($this->getStats()['members_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @else
-                        <span class="growth-down">▼ {{ number_format($this->getStats()['members_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @endif
-                </div>
+    <div class="period-archive-view">
+        <!-- 1. Header Info Row -->
+        <div class="period-header-container">
+            <div class="period-header-left">
+                <h2 class="period-header-title">{{ $stats['name'] }}</h2>
+                <span class="period-header-year">Tahun Arsip: {{ $stats['archive_year'] }}</span>
             </div>
-
-            <!-- Card 2 -->
-            <div class="period-stat-card">
-                <div>
-                    <span class="period-stat-label">Total Poin Dibekukan</span>
-                    <h3 class="period-stat-value">{{ $this->getStats()['frozen_points_total'] }}</h3>
-                </div>
-                <div class="period-stat-growth">
-                    @if($this->getStats()['frozen_growth'] === null)
-                        <span class="growth-none">Tidak ada data pembanding</span>
-                    @elseif($this->getStats()['frozen_growth'] >= 0)
-                        <span class="growth-up">▲ +{{ number_format($this->getStats()['frozen_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @else
-                        <span class="growth-down">▼ {{ number_format($this->getStats()['frozen_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @endif
-                </div>
-            </div>
-
-            <!-- Card 3 -->
-            <div class="period-stat-card">
-                <div>
-                    <span class="period-stat-label">Total Poin Ditukarkan</span>
-                    <h3 class="period-stat-value">{{ $this->getStats()['redeemed_points_total'] }}</h3>
-                </div>
-                <div class="period-stat-growth">
-                    @if($this->getStats()['redeemed_growth'] === null)
-                        <span class="growth-none">Tidak ada data pembanding</span>
-                    @elseif($this->getStats()['redeemed_growth'] >= 0)
-                        <span class="growth-up">▲ +{{ number_format($this->getStats()['redeemed_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @else
-                        <span class="growth-down">▼ {{ number_format($this->getStats()['redeemed_growth'], 1) }}%</span> dibandingkan periode sebelumnya
-                    @endif
-                </div>
+            <div class="period-header-right">
+                <span class="period-header-label">Waktu Diarsipkan</span>
+                <span class="period-header-value">{{ $stats['archived_at'] }}</span>
             </div>
         </div>
 
-        <!-- Right: Pie Chart Component -->
-        @livewire(\App\Filament\Resources\PointAnnualArchives\Widgets\PeriodDetailTierChartWidget::class, ['record' => $this->record])
-        <!-- <div class="period-chart-column">
-        </div> -->
-    </div>
+        <!-- 2. Middle Row: 2 Columns Layout -->
+        <div class="period-middle-grid">
+            <!-- Left: Stats 2x2 Grid -->
+            <div class="period-stats-grid">
+                <div class="period-stat-card">
+                    <div>
+                        <span class="period-stat-label">Total Member</span>
+                        <h3 class="period-stat-value">{{ $stats['total_members'] }}</h3>
+                    </div>
+                    <div class="period-stat-growth">
+                        @if ($stats['members_growth'] === null)
+                            <span class="growth-none">Tidak ada data pembanding</span>
+                        @elseif ($stats['members_growth'] >= 0)
+                            <span class="growth-up">▲ +{{ number_format($stats['members_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @else
+                            <span class="growth-down">▼ {{ number_format($stats['members_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @endif
+                    </div>
+                </div>
 
-    <!-- 3. Bottom Row: Detail Table -->
-    <div style="margin-top: 1rem;">
-        {{ $this->table }}
+                <div class="period-stat-card">
+                    <div>
+                        <span class="period-stat-label">Total Poin Didapatkan</span>
+                        <h3 class="period-stat-value">{{ $stats['earned_points_total'] }}</h3>
+                    </div>
+                    <div class="period-stat-growth">
+                        @if ($stats['earned_growth'] === null)
+                            <span class="growth-none">Tidak ada data pembanding</span>
+                        @elseif ($stats['earned_growth'] >= 0)
+                            <span class="growth-up">▲ +{{ number_format($stats['earned_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @else
+                            <span class="growth-down">▼ {{ number_format($stats['earned_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @endif
+                    </div>
+                </div>
+
+                <div class="period-stat-card">
+                    <div>
+                        <span class="period-stat-label">Total Poin Dibekukan</span>
+                        <h3 class="period-stat-value">{{ $stats['frozen_points_total'] }}</h3>
+                    </div>
+                    <div class="period-stat-growth">
+                        @if ($stats['frozen_growth'] === null)
+                            <span class="growth-none">Tidak ada data pembanding</span>
+                        @elseif ($stats['frozen_growth'] >= 0)
+                            <span class="growth-up">▲ +{{ number_format($stats['frozen_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @else
+                            <span class="growth-down">▼ {{ number_format($stats['frozen_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @endif
+                    </div>
+                </div>
+
+                <div class="period-stat-card">
+                    <div>
+                        <span class="period-stat-label">Total Poin Ditukarkan</span>
+                        <h3 class="period-stat-value">{{ $stats['redeemed_points_total'] }}</h3>
+                    </div>
+                    <div class="period-stat-growth">
+                        @if ($stats['redeemed_growth'] === null)
+                            <span class="growth-none">Tidak ada data pembanding</span>
+                        @elseif ($stats['redeemed_growth'] >= 0)
+                            <span class="growth-up">▲ +{{ number_format($stats['redeemed_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @else
+                            <span class="growth-down">▼ {{ number_format($stats['redeemed_growth'], 1) }}%</span> dibandingkan periode sebelumnya
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Pie Chart Component -->
+            <div class="period-chart-column">
+                @livewire(\App\Filament\Resources\PointAnnualArchives\Widgets\PeriodDetailTierChartWidget::class, ['record' => $this->record])
+            </div>
+        </div>
+
+        <!-- 3. Bottom Row: Detail Table -->
+        <div>
+            {{ $this->table }}
+        </div>
     </div>
 </x-filament-panels::page>

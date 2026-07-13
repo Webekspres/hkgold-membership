@@ -9,11 +9,13 @@ use App\Filament\Resources\Villages\Schemas\VillageForm;
 use App\Filament\Resources\Villages\Tables\VillagesTable;
 use App\Models\Village;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class VillageResource extends Resource
 {
@@ -32,6 +34,13 @@ class VillageResource extends Resource
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'nama';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->hasRole(Utils::getSuperAdminName());
+    }
 
     public static function form(Schema $schema): Schema
     {

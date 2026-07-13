@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Branches\Pages;
 
+use App\Enums\ActivityLogAction;
 use App\Filament\Resources\Branches\BranchResource;
 use App\Filament\Resources\Branches\Support\BranchFormSupport;
 use App\Filament\Resources\Members\Support\MemberFormSupport;
 use App\Models\Branch;
+use App\Services\ActivityLog\ActivityLogger;
+use App\Support\ActivityLog\ActivityLogSanitizer;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CreateBranch extends CreateRecord
@@ -20,7 +24,7 @@ class CreateBranch extends CreateRecord
     {
         $state = BranchFormSupport::formState($this->form);
 
-        return DB::transaction(function () use ($data, $state): Branch {
+        $record = DB::transaction(function () use ($data, $state): Branch {
             $addressId = BranchFormSupport::upsertAddress($state);
 
             return Branch::query()->create([
@@ -35,5 +39,16 @@ class CreateBranch extends CreateRecord
                 'address' => BranchFormSupport::buildAddressString($state),
             ]);
         });
+
+        app(ActivityLogger::class)->log(
+            action: ActivityLogAction::BranchCreated,
+            description: 'Membuat data cabang baru',
+            auditable: $record,
+            ipAddress: (string) request()->ip(),
+            after: ActivityLogSanitizer::extract($record),
+            actor: Auth::user(),
+        );
+
+        return $record;
     }
 }

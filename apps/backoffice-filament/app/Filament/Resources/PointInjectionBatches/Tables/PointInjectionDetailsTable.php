@@ -18,6 +18,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -113,8 +114,12 @@ class PointInjectionDetailsTable
                         InjectionStatus::Validated->value => 'Tervalidasi',
                         InjectionStatus::Success->value => 'Sukses',
                         InjectionStatus::Failed->value => 'Gagal',
-                    ]),
-            ])
+                    ])
+                    ->placeholder('Semua status')
+                    ->native(false),
+            ], layout: FiltersLayout::Hidden)
+            ->deferFilters(false)
+            ->hiddenFilterIndicators()
             ->actions([
                 Action::make('edit')
                     ->label('Edit')
