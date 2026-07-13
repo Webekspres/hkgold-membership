@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Program Files\\FlyEnv-Data\\env\\python\\Scripts\\graphify.EXE\" hook-guard search"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Program Files\\FlyEnv-Data\\env\\python\\Scripts\\graphify.EXE\" hook-guard read"
+          }
+        ]
+      }
+    ]
+  }
+}
