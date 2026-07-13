@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,22 +8,23 @@ import { NearestBranchSection } from "@/components/home/nearest-branch-section";
 import { PromotionBannerSlider } from "@/components/home/promotion-banner-slider";
 import { UpcomingEventsSection } from "@/components/home/upcoming-events-section";
 import { RewardCatalogSection } from "@/components/home/reward-catalog-section";
-import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { MOCK_PROMOTION_BANNERS } from "@/mocks/mock-banners";
+import { useLatestNews } from "@/hooks/use-latest-news";
+import { useMyProfile } from "@/hooks/use-my-profile";
+import { usePromotionBanners } from "@/hooks/use-promotion-banners";
+import { useUpcomingEvents } from "@/hooks/use-upcoming-events";
 import { getNearestBranch } from "@/services/branches";
-import { getUpcomingEvents } from "@/services/events";
-import { getLatestNews } from "@/services/news";
 import { getRewardCatalog } from "@/services/rewards";
-import { BottomTabInset } from "@/config/theme";
-import { MOCK_MEMBER } from "@/mocks/mock-member";
 
 const nearestBranch = getNearestBranch();
-const upcomingEvents = getUpcomingEvents();
-const latestNews = getLatestNews();
 const rewardCatalog = getRewardCatalog();
 
 export default function HomeScreen() {
+  const { card } = useMyProfile();
+  const { articles: latestNews, isError: latestNewsError } = useLatestNews();
+  const { events: upcomingEvents, isError: upcomingEventsError } = useUpcomingEvents();
+  const { banners: promotionBanners } = usePromotionBanners();
+
   return (
     <View className="flex-1 bg-background">
       <SafeAreaView className="flex-1" style={{ paddingBottom: 4 }}>
@@ -35,24 +35,33 @@ export default function HomeScreen() {
         >
           <View className="gap-1 px-4">
             <Text variant="h3" className="text-stone-900">
-              Halo, {MOCK_MEMBER.fullName.split(" ")[0]}
+              Halo, {card?.firstName ?? "Member"}
             </Text>
             <Text variant="muted">Selamat datang di HK Gold VIP</Text>
           </View>
 
-          <View className="px-4">
-            <MemberWalletCard {...MOCK_MEMBER} />
-          </View>
+          {card ? (
+            <View className="px-4">
+              <MemberWalletCard
+                fullName={card.fullName}
+                memberNumber={card.memberNumber}
+                currentTier={card.currentTier}
+                pointBalance={card.pointBalance}
+              />
+            </View>
+          ) : null}
 
           <HomeShortcutGrid />
 
           <NearestBranchSection branch={nearestBranch} />
 
-          <PromotionBannerSlider banners={MOCK_PROMOTION_BANNERS} />
+          {promotionBanners.length > 0 ? (
+            <PromotionBannerSlider banners={promotionBanners} />
+          ) : null}
 
-          <UpcomingEventsSection events={upcomingEvents} />
+          <UpcomingEventsSection events={upcomingEvents} isError={upcomingEventsError} />
 
-          <LatestNewsSection articles={latestNews} />
+          <LatestNewsSection articles={latestNews} isError={latestNewsError} />
 
           <RewardCatalogSection categories={rewardCatalog} />
         </ScrollView>

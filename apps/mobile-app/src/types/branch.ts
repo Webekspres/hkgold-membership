@@ -7,3 +7,14 @@ export type BranchItem = {
   phone: string | null;
   locationUrl: string | null;
 };
+
+export type BranchCityOption = {
+  id: number;
+  name: string;
+};
+
+export type BranchPage = {
+  items: BranchItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};

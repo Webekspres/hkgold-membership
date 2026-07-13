@@ -199,4 +199,59 @@ describe('Content Module - Get List with Pagination & Filters', () => {
       }
     }
   });
+
+  test('Search q filters title when length > 2', async () => {
+    const uniqueTitle = `UniqueGoldNews ${testSuffix}`;
+    const created = await prisma.content.create({
+      data: {
+        type: 'NEWS',
+        title: uniqueTitle,
+        slug: `unique-gold-news-${testSuffix}`,
+        bodyContent: 'Searchable unique body.',
+        status: 'PUBLISHED',
+      },
+    });
+    testNewsIds.push(created.id);
+
+    const result = await contentService.getAll({
+      type: 'NEWS',
+      q: `UniqueGoldNews ${testSuffix}`,
+      limit: 10,
+    });
+
+    expect(result.data.some((item) => item.id === created.id)).toBe(true);
+    result.data.forEach((item) => {
+      expect(item.title.toLowerCase()).toContain('uniquegoldnews');
+    });
+  });
+
+  test('dateFrom/dateTo filters EVENT by eventDate', async () => {
+    const day = new Date('2030-06-15T12:00:00.000Z');
+    const created = await prisma.content.create({
+      data: {
+        type: 'EVENT',
+        title: `Dated Event ${testSuffix}`,
+        slug: `dated-event-${testSuffix}`,
+        bodyContent: 'Event with fixed date.',
+        eventDate: day,
+        status: 'PUBLISHED',
+      },
+    });
+    testEventIds.push(created.id);
+
+    const result = await contentService.getAll({
+      type: 'EVENT',
+      dateFrom: '2030-06-15',
+      dateTo: '2030-06-15',
+      limit: 20,
+    });
+
+    expect(result.data.some((item) => item.id === created.id)).toBe(true);
+    result.data.forEach((item) => {
+      expect(item.eventDate).not.toBeNull();
+      const t = item.eventDate!.getTime();
+      expect(t).toBeGreaterThanOrEqual(new Date('2030-06-15T00:00:00.000Z').getTime());
+      expect(t).toBeLessThanOrEqual(new Date('2030-06-15T23:59:59.999Z').getTime());
+    });
+  });
 });

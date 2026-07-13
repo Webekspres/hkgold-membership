@@ -11,7 +11,7 @@ export interface AuthContext {
 }
 
 export const authMiddleware = new Elysia({ name: 'auth' })
-  .derive(async ({ headers, set }): Promise<{ auth: AuthContext | null }> => {
+  .derive({ as: 'scoped' }, async ({ headers, set }): Promise<{ auth: AuthContext | null }> => {
     const authHeader = headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -43,7 +43,7 @@ export const authMiddleware = new Elysia({ name: 'auth' })
           isSuspended: payload.isSuspended
         }
       };
-    } catch (error) {
+    } catch {
       set.status = 401;
       return { auth: null };
     }
@@ -51,7 +51,7 @@ export const authMiddleware = new Elysia({ name: 'auth' })
 
 export const requireAuth = new Elysia()
   .use(authMiddleware)
-  .onBeforeHandle(({ auth, set }) => {
+  .onBeforeHandle({ as: 'scoped' }, ({ auth, set }) => {
     if (!auth) {
       set.status = 401;
       return {
@@ -59,11 +59,12 @@ export const requireAuth = new Elysia()
         message: 'Unauthorized - Silakan login terlebih dahulu'
       };
     }
-  });
+  })
+  .as('scoped');
 
 export const requireActiveUser = new Elysia()
   .use(requireAuth)
-  .onBeforeHandle(({ auth, set }) => {
+  .onBeforeHandle({ as: 'scoped' }, ({ auth, set }) => {
     if (auth && !auth.isActive) {
       set.status = 403;
       return {
@@ -71,11 +72,12 @@ export const requireActiveUser = new Elysia()
         message: 'Akun Anda telah dinonaktifkan'
       };
     }
-  });
+  })
+  .as('scoped');
 
 export const requireNotSuspended = new Elysia()
   .use(requireAuth)
-  .onBeforeHandle(({ auth, set }) => {
+  .onBeforeHandle({ as: 'scoped' }, ({ auth, set }) => {
     if (auth && auth.isSuspended) {
       set.status = 403;
       return {
@@ -83,4 +85,5 @@ export const requireNotSuspended = new Elysia()
         message: 'Akun Anda sedang disuspend. Hubungi admin untuk informasi lebih lanjut.'
       };
     }
-  });
+  })
+  .as('scoped');

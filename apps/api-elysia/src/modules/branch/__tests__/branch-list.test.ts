@@ -138,4 +138,36 @@ describe('Branch Module - Get List with Pagination', () => {
       expect(overlap.length).toBe(0);
     }
   });
+
+  test('Search q filters by name when length > 2', async () => {
+    const uniqueName = `UniqueBranchSearch ${testSuffix}`;
+    const created = await prisma.branch.create({
+      data: {
+        branchCode: `UQ${testSuffix}`,
+        name: uniqueName,
+        address: 'Unique address search',
+        isOnlineWarehouse: false,
+      },
+    });
+    testBranchIds.push(created.id);
+
+    const result = await branchService.getAll({
+      q: `UniqueBranchSearch ${testSuffix}`,
+      limit: 10,
+    });
+
+    expect(result.data.some((b) => b.id === created.id)).toBe(true);
+    result.data.forEach((b) => {
+      expect(b.name.toLowerCase()).toContain('uniquebranchsearch');
+    });
+  });
+
+  test('getCities returns array of id/name', async () => {
+    const cities = await branchService.getCities();
+    expect(Array.isArray(cities)).toBe(true);
+    cities.forEach((c) => {
+      expect(typeof c.id).toBe('number');
+      expect(typeof c.name).toBe('string');
+    });
+  });
 });

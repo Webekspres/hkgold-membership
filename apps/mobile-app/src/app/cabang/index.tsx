@@ -1,36 +1,49 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BranchCityFilterDropdown } from '@/components/branch/branch-city-filter-dropdown';
 import { BranchListCard } from '@/components/branch/branch-list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { getBranchList } from '@/services/branches';
+import { useBranchCities } from '@/hooks/use-branch-cities';
+import { useBranchesList } from '@/hooks/use-branches-list';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
-import {
-  filterBranchesByCity,
-  getBranchCityOptions,
-} from '@/lib/filters/filter-branches-by-city';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 
-const branchList = getBranchList();
-
 export default function BranchListScreen() {
   const [selectedCity, setSelectedCity] = useState<string | null>('all');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 500);
 
-  const cityOptions = useMemo(() => getBranchCityOptions(branchList), []);
+  const q = useMemo(() => {
+    const trimmed = debouncedSearch.trim();
+    return trimmed.length > 2 ? trimmed : undefined;
+  }, [debouncedSearch]);
 
-  const filteredBranches = useMemo(
-    () => filterBranchesByCity(branchList, selectedCity),
-    [selectedCity]
-  );
+  const city = selectedCity && selectedCity !== 'all' ? selectedCity : undefined;
+  const hasActiveFilter = Boolean(city);
 
-  const hasActiveFilter = Boolean(selectedCity && selectedCity !== 'all');
+  const { options: cityOptions } = useBranchCities();
+  const {
+    branches,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useBranchesList({ q, city });
 
   return (
     <View className="flex-1 bg-background">
@@ -43,11 +56,10 @@ export default function BranchListScreen() {
               <SymbolView name={BACK_ICON} size={20} tintColor="#44403c" />
             </Button>
 
-            <Input
-              className="min-w-0 flex-1"
+            <SearchInput
               placeholder="Cari cabang..."
-              placeholderTextColor="#a8a29e"
-              editable
+              value={search}
+              onChangeText={setSearch}
             />
           </View>
 
@@ -60,7 +72,7 @@ export default function BranchListScreen() {
         </View>
 
         <FlatList
-          data={filteredBranches}
+          data={branches}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <BranchListCard branch={item} />}
           ItemSeparatorComponent={() => <View className="h-4" />}
@@ -68,11 +80,38 @@ export default function BranchListScreen() {
             paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
             paddingVertical: 16,
             paddingBottom: 24,
+            flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              void fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View className="items-center py-4">
+                <ActivityIndicator color="#b45309" />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
-            <View className="items-center py-12">
-              <Text variant="muted">Tidak ada cabang di kota ini.</Text>
+            <View className="items-center justify-center py-12">
+              {isLoading ? (
+                <ActivityIndicator color="#b45309" />
+              ) : isError ? (
+                <View className="items-center gap-3 px-4">
+                  <Text variant="muted" className="text-center">
+                    Gagal memuat cabang. Periksa koneksi lalu coba lagi.
+                  </Text>
+                  <Pressable onPress={() => void refetch()} className="active:opacity-70">
+                    <Text className="font-semibold text-[#c4841a]">Coba lagi</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Text variant="muted">Tidak ada cabang.</Text>
+              )}
             </View>
           }
         />
