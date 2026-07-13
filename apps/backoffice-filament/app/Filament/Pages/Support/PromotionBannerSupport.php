@@ -31,6 +31,9 @@ class PromotionBannerSupport
                 $name = isset($item['name']) && filled($item['name']) ? (string) $item['name'] : 'Banner';
                 $imagePath = is_string($item['image'] ?? null) ? $item['image'] : null;
                 $mediaId = self::storeBannerImage($imagePath ?? '', $name);
+                $linkUrl = isset($item['link_url']) && filled($item['link_url'])
+                    ? (string) $item['link_url']
+                    : null;
 
                 if ($mediaId === null) {
                     continue;
@@ -51,6 +54,7 @@ class PromotionBannerSupport
                     $banner->update([
                         'name' => $name,
                         'media_id' => $mediaId,
+                        'link_url' => $linkUrl,
                         'is_active' => $isActive,
                         'sort_order' => $sortOrder,
                     ]);
@@ -67,6 +71,7 @@ class PromotionBannerSupport
                 $banner = PromotionBanner::query()->create([
                     'name' => $name,
                     'media_id' => $mediaId,
+                    'link_url' => $linkUrl,
                     'is_active' => $isActive,
                     'sort_order' => $sortOrder,
                 ]);

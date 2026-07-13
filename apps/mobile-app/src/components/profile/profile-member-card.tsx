@@ -14,6 +14,7 @@ type ProfileMemberCardProps = {
   memberCode: string;
   avatarUri?: string;
   avatarFallback: string;
+  birthDateLabel?: string | null;
   onPressMemberCode: () => void;
 };
 
@@ -22,6 +23,7 @@ export function ProfileMemberCard({
   memberCode,
   avatarUri,
   avatarFallback,
+  birthDateLabel,
   onPressMemberCode,
 }: ProfileMemberCardProps) {
   return (
@@ -50,6 +52,11 @@ export function ProfileMemberCard({
                 {memberCode}
               </Text>
             </Pressable>
+            {birthDateLabel ? (
+              <Text variant="muted" className="mt-1 text-xs">
+                Lahir {birthDateLabel}
+              </Text>
+            ) : null}
           </View>
         </View>
       </View>

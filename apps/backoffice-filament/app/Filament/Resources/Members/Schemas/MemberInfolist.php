@@ -54,6 +54,10 @@ class MemberInfolist
                             ->formatStateUsing(fn (?string $state): string => filled($state)
                                 ? '+'.ltrim($state, '+')
                                 : '—'),
+                        TextEntry::make('birth_date')
+                            ->label('Tanggal lahir')
+                            ->date('d M Y')
+                            ->placeholder('—'),
                         TextEntry::make('user.is_active')
                             ->label('Status akun')
                             ->badge()

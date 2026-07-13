@@ -29,6 +29,8 @@ class Content extends Model
         'slug',
         'body_content',
         'event_date',
+        'location_address',
+        'location_url',
         'status',
         'is_staged',
     ];

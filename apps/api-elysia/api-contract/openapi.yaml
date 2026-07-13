@@ -533,6 +533,16 @@ components:
           type: string
           format: date-time
           nullable: true
+        locationAddress:
+          type: string
+          nullable: true
+          description: Alamat lokasi event (null untuk NEWS)
+          example: "Ballroom Hotel Mercure Pontianak, Jl. Jenderal Ahmad Yani No. 91"
+        locationUrl:
+          type: string
+          nullable: true
+          description: Link Google Maps lokasi event (null untuk NEWS)
+          example: "https://maps.google.com/?q=Hotel+Mercure+Pontianak"
         status:
           type: string
           enum: [draft, archived, published]
@@ -2095,8 +2105,8 @@ paths:
         - PromotionBanner
       summary: List active promotion banners
       description: |
-        Banner aktif untuk homepage, urut `createdAt` terbaru dulu.
-        `linkUrl` selalu null sampai CMS menyediakan link.
+        Banner aktif untuk homepage, urut `sortOrder` naik.
+        `linkUrl` dari CMS (nullable jika tidak diisi).
       security: []
       responses:
         '200':
@@ -2123,6 +2133,7 @@ paths:
                             linkUrl:
                               type: string
                               nullable: true
+                              example: "https://hkgoldvip.com/promo"
                             createdAt:
                               type: string
                               format: date-time

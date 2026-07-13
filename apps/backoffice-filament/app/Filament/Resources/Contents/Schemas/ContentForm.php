@@ -10,6 +10,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -47,6 +48,17 @@ class ContentForm
                             ->label('Tanggal acara')
                             ->visible(fn (Get $get): bool => $get('type') === ContentType::Event->value)
                             ->native(false),
+                        Textarea::make('location_address')
+                            ->label('Alamat lokasi')
+                            ->rows(2)
+                            ->visible(fn (Get $get): bool => $get('type') === ContentType::Event->value)
+                            ->columnSpanFull(),
+                        TextInput::make('location_url')
+                            ->label('Link maps')
+                            ->url()
+                            ->maxLength(500)
+                            ->visible(fn (Get $get): bool => $get('type') === ContentType::Event->value)
+                            ->columnSpanFull(),
 
                         TextInput::make('title')
                             ->label('Judul')

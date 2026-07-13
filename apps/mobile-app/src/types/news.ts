@@ -40,6 +40,8 @@ export type ContentDetailData = {
   slug: string;
   bodyContent: string;
   eventDate: string | null;
+  locationAddress?: string | null;
+  locationUrl?: string | null;
   status: string;
   coverImages: { id: string; fileUrl: string; sortOrder: number }[];
   createdAt: string;

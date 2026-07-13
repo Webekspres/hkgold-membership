@@ -87,6 +87,7 @@ class PromotionBannerPage extends Page
                     'id' => $banner->id,
                     'name' => $banner->name,
                     'is_active' => $banner->is_active,
+                    'link_url' => $banner->link_url,
                     'image' => $banner->media !== null
                         ? ContentFormSupport::mediaToUploadPath($banner->media)
                         : null,
@@ -182,6 +183,13 @@ class PromotionBannerPage extends Page
                                     ->disabled(! $canManage)
                                     ->columnSpan(1),
                             ]),
+                        TextInput::make('link_url')
+                            ->label('URL tautan')
+                            ->url()
+                            ->maxLength(500)
+                            ->nullable()
+                            ->disabled(! $canManage)
+                            ->columnSpanFull(),
                         FileUpload::make('image')
                             ->label('Gambar Banner')
                             ->image()

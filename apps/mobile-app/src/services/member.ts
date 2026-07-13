@@ -67,6 +67,7 @@ export type MemberCardView = {
   memberNumber: string;
   currentTier: MemberTier;
   pointBalance: number;
+  birthDate: string | null;
   avatarUri?: string;
   avatarFallback: string;
   firstName: string;
@@ -80,6 +81,7 @@ export function mapProfileToCardView(profile: MemberProfile): MemberCardView {
     memberNumber: profile.memberNumber,
     currentTier: asMemberTier(String(profile.currentTier)),
     pointBalance: profile.pointBalance,
+    birthDate: profile.birthDate ?? null,
     avatarUri: profile.user.profilePhoto?.fileUrl,
     avatarFallback: getNameInitials(fullName),
     firstName: fullName.trim().split(/\s+/)[0] ?? fullName,
@@ -97,6 +99,7 @@ export function mapSessionToCardView(
     memberNumber: member.memberNumber,
     currentTier: asMemberTier(String(member.currentTier)),
     pointBalance: member.pointBalance,
+    birthDate: null,
     avatarUri: undefined,
     avatarFallback: getNameInitials(user.fullName),
     firstName: user.fullName.trim().split(/\s+/)[0] ?? user.fullName,

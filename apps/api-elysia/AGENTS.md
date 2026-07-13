@@ -89,9 +89,27 @@ Aplikasi harus merespons kode payload status keuangan member secara terpisah dem
 
 ---
 
-## 🛠️ 8. Perintah Eksekusi Pertama Anda
+## 🧩 8. Gap Schema vs Kontrak Mobile (jangan asumsikan kolom ada)
+
+Prisma / `packages/database` bisa lebih maju dari MySQL lokal. Sebelum SELECT kolom baru, verifikasi migrasi. Catatan aktif untuk agent:
+
+| Model | Field diminta mobile | Status | Catatan |
+| --- | --- | --- | --- |
+| `PromotionBanner` | `linkUrl`, `sortOrder` | ✅ Ada | Order `sortOrder asc`; `linkUrl` nullable |
+| `Content` (EVENT) | `locationAddress`, `locationUrl` | ✅ Ada | Hanya relevan untuk EVENT |
+| `Content` (NEWS) | kategori | **Belum ada** | Detail tanpa category |
+| `Branch` | lat / lng (nearest) | **Belum ada** (`locationUrl` ada) | Tidak expose nearest geo |
+| `Member` | `birthDate` | ✅ Ada | Pastikan migrasi Laravel `birth_date` sudah dijalankan |
+
+Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware), `promotion-banner`.
+
+Saat menambah kolom: migrasi Prisma + update OpenAPI + mapper service + CMS Filament — jangan hanya ubah TypeScript response.
+
+---
+
+## 🛠️ 9. Perintah Eksekusi Pertama Anda
 
 Sebelum Anda mulai menulis kode endpoint baru, membuat interface, atau memodifikasi fungsionalitas pengontrol (*controller*), eksekusi langkah-langkah diagnostik berikut:
 1. Pastikan Doppler CLI login (`doppler login`) dan `doppler.yaml` mengarah ke `hkgoldvip` / `dev_backend`. Verifikasi secret ter-inject: `doppler secrets`.
 2. Periksa kelancaran koneksi database ke target di secret Doppler (`DATABASE_URL`).
-3. Lakukan introspeksi database (`doppler run -- bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `TransactionType`) siap melayani endpoint mobile app.92
+3. Lakukan introspeksi database (`doppler run -- bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `TransactionType`) siap melayani endpoint mobile app. Bandingkan dengan gap di §8.92
