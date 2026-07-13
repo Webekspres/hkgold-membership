@@ -470,6 +470,12 @@ components:
         isOnlineWarehouse:
           type: boolean
           example: false
+        city:
+          type: string
+          example: "Jakarta Pusat"
+        subdistrict:
+          type: string
+          example: "Menteng"
         images:
           type: array
           items:
@@ -1655,6 +1661,33 @@ paths:
                 success: false
                 message: "Branch tidak ditemukan"
 
+  /api/branch/cities:
+    get:
+      tags:
+        - Branch
+      summary: List distinct cities for branches
+      description: Kota unik dari cabang yang punya alamat ternormalisasi
+      security: []
+      responses:
+        '200':
+          description: Daftar kota berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+
   /api/branch:
     get:
       tags:
@@ -1664,6 +1697,8 @@ paths:
         Mendapatkan daftar branch dengan cursor pagination.
         
         Cursor adalah base64-encoded object dengan format: `{"id": number, "name": string}`
+        - `q`: cari nama/alamat (efektif jika panjang > 2)
+        - `city`: filter nama kota (normalized address)
       security: []
       parameters:
         - name: limit
@@ -1681,6 +1716,18 @@ paths:
             type: string
           description: Base64-encoded cursor untuk halaman berikutnya
           example: "eyJpZCI6MTUsIm5hbWUiOiJISyBHb2xkIEpha2FydGEifQ=="
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Cari nama atau alamat (diterapkan jika panjang > 2)
+          example: "jakarta"
+        - name: city
+          in: query
+          schema:
+            type: string
+          description: Filter nama kota
+          example: "Jakarta Pusat"
       responses:
         '200':
           description: List branch berhasil diambil
@@ -1705,6 +1752,8 @@ paths:
                       phone: "021-12345678"
                       locationUrl: "https://maps.google.com/?q=-6.2088,106.8456"
                       isOnlineWarehouse: false
+                      city: "Jakarta Pusat"
+                      subdistrict: "Menteng"
                       images: []
                       createdAt: "2026-05-01T04:30:00.000Z"
                       updatedAt: "2026-07-10T04:30:00.000Z"
@@ -1715,6 +1764,8 @@ paths:
                       phone: "021-87654321"
                       locationUrl: null
                       isOnlineWarehouse: false
+                      city: "Jakarta Selatan"
+                      subdistrict: "Cilandak"
                       images: []
                       createdAt: "2026-05-15T04:30:00.000Z"
                       updatedAt: "2026-07-10T04:30:00.000Z"
@@ -1812,6 +1863,8 @@ paths:
         
         - Type: NEWS atau EVENT
         - Cursor format: base64-encoded `{"id": "uuid", "createdAt": "timestamp"}`
+        - `q`: search title (efektif jika panjang > 2)
+        - `dateFrom`/`dateTo`: NEWS filter `createdAt`, EVENT filter `eventDate`
       security: []
       parameters:
         - name: type
@@ -1845,6 +1898,26 @@ paths:
             type: string
           description: Base64-encoded cursor untuk halaman berikutnya
           example: "eyJpZCI6ImFiYzEyMy0xMjMtNDU2Iiwic2x1ZyI6InByb21vLXRlc3QifQ=="
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Cari judul (diterapkan jika panjang > 2)
+          example: "emas"
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Awal rentang tanggal (ISO date)
+          example: "2026-01-01"
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Akhir rentang tanggal (ISO date, inclusive end-of-day)
+          example: "2026-12-31"
       responses:
         '200':
           description: List content berhasil diambil
@@ -2016,6 +2089,44 @@ paths:
                 success: false
                 message: "Gagal mengambil katalog reward"
 
+  /api/promotion-banner:
+    get:
+      tags:
+        - PromotionBanner
+      summary: List active promotion banners
+      description: |
+        Banner aktif untuk homepage, urut `createdAt` terbaru dulu.
+        `linkUrl` selalu null sampai CMS menyediakan link.
+      security: []
+      responses:
+        '200':
+          description: Daftar banner berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            imageUrl:
+                              type: string
+                            linkUrl:
+                              type: string
+                              nullable: true
+                            createdAt:
+                              type: string
+                              format: date-time
+
   /api/reward:
     get:
       tags:
@@ -2029,6 +2140,7 @@ paths:
         - pointsMin/pointsMax: filter berdasarkan rentang poin
         - branchId: filter berdasarkan stok di cabang tertentu
         - search: pencarian teks pada nama/deskripsi
+        - sortBy/sortOrder: urutkan by sku (default), name, atau points
       security: []
       parameters:
         - name: limit
@@ -2083,6 +2195,22 @@ paths:
             type: string
           description: Pencarian teks pada nama/deskripsi reward
           example: voucher
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [sku, name, points]
+            default: sku
+          description: Field untuk mengurutkan list reward
+          example: sku
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Arah pengurutan
+          example: asc
       responses:
         '200':
           description: List reward berhasil diambil

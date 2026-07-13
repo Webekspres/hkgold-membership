@@ -1,7 +1,12 @@
 import type { RewardCatalogItem } from '@/types/reward';
-import type { RewardFilterState, RewardPointsBounds } from '@/types/filter';
+import type {
+  RewardFilterState,
+  RewardPointsBounds,
+  RewardSortBy,
+  RewardSortOrder,
+} from '@/types/filter';
 
-export type { RewardFilterState, RewardPointsBounds };
+export type { RewardFilterState, RewardPointsBounds, RewardSortBy, RewardSortOrder };
 
 export function getRewardPointsBounds(rewards: RewardCatalogItem[]): RewardPointsBounds {
   if (rewards.length === 0) {
@@ -21,6 +26,8 @@ export function createDefaultRewardFilter(bounds: RewardPointsBounds): RewardFil
     categoryIds: [],
     pointsMin: bounds.min,
     pointsMax: bounds.max,
+    sortBy: 'sku',
+    sortOrder: 'asc',
   };
 }
 
@@ -60,6 +67,7 @@ export function hasActiveRewardFilter(
   const hasCategoryFilter = filter.categoryIds.length > 0;
   const hasPointsFilter =
     filter.pointsMin > bounds.min || filter.pointsMax < bounds.max;
+  const hasSortFilter = filter.sortBy !== 'sku' || filter.sortOrder !== 'asc';
 
-  return hasCategoryFilter || hasPointsFilter;
+  return hasCategoryFilter || hasPointsFilter || hasSortFilter;
 }

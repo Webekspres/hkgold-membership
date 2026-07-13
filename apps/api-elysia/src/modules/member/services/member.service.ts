@@ -11,15 +11,37 @@ export class MemberService implements IMemberService {
     // Baca data member + user + foto profil dalam satu query.
     // Catatan: address DIBACA lewat addressService (bukan join langsung) agar
     // transformasi region wilayah konsisten dengan modul Address.
+    // ponytail: select eksplisit — kolom birth_date belum ada di MySQL lokal.
+    // Ceiling: birthDate selalu null sampai migrasi; upgrade: ALTER + select birthDate.
     const member = await prisma.member.findUnique({
       where: { userId },
-      include: {
+      select: {
+        id: true,
+        addressId: true,
+        memberNumber: true,
+        phoneNumber: true,
+        currentTier: true,
+        pointBalance: true,
+        highestPoint: true,
+        isSuspended: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
-          include: {
-            profilePhoto: true
-          }
-        }
-      }
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            role: true,
+            isActive: true,
+            profilePhoto: {
+              select: {
+                id: true,
+                fileUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!member || !member.user) return null;
@@ -33,7 +55,7 @@ export class MemberService implements IMemberService {
       id: member.id,
       memberNumber: member.memberNumber,
       phoneNumber: member.phoneNumber,
-      birthDate: member.birthDate,
+      birthDate: null,
       currentTier: member.currentTier,
       pointBalance: member.pointBalance,
       highestPoint: member.highestPoint,

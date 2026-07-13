@@ -1,22 +1,23 @@
-import { Image } from "expo-image";
-import { useCallback, useState } from "react";
+import { Image } from 'expo-image';
+import { useCallback, useState } from 'react';
 import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   View,
   type ListRenderItem,
-} from "react-native";
+} from 'react-native';
 
-import type { PromotionBanner } from "@/mocks/mock-banners";
+import type { PromotionBanner } from '@/types/banner';
 import {
   CAROUSEL_ITEM_GAP,
   CAROUSEL_ITEM_WIDTH,
   CAROUSEL_LEFT_PADDING,
   CAROUSEL_PEEK,
   CAROUSEL_SNAP_INTERVAL,
-} from "@/constants/layout/carousel-layout";
-import { cn } from "@/lib/utils";
+} from '@/constants/layout/carousel-layout';
+import { cn } from '@/lib/utils';
 
 type PromotionBannerSliderProps = {
   banners: PromotionBanner[];
@@ -38,29 +39,42 @@ export function PromotionBannerSlider({
     [banners.length],
   );
 
-  const renderItem: ListRenderItem<PromotionBanner> = useCallback(
-    ({ item }) => (
+  const renderItem: ListRenderItem<PromotionBanner> = useCallback(({ item }) => {
+    const image = (
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={{ width: '100%', aspectRatio: 21 / 9 }}
+        contentFit="cover"
+        accessibilityLabel={item.name || 'Banner promosi'}
+      />
+    );
+
+    return (
       <View
         style={{ width: CAROUSEL_ITEM_WIDTH, marginRight: CAROUSEL_ITEM_GAP }}
-        className="overflow-hidden rounded-xl"
-      >
-        <Image
-          source={item.image}
-          style={{ width: "100%", aspectRatio: 21 / 9 }}
-          contentFit="cover"
-          accessibilityLabel="Banner promosi"
-        />
+        className="overflow-hidden rounded-xl">
+        {/* ponytail: linkUrl null → no Pressable; aktifkan CTA saat CMS punya link */}
+        {item.linkUrl ? (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => {
+              // Placeholder — wire Linking.openURL(item.linkUrl) nanti
+            }}>
+            {image}
+          </Pressable>
+        ) : (
+          image
+        )}
       </View>
-    ),
-    [],
-  );
+    );
+  }, []);
 
   if (banners.length === 0) {
     return null;
   }
 
   return (
-    <View className={cn("gap-3", className)}>
+    <View className={cn('gap-3', className)}>
       <FlatList
         data={banners}
         keyExtractor={(item) => item.id}
@@ -86,8 +100,8 @@ export function PromotionBannerSlider({
           <View
             key={banner.id}
             className={cn(
-              "h-1.5 rounded-full",
-              index === activeIndex ? "w-5 bg-[#e8a020]" : "w-1.5 bg-stone-300",
+              'h-1.5 rounded-full',
+              index === activeIndex ? 'w-5 bg-[#e8a020]' : 'w-1.5 bg-stone-300',
             )}
           />
         ))}

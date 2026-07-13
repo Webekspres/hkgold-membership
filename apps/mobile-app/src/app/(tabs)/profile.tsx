@@ -29,12 +29,11 @@ import {
 } from "@/components/ui/dialog";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/hooks/use-auth";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { copyMemberCode } from "@/lib/clipboard/copy-member-code";
 import { toast } from "@/lib/sonner";
 import { getRewardList } from "@/services/rewards";
-import { MOCK_MEMBER } from "@/mocks/mock-member";
 
-const PROFILE_AVATAR_URI = "https://i.pravatar.cc/300?img=68";
 const LAST_REDEEMED_REWARD = getRewardList()[0];
 
 const profileMenus: ProfileMenuItem[] = [
@@ -49,12 +48,9 @@ const profileMenus: ProfileMenuItem[] = [
   { key: "logout", title: "Logout", icon: LogOut, destructive: true },
 ];
 
-function formatTierName(tier: string) {
-  return tier.charAt(0) + tier.slice(1).toLowerCase();
-}
-
 export default function ProfileScreen() {
   const { logout } = useAuth();
+  const { card } = useMyProfile();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -111,18 +107,22 @@ export default function ProfileScreen() {
           className="flex-1"
           contentContainerClassName="gap-4 px-4 pb-8 pt-4"
           showsVerticalScrollIndicator={false}>
-          <ProfileMemberCard
-            fullName={MOCK_MEMBER.fullName}
-            memberCode={MOCK_MEMBER.memberNumber}
-            avatarUri={PROFILE_AVATAR_URI}
-            avatarFallback="HK"
-            onPressMemberCode={() => void copyMemberCode(MOCK_MEMBER.memberNumber)}
-          />
+          {card ? (
+            <>
+              <ProfileMemberCard
+                fullName={card.fullName}
+                memberCode={card.memberNumber}
+                avatarUri={card.avatarUri}
+                avatarFallback={card.avatarFallback}
+                onPressMemberCode={() => void copyMemberCode(card.memberNumber)}
+              />
 
-          <ProfilePointsTierCard
-            points={MOCK_MEMBER.pointBalance}
-            tierName={formatTierName(MOCK_MEMBER.currentTier)}
-          />
+              <ProfilePointsTierCard
+                points={card.pointBalance}
+                tierName={card.tierLabel}
+              />
+            </>
+          ) : null}
 
           <ProfileLastRewardCard reward={LAST_REDEEMED_REWARD} onPress={() => router.push("/cms")} />
 

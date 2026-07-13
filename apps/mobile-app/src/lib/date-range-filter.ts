@@ -50,3 +50,16 @@ export function formatDateRangeLabel(range: DateRange) {
 export function hasActiveDateRange(range: DateRange) {
   return Boolean(range.startDate || range.endDate);
 }
+
+/** ISO date (YYYY-MM-DD) untuk query API content. */
+export function dateRangeToApiParams(range: DateRange): {
+  dateFrom?: string;
+  dateTo?: string;
+} {
+  return {
+    ...(range.startDate
+      ? { dateFrom: dayjs(range.startDate).format('YYYY-MM-DD') }
+      : {}),
+    ...(range.endDate ? { dateTo: dayjs(range.endDate).format('YYYY-MM-DD') } : {}),
+  };
+}

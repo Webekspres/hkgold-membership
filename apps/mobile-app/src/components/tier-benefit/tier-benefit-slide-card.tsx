@@ -24,11 +24,11 @@ export function TierBenefitSlideCard({ slide }: TierBenefitSlideCardProps) {
       style={{ flex: 1, borderRadius: 20, padding: 2 }}>
       <View className="flex-1 overflow-hidden rounded-[18px] bg-white/10">
         <Image
-          source={require('@/assets/media/background.webp')}
+          source={require('@/assets/media/pattern-vertical.webp')}
           style={{
             position: 'absolute',
             inset: 0,
-            opacity: slide.tier === 'SILVER' ? 0.08 : 0.12,
+            opacity: slide.tier === 'SILVER' ? 0.18 : 0.22,
             borderRadius: 18,
           }}
           contentFit="cover"
