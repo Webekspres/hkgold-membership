@@ -7,6 +7,8 @@ import { Text } from "@/components/ui/text";
 import type { EventItem } from "@/types/event";
 import { formatEventDateLabel } from "@/lib/format/format-event-date";
 
+const PLACEHOLDER_IMAGE = require("@/assets/mockImage/mock-image-news.webp");
+
 type EventListCardProps = {
   event: EventItem;
 };
@@ -18,7 +20,9 @@ export function EventListCard({ event }: EventListCardProps) {
     <View className="rounded-xl border border-stone-200 shadow-md shadow-stone-900/15">
       <View className="overflow-hidden rounded-xl bg-white">
         <Image
-          source={event.image}
+          source={
+            event.imageUrl ? { uri: event.imageUrl } : PLACEHOLDER_IMAGE
+          }
           style={{ width: "100%", aspectRatio: 16 / 9 }}
           contentFit="cover"
           accessibilityLabel={event.title}
@@ -47,8 +51,8 @@ export function EventListCard({ event }: EventListCardProps) {
                 label="Lihat sekarang"
                 onPress={() =>
                   router.push({
-                    pathname: "/events/[slug]",
-                    params: { slug: event.slug },
+                    pathname: "/events/[id]",
+                    params: { id: event.id },
                   })
                 }
               />

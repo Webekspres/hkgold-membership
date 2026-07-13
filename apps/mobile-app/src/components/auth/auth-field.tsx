@@ -5,15 +5,21 @@ import { Text } from '@/components/ui/text';
 
 type AuthFieldProps = PropsWithChildren<{
   label: string;
+  helperText?: string;
 }>;
 
-export function AuthField({ label, children }: AuthFieldProps) {
+export function AuthField({ label, helperText, children }: AuthFieldProps) {
   return (
     <View className="gap-1.5">
       <Text variant="small" className="text-stone-600">
         {label}
       </Text>
       {children}
+      {helperText ? (
+        <Text variant="muted" className="text-xs text-stone-500">
+          {helperText}
+        </Text>
+      ) : null}
     </View>
   );
 }

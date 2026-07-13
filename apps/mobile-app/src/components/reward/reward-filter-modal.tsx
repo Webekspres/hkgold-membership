@@ -18,6 +18,8 @@ import type { RewardCategory } from '@/types/reward';
 import type {
   RewardFilterState,
   RewardPointsBounds,
+  RewardSortBy,
+  RewardSortOrder,
 } from "@/lib/filters/filter-rewards";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +28,17 @@ const CHECK_ICON = {
   android: "check",
   web: "check",
 } as const;
+
+const SORT_BY_OPTIONS: { value: RewardSortBy; label: string }[] = [
+  { value: "sku", label: "SKU" },
+  { value: "name", label: "Nama" },
+  { value: "points", label: "Poin" },
+];
+
+const SORT_ORDER_OPTIONS: { value: RewardSortOrder; label: string }[] = [
+  { value: "asc", label: "Naik (A-Z / kecil-besar)" },
+  { value: "desc", label: "Turun (Z-A / besar-kecil)" },
+];
 
 type RewardFilterModalProps = {
   visible: boolean;
@@ -179,109 +192,184 @@ export function RewardFilterModal({
               Filter Hadiah
             </Text>
             <Text variant="muted" className="mt-1">
-              Pilih rentang poin dan kategori
+              Urutkan, rentang poin, dan kategori
             </Text>
-          </View>
-
-          <View className="mt-5 gap-3 px-4">
-            <Text className="text-sm font-semibold text-stone-800">
-              Rentang poin
-            </Text>
-
-            <View className="flex-row gap-3">
-              <View className="flex-1 gap-1">
-                <Text variant="muted" className="text-xs">
-                  Dari
-                </Text>
-                <Input
-                  keyboardType="number-pad"
-                  value={minInput}
-                  onChangeText={setMinInput}
-                  onFocus={() => {
-                    isEditingMinRef.current = true;
-                  }}
-                  onBlur={commitMinInput}
-                />
-              </View>
-              <View className="flex-1 gap-1">
-                <Text variant="muted" className="text-xs">
-                  Sampai
-                </Text>
-                <Input
-                  keyboardType="number-pad"
-                  value={maxInput}
-                  onChangeText={setMaxInput}
-                  onFocus={() => {
-                    isEditingMaxRef.current = true;
-                  }}
-                  onBlur={commitMaxInput}
-                />
-              </View>
-            </View>
-
-            <RewardPointsRangeSlider
-              min={bounds.min}
-              max={bounds.max}
-              low={filter.pointsMin}
-              high={filter.pointsMax}
-              onChange={updatePoints}
-            />
           </View>
 
           <ScrollView
-            className="mt-6 px-4"
+            className="mt-5 px-4"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
           >
-            <View className="gap-3">
-              <Text className="text-sm font-semibold text-stone-800">
-                Kategori
-              </Text>
-              <Input
-                placeholder="Cari kategori..."
-                placeholderTextColor="#a8a29e"
-                value={categoryQuery}
-                onChangeText={setCategoryQuery}
-              />
-
-              <View className="gap-2">
-                {filteredCategories.map((category) => {
-                  const selected = filter.categoryIds.includes(category.id);
-
-                  return (
-                    <Pressable
-                      key={category.id}
-                      className={cn(
-                        "flex-row items-center gap-3 rounded-lg border px-3 py-3",
-                        selected
-                          ? "border-[#e8a020] bg-[#fffbeb]"
-                          : "border-stone-200 bg-white",
-                      )}
-                      onPress={() => toggleCategory(category.id)}
-                    >
-                      <View
+            <View className="gap-6 pb-2">
+              <View className="gap-3">
+                <Text className="text-sm font-semibold text-stone-800">
+                  Urutkan
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {SORT_BY_OPTIONS.map((option) => {
+                    const selected = filter.sortBy === option.value;
+                    return (
+                      <Pressable
+                        key={option.value}
                         className={cn(
-                          "h-5 w-5 items-center justify-center rounded border",
+                          "rounded-lg border px-3 py-2",
                           selected
-                            ? "border-[#e8a020] bg-[#e8a020]"
-                            : "border-stone-300 bg-white",
+                            ? "border-[#e8a020] bg-[#fffbeb]"
+                            : "border-stone-200 bg-white",
                         )}
+                        onPress={() =>
+                          onFilterChange((prev) => ({
+                            ...prev,
+                            sortBy: option.value,
+                          }))
+                        }
                       >
-                        {selected ? (
-                          <SymbolView
-                            name={CHECK_ICON}
-                            size={12}
-                            tintColor="#ffffff"
-                          />
-                        ) : null}
-                      </View>
-                      <Text className="text-sm text-stone-800">
-                        {category.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+                        <Text
+                          className={cn(
+                            "text-sm",
+                            selected ? "font-semibold text-stone-900" : "text-stone-700",
+                          )}
+                        >
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <View className="gap-2">
+                  {SORT_ORDER_OPTIONS.map((option) => {
+                    const selected = filter.sortOrder === option.value;
+                    return (
+                      <Pressable
+                        key={option.value}
+                        className={cn(
+                          "flex-row items-center gap-3 rounded-lg border px-3 py-3",
+                          selected
+                            ? "border-[#e8a020] bg-[#fffbeb]"
+                            : "border-stone-200 bg-white",
+                        )}
+                        onPress={() =>
+                          onFilterChange((prev) => ({
+                            ...prev,
+                            sortOrder: option.value,
+                          }))
+                        }
+                      >
+                        <View
+                          className={cn(
+                            "h-5 w-5 items-center justify-center rounded-full border",
+                            selected
+                              ? "border-[#e8a020] bg-[#e8a020]"
+                              : "border-stone-300 bg-white",
+                          )}
+                        >
+                          {selected ? (
+                            <View className="h-2 w-2 rounded-full bg-white" />
+                          ) : null}
+                        </View>
+                        <Text className="text-sm text-stone-800">{option.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View className="gap-3">
+                <Text className="text-sm font-semibold text-stone-800">
+                  Rentang poin
+                </Text>
+
+                <View className="flex-row gap-3">
+                  <View className="flex-1 gap-1">
+                    <Text variant="muted" className="text-xs">
+                      Dari
+                    </Text>
+                    <Input
+                      keyboardType="number-pad"
+                      value={minInput}
+                      onChangeText={setMinInput}
+                      onFocus={() => {
+                        isEditingMinRef.current = true;
+                      }}
+                      onBlur={commitMinInput}
+                    />
+                  </View>
+                  <View className="flex-1 gap-1">
+                    <Text variant="muted" className="text-xs">
+                      Sampai
+                    </Text>
+                    <Input
+                      keyboardType="number-pad"
+                      value={maxInput}
+                      onChangeText={setMaxInput}
+                      onFocus={() => {
+                        isEditingMaxRef.current = true;
+                      }}
+                      onBlur={commitMaxInput}
+                    />
+                  </View>
+                </View>
+
+                <RewardPointsRangeSlider
+                  min={bounds.min}
+                  max={bounds.max}
+                  low={filter.pointsMin}
+                  high={filter.pointsMax}
+                  onChange={updatePoints}
+                />
+              </View>
+
+              <View className="gap-3">
+                <Text className="text-sm font-semibold text-stone-800">
+                  Kategori
+                </Text>
+                <Input
+                  placeholder="Cari kategori..."
+                  placeholderTextColor="#a8a29e"
+                  value={categoryQuery}
+                  onChangeText={setCategoryQuery}
+                />
+
+                <View className="gap-2">
+                  {filteredCategories.map((category) => {
+                    const selected = filter.categoryIds.includes(category.id);
+
+                    return (
+                      <Pressable
+                        key={category.id}
+                        className={cn(
+                          "flex-row items-center gap-3 rounded-lg border px-3 py-3",
+                          selected
+                            ? "border-[#e8a020] bg-[#fffbeb]"
+                            : "border-stone-200 bg-white",
+                        )}
+                        onPress={() => toggleCategory(category.id)}
+                      >
+                        <View
+                          className={cn(
+                            "h-5 w-5 items-center justify-center rounded border",
+                            selected
+                              ? "border-[#e8a020] bg-[#e8a020]"
+                              : "border-stone-300 bg-white",
+                          )}
+                        >
+                          {selected ? (
+                            <SymbolView
+                              name={CHECK_ICON}
+                              size={12}
+                              tintColor="#ffffff"
+                            />
+                          ) : null}
+                        </View>
+                        <Text className="text-sm text-stone-800">
+                          {category.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
             </View>
           </ScrollView>

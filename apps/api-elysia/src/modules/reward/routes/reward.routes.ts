@@ -80,7 +80,7 @@ export const rewardRoutes = new Elysia({ prefix: '/api/reward' })
       if (cursor) {
         try {
           const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString());
-          if (!decoded.sku || !decoded.id) {
+          if (!decoded.id) {
             set.status = 400;
             return {
               success: false,
@@ -144,6 +144,30 @@ export const rewardRoutes = new Elysia({ prefix: '/api/reward' })
       // Parse search
       const search = query.search as string | undefined;
 
+      const sortByRaw = query.sortBy as string | undefined;
+      const sortOrderRaw = query.sortOrder as string | undefined;
+      const sortBy =
+        sortByRaw === 'name' || sortByRaw === 'points' || sortByRaw === 'sku'
+          ? sortByRaw
+          : 'sku';
+      const sortOrder = sortOrderRaw === 'desc' ? 'desc' : 'asc';
+
+      if (sortByRaw && !['sku', 'name', 'points'].includes(sortByRaw)) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'sortBy harus sku, name, atau points',
+        };
+      }
+
+      if (sortOrderRaw && !['asc', 'desc'].includes(sortOrderRaw)) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'sortOrder harus asc atau desc',
+        };
+      }
+
       const result = await rewardService.getRewards({
         limit,
         cursor,
@@ -151,7 +175,9 @@ export const rewardRoutes = new Elysia({ prefix: '/api/reward' })
         pointsMin,
         pointsMax,
         branchId,
-        search
+        search,
+        sortBy,
+        sortOrder,
       });
 
       return {

@@ -23,15 +23,26 @@ export type RewardCatalogItem = {
   categorySlug: string;
   pointsRequired: number;
   stockRemaining: number;
-  image: number;
+  image: number | string | null;
 };
 
 export type RewardDetail = RewardCatalogItem & {
   description: string;
-  images: number[];
+  images: (string | number)[];
   branchStocks: RewardBranchStockItem[];
 };
 
 export type RewardCategoryGroup = RewardCategory & {
   rewards: RewardCatalogItem[];
+};
+
+export type RewardPagination = {
+  nextCursor: string | null;
+  hasMore: boolean;
+  limit: number;
+};
+
+export type RewardCatalogPage = {
+  data: RewardCatalogItem[];
+  pagination: RewardPagination;
 };

@@ -2,8 +2,6 @@ import type { NewsArticle } from '@/types/news';
 
 export type { NewsArticle };
 
-const MOCK_NEWS_IMAGE = require('@/assets/mockImage/mock-image-news.webp');
-
 export const MOCK_NEWS_LIST: NewsArticle[] = [
   {
     id: 'news-1',
@@ -11,7 +9,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Harga Emas Stabil di Awal Tahun, Simak Proyeksi Ahli',
     publishedAt: '2026-06-24T08:00:00.000Z',
     publishedAtLabel: '2 hari lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-2',
@@ -19,7 +17,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Tips Investasi Emas untuk Pemula yang Ingin Mulai Koleksi',
     publishedAt: '2026-06-21T10:00:00.000Z',
     publishedAtLabel: '5 hari lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-3',
@@ -27,7 +25,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Program Loyalitas HK Gold 2026: Benefit Baru untuk Member',
     publishedAt: '2026-06-19T09:00:00.000Z',
     publishedAtLabel: '1 minggu lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-4',
@@ -35,7 +33,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Tren Perhiasan Emas Modern yang Diminati Generasi Muda',
     publishedAt: '2026-06-15T11:00:00.000Z',
     publishedAtLabel: '11 hari lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-5',
@@ -43,7 +41,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Cara Aman Menyimpan Emas di Rumah Tanpa Khawatir',
     publishedAt: '2026-06-10T14:00:00.000Z',
     publishedAtLabel: '16 hari lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-6',
@@ -51,7 +49,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Bedah Kebijakan Pajak Emas Terbaru untuk Investor',
     publishedAt: '2026-06-05T08:30:00.000Z',
     publishedAtLabel: '3 minggu lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-7',
@@ -59,7 +57,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Kolaborasi HK Gold dan Artis Lokal Hadirkan Koleksi Terbatas',
     publishedAt: '2026-05-28T16:00:00.000Z',
     publishedAtLabel: '1 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-8',
@@ -67,7 +65,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Panduan Cuci Perhiasan Emas Agar Tetap Berkilau',
     publishedAt: '2026-05-20T09:00:00.000Z',
     publishedAtLabel: '1 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-9',
@@ -75,7 +73,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Mengapa Emas Tetap Jadi Aset Lindung Nilai di 2026',
     publishedAt: '2026-05-12T13:00:00.000Z',
     publishedAtLabel: '1 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-10',
@@ -83,7 +81,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Grand Opening Cabang Baru HK Gold di Surabaya',
     publishedAt: '2026-05-02T10:00:00.000Z',
     publishedAtLabel: '2 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-11',
@@ -91,7 +89,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Interview Founder HK Gold tentang Visi Membership VIP',
     publishedAt: '2026-04-22T15:00:00.000Z',
     publishedAtLabel: '2 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
   {
     id: 'news-12',
@@ -99,7 +97,7 @@ export const MOCK_NEWS_LIST: NewsArticle[] = [
     title: 'Checklist Membeli Emas Pertama Kali untuk Pemula',
     publishedAt: '2026-04-10T08:00:00.000Z',
     publishedAtLabel: '2 bulan lalu',
-    image: MOCK_NEWS_IMAGE,
+    imageUrl: null,
   },
 ];
 

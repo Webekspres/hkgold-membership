@@ -15,18 +15,34 @@ import { cn } from '@/lib/utils';
 
 type LatestNewsSectionProps = {
   articles: NewsArticle[];
+  isError?: boolean;
   className?: string;
 };
 
-export function LatestNewsSection({ articles, className }: LatestNewsSectionProps) {
+export function LatestNewsSection({
+  articles,
+  isError = false,
+  className,
+}: LatestNewsSectionProps) {
   const renderItem: ListRenderItem<NewsArticle> = useCallback(
     ({ item }) => (
       <View style={{ marginRight: CAROUSEL_ITEM_GAP }}>
         <NewsArticleCard article={item} />
       </View>
     ),
-    []
+    [],
   );
+
+  if (isError) {
+    return (
+      <View className={cn('gap-1 px-4', className)}>
+        <Text className="text-base font-semibold text-stone-900">Berita Terbaru</Text>
+        <Text variant="muted" className="text-sm">
+          Gagal memuat berita.
+        </Text>
+      </View>
+    );
+  }
 
   if (articles.length === 0) {
     return null;

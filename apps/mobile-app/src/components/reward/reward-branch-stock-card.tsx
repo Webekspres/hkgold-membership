@@ -4,12 +4,10 @@ import { View } from 'react-native';
 import { GoldButton } from '@/components/shared/gold-button';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import {
-  getAvailableBranchStock,
-  type RewardBranchStockItem,
-} from '@/mocks/mock-rewards';
+import type { RewardBranchStockItem } from '@/types/reward';
 import { formatBranchLocation } from '@/lib/format/format-branch-location';
 import { openLocationUrl } from '@/lib/open-location-url';
+import { getAvailableBranchStock } from '@/services/rewards';
 
 const MAP_ICON = {
   ios: 'map',

@@ -37,6 +37,9 @@ export interface RewardCategoryGroupData extends RewardCategoryData {
   rewards: RewardCatalogItemData[];
 }
 
+export type RewardSortBy = 'sku' | 'name' | 'points';
+export type RewardSortOrder = 'asc' | 'desc';
+
 // Query params
 export interface GetRewardsParams {
   limit?: number;
@@ -46,6 +49,8 @@ export interface GetRewardsParams {
   pointsMax?: number;
   branchId?: number;
   search?: string;
+  sortBy?: RewardSortBy;
+  sortOrder?: RewardSortOrder;
 }
 
 // Pagination types
@@ -58,14 +63,23 @@ export interface PaginationResponse<T> {
   };
 }
 
-export function encodeCursor(data: { sku: string; id: string }): string {
+export type RewardCursorPayload = {
+  id: string;
+  sku?: string;
+  name?: string;
+  pointsRequired?: number;
+};
+
+export function encodeCursor(data: RewardCursorPayload): string {
   return Buffer.from(JSON.stringify(data)).toString('base64');
 }
 
-export function decodeCursor(cursor: string): { sku: string; id: string } | null {
+export function decodeCursor(cursor: string): RewardCursorPayload | null {
   try {
     const decoded = Buffer.from(cursor, 'base64').toString('utf8');
-    return JSON.parse(decoded);
+    const parsed = JSON.parse(decoded);
+    if (!parsed?.id) return null;
+    return parsed as RewardCursorPayload;
   } catch {
     return null;
   }
