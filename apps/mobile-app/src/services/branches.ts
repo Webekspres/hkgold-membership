@@ -33,6 +33,7 @@ function mapBranchItem(item: BranchListApiItem): BranchItem {
     city: item.city ?? '',
     phone: item.phone,
     locationUrl: item.locationUrl,
+    imageUrl: item.images?.[0]?.fileUrl ?? null,
   };
 }
 

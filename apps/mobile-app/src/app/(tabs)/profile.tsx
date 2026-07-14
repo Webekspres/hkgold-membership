@@ -5,6 +5,7 @@ import {
   Gift,
   HelpCircle,
   History,
+  Key,
   LogOut,
   MapPin,
   Newspaper,
@@ -50,6 +51,7 @@ const profileMenus: ProfileMenuItem[] = [
   { key: "news", title: "Berita", icon: Newspaper },
   { key: "branch-location", title: "Lokasi Cabang", icon: MapPin },
   { key: "faq", title: "FAQ", icon: HelpCircle },
+  { key: "change-password", title: "Ganti Password", icon: Key },
   { key: "account-settings", title: "Pengaturan Akun", icon: Settings },
   { key: "logout", title: "Logout", icon: LogOut, destructive: true },
 ];
@@ -94,6 +96,9 @@ export default function ProfileScreen() {
         return;
       case "tier-benefit":
         router.push("/tier-benefit" as Href);
+        return;
+      case "change-password":
+        router.push("/change-password");
         return;
       default:
         router.push("/cms");
@@ -140,6 +145,7 @@ export default function ProfileScreen() {
               <ProfilePointsTierCard
                 points={card.pointBalance}
                 tierName={card.tierLabel}
+                currentTier={card.currentTier}
               />
             </>
           ) : null}

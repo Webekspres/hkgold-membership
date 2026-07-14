@@ -135,6 +135,26 @@ export async function register(input: {
   }
 }
 
+export async function changePassword(
+  oldPassword: string,
+  newPassword: string
+): Promise<void> {
+  try {
+    const { data } = await apiClient.post<ApiEnvelope<void>>(
+      '/api/auth/change-password',
+      { oldPassword, newPassword }
+    );
+
+    if (!data.success) {
+      throw new Error(data.message || 'Gagal mengubah password');
+    }
+
+    // Success - no need to update session (per user requirement: tetap login)
+  } catch (error) {
+    throw new Error(messageFromError(error, 'Gagal mengubah password'));
+  }
+}
+
 export async function logout(): Promise<void> {
   try {
     await Promise.all([
