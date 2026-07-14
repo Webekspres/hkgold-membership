@@ -15,7 +15,7 @@ const ICON_COLOR = "#ffffff";
 const SHORTCUT_SIZE = 44;
 const SHORTCUT_ICON = 16;
 /** Referensi mockup: kuning terang → amber dalam. */
-const SHORTCUT_GRADIENT = ["#F9D423", "#F0B429", "#E08912"] as [
+export const SHORTCUT_GRADIENT = ["#D1A13B", "#ebca86", "#9A6B1F"] as [
   string,
   string,
   string,

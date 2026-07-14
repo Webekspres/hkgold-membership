@@ -74,7 +74,7 @@ const DIVIDER_COLORS = [
 ] as const;
 
 function formatPointBalance(points: number) {
-  return points.toLocaleString("id-ID");
+  return (points ?? 0).toLocaleString("id-ID");
 }
 
 function CardWrapper({
@@ -165,7 +165,7 @@ export function MemberWalletCard({
 
   return (
     <CardWrapper pressable={pressable} className={className}>
-      <View className="overflow-hidden rounded-xl border border-stone-800 bg-[#0a0a0a] px-5 py-5 shadow-md shadow-black/40">
+      <View className="overflow-hidden rounded-xl border-0 bg-[#0a0a0a] px-5 py-5 shadow-lg shadow-stone-900/30">
         <View className="absolute inset-0" pointerEvents="none">
           <Image
             source={require("@/assets/media/pattern-horizontal.webp")}

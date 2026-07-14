@@ -49,11 +49,12 @@ export default function MemberCardScreen() {
           />
 
           <MemberWalletCard
+            fullName={card.fullName}
             memberNumber={card.memberNumber}
-            name={card.name}
-            points={card.points}
-            tier={card.tier}
+            currentTier={card.currentTier}
+            pointBalance={card.pointBalance}
             pressable={false}
+            onPressMemberNumber={() => void copyMemberCode(card.memberNumber)}
           />
 
           {/* TODO: Hadiah sedang diklaim - implementasi nanti */}
