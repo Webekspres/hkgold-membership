@@ -1,13 +1,15 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { Crown } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { cssInterop } from 'nativewind';
 import { View } from 'react-native';
 
-import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { getTierIconSource } from '@/config/assets';
 import { GOLD_GRADIENT_END, GOLD_GRADIENT_START } from '@/config/brand';
 import { cn } from '@/lib/utils';
 import type { TierBenefitSlide } from '@/types/tier-benefit';
+
+cssInterop(Image, { className: 'style' });
 
 type TierBenefitSlideCardProps = {
   slide: TierBenefitSlide;
@@ -34,8 +36,13 @@ export function TierBenefitSlideCard({ slide }: TierBenefitSlideCardProps) {
           contentFit="cover"
         />
         <View className="flex-1 items-center justify-center px-6">
-          <View className="items-center justify-center rounded-full bg-white/25 p-5">
-            <Icon as={Crown} size={48} className={cn(slide.iconClassName)} />
+          <View className="items-center justify-center rounded-full bg-white/25 p-4">
+            <Image
+              source={getTierIconSource(slide.tier)}
+              className="h-16 w-16"
+              contentFit="contain"
+              accessibilityLabel={`Tier ${slide.title}`}
+            />
           </View>
           <Text
             className={cn(

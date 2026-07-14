@@ -6,6 +6,10 @@ export type BranchItem = {
   city: string;
   phone: string | null;
   locationUrl: string | null;
+  /** URL foto cabang (gambar pertama dari API). */
+  imageUrl?: string | null;
+  /** Jarak ke user (km) — home nearest; null jika belum dihitung. */
+  distanceKm?: number | null;
 };
 
 export type BranchCityOption = {

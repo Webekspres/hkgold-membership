@@ -113,4 +113,8 @@ export const MOCK_BRANCH_LIST: BranchItem[] = [
   },
 ];
 
-export const MOCK_NEAREST_BRANCH = MOCK_BRANCH_LIST[0];
+export const MOCK_NEAREST_BRANCH: BranchItem = {
+  ...MOCK_BRANCH_LIST[0],
+  distanceKm: 1.2,
+  imageUrl: null, // UI pakai placeholder lokal
+};

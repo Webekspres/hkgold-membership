@@ -1,19 +1,28 @@
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Crown } from "lucide-react-native";
+import { cssInterop } from "nativewind";
 import { Pressable, View } from "react-native";
 
-import { Icon } from "@/components/ui/icon";
+import { GoldGradientText } from "@/components/shared/gold-gradient-text";
 import { Text } from "@/components/ui/text";
+import { getTierIconSource } from "@/config/assets";
 import {
   GOLD_GRADIENT_COLORS,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
-  GOLD_TAB_SELECTED,
 } from "@/config/brand";
 import { cn } from "@/lib/utils";
+import type { MemberTier } from "@/types/auth";
 
-export type MemberTier = "SILVER" | "GOLD" | "PLATINUM" | "SAPPHIRE";
+cssInterop(LinearGradient, { className: "style" });
+cssInterop(Image, { className: "style" });
+
+const SWOOSH_ASSET = require("@/assets/media/swoosh.webp");
+/** Tinggi dekorasi swoosh di bawah kartu. */
+const SWOOSH_H = 56;
+
+export type { MemberTier };
 
 export type MemberWalletCardProps = {
   fullName: string;
@@ -29,39 +38,43 @@ const TIER_STYLES: Record<
   MemberTier,
   {
     label: string;
-    panelClassName: string;
-    iconClassName: string;
     textClassName: string;
   }
 > = {
   SILVER: {
     label: "Silver",
-    panelClassName: "bg-stone-100",
-    iconClassName: "text-stone-500",
-    textClassName: "text-stone-700",
+    textClassName: "text-stone-200",
   },
   GOLD: {
     label: "Gold",
-    panelClassName: "bg-amber-50",
-    iconClassName: "text-amber-600",
-    textClassName: "text-[#b45309]",
+    textClassName: "text-[#f5c842]",
   },
   PLATINUM: {
     label: "Platinum",
-    panelClassName: "bg-slate-100",
-    iconClassName: "text-slate-500",
-    textClassName: "text-slate-700",
+    textClassName: "text-slate-200",
   },
   SAPPHIRE: {
     label: "Sapphire",
-    panelClassName: "bg-indigo-100",
-    iconClassName: "text-indigo-600",
-    textClassName: "text-indigo-800",
+    textClassName: "text-indigo-200",
   },
 };
 
+/** Pattern fade gelap agar teks tetap terbaca di kartu hitam. */
+const PATTERN_FADE = [
+  "rgba(10,10,10,0.45)",
+  "rgba(10,10,10,0.78)",
+  "rgba(10,10,10,0.94)",
+] as const;
+
+const DIVIDER_COLORS = [
+  "transparent",
+  GOLD_GRADIENT_COLORS[0],
+  GOLD_GRADIENT_COLORS[1],
+  "transparent",
+] as const;
+
 function formatPointBalance(points: number) {
-  return points.toLocaleString("id-ID");
+  return (points ?? 0).toLocaleString("id-ID");
 }
 
 function CardWrapper({
@@ -79,7 +92,8 @@ function CardWrapper({
         className={cn("active:opacity-95", className)}
         onPress={() => router.push("/card")}
         accessibilityRole="button"
-        accessibilityLabel="Buka kartu member">
+        accessibilityLabel="Buka kartu member"
+      >
         {children}
       </Pressable>
     );
@@ -95,25 +109,45 @@ function MemberNumber({
   memberNumber: string;
   onPressMemberNumber?: () => void;
 }) {
+  const pill = (
+    <View className="self-start rounded-full bg-white/10 px-3 py-1">
+      <GoldGradientText className="text-sm font-medium">
+        {memberNumber}
+      </GoldGradientText>
+    </View>
+  );
+
   if (onPressMemberNumber) {
     return (
       <Pressable
-        className="self-start rounded-full bg-amber-50 px-3 py-1 active:opacity-80"
+        className="self-start active:opacity-80"
         onPress={onPressMemberNumber}
         accessibilityRole="button"
-        accessibilityLabel="Salin nomor member">
-        <Text variant="small" style={{ color: GOLD_TAB_SELECTED }}>
-          {memberNumber}
-        </Text>
+        accessibilityLabel="Salin nomor member"
+      >
+        {pill}
       </Pressable>
     );
   }
 
+  return pill;
+}
+
+/** Swoosh bawah kartu — asset full-bleed. */
+function CardBottomSwoosh() {
   return (
-    <View className="self-start rounded-full bg-amber-50 px-3 py-1">
-      <Text variant="small" style={{ color: GOLD_TAB_SELECTED }}>
-        {memberNumber}
-      </Text>
+    <View
+      pointerEvents="none"
+      className="absolute bottom-0 left-0 right-0 overflow-hidden"
+      style={{ height: SWOOSH_H }}
+    >
+      <Image
+        source={SWOOSH_ASSET}
+        className="size-full"
+        contentFit="fill"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
     </View>
   );
 }
@@ -131,55 +165,77 @@ export function MemberWalletCard({
 
   return (
     <CardWrapper pressable={pressable} className={className}>
-      <LinearGradient
-        colors={[...GOLD_GRADIENT_COLORS]}
-        start={GOLD_GRADIENT_START}
-        end={GOLD_GRADIENT_END}
-        style={{ borderRadius: 20, padding: 2 }}>
-        <View className="rounded-[18px] bg-white px-5 py-5">
-          <View className="mb-1">
-            <Text className="text-xl font-semibold text-stone-900" numberOfLines={2}>
-              {fullName}
-            </Text>
-          </View>
+      <View className="overflow-hidden rounded-xl border-0 bg-[#0a0a0a] px-5 py-5 shadow-lg shadow-stone-900/30">
+        <View className="absolute inset-0" pointerEvents="none">
+          <Image
+            source={require("@/assets/media/pattern-horizontal.webp")}
+            className="absolute inset-0 size-full opacity-80"
+            contentFit="cover"
+          />
+          <LinearGradient
+            colors={[...PATTERN_FADE]}
+            start={GOLD_GRADIENT_START}
+            end={GOLD_GRADIENT_END}
+            className="absolute inset-0"
+          />
+        </View>
 
-          <View className="flex-row items-stretch gap-3">
-            <View className="w-3/5 justify-center">
+        <CardBottomSwoosh />
+
+        <View className="relative z-10">
+          <Text
+            className="mb-2 text-xl font-semibold text-white"
+            numberOfLines={2}
+          >
+            {fullName}
+          </Text>
+
+          <View className="flex-row items-stretch">
+            <View className="min-w-0 flex-1 justify-center pr-4">
               <MemberNumber
                 memberNumber={memberNumber}
                 onPressMemberNumber={onPressMemberNumber}
               />
-              <View className="my-4 h-px w-full bg-stone-200" />
 
-              <Text variant="muted" className="text-xs uppercase tracking-wide">
+              <Text className="mt-4 text-xs uppercase tracking-wide text-white/55">
                 Saldo poin
               </Text>
-              <Text className="mt-1 text-3xl font-bold leading-tight text-stone-900">
+              <GoldGradientText className="mt-0.5 text-3xl font-bold leading-tight">
                 {formatPointBalance(pointBalance)}
-              </Text>
-              <Text variant="small" className="text-stone-600">
+              </GoldGradientText>
+              <Text variant="small" className="text-white/55">
                 Poin
               </Text>
             </View>
 
-            <View
-              className={cn(
-                "w-2/5 items-center justify-center rounded-2xl px-3 py-3",
-                tier.panelClassName,
-              )}>
-              <Icon as={Crown} size={34} className={cn(tier.iconClassName)} />
+            <LinearGradient
+              colors={[...DIVIDER_COLORS]}
+              locations={[0, 0.25, 0.75, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              className="w-[1.5px] self-stretch"
+            />
+
+            <View className="w-[30%] items-center justify-center pl-3">
+              <Image
+                source={getTierIconSource(currentTier)}
+                className="h-20 w-20"
+                contentFit="contain"
+                accessibilityLabel={`Tier ${tier.label}`}
+              />
               <Text
                 variant="small"
-                className={cn("mt-1.5 font-semibold", tier.textClassName)}>
+                className={cn("mt-1.5 font-semibold", tier.textClassName)}
+              >
                 {tier.label}
               </Text>
-              <Text variant="small" className="text-stone-500">
+              {/* <Text variant="small" className="text-white/55">
                 Member
-              </Text>
+              </Text> */}
             </View>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </CardWrapper>
   );
 }

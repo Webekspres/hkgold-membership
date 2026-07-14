@@ -1,19 +1,23 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
-import { Crown } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { cssInterop } from "nativewind";
 import { View } from "react-native";
 
-import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { getTierIconSource } from "@/config/assets";
 import {
   GOLD_GRADIENT_COLORS,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
 } from "@/config/brand";
+import type { MemberTier } from "@/types/auth";
+
+cssInterop(Image, { className: "style" });
 
 type ProfilePointsTierCardProps = {
   points: number;
   tierName: string;
+  currentTier: MemberTier;
 };
 
 function formatPoints(points: number) {
@@ -23,6 +27,7 @@ function formatPoints(points: number) {
 export function ProfilePointsTierCard({
   points,
   tierName,
+  currentTier,
 }: ProfilePointsTierCardProps) {
   return (
     <LinearGradient
@@ -55,7 +60,12 @@ export function ProfilePointsTierCard({
         </View>
 
         <View className="w-2/5 items-center justify-center rounded-2xl bg-white/20 px-3 py-3">
-          <Icon as={Crown} size={30} className="text-white" />
+          <Image
+            source={getTierIconSource(currentTier)}
+            className="h-9 w-9"
+            contentFit="contain"
+            accessibilityLabel={`Tier ${tierName}`}
+          />
           <Text className="mt-1 font-semibold text-white">{tierName}</Text>
         </View>
       </View>

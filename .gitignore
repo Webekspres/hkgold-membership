@@ -6,3 +6,5 @@
 *.log
 .DS_Store
 /packages/*firebase-adminsdk*.json
+graphify-out/
+.claude/worktrees/

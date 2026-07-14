@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~56.0.18",
     "@react-native-community/slider": "^5.2.0",
+    "@react-native-masked-view/masked-view": "0.3.2",
     "@rn-primitives/accordion": "^1.5.2",
     "@rn-primitives/avatar": "^1.4.0",
     "@rn-primitives/dialog": "^1.4.0",

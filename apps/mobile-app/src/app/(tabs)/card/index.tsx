@@ -1,22 +1,33 @@
-import { router, type Href } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown';
+// import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown';
 import { MemberQrCard } from '@/components/card/member-qr-card';
 import { MemberWalletCard } from '@/components/home/member-wallet-card';
-import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-card';
+// import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/config/theme';
-import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
+import { useMyProfile } from '@/hooks/use-my-profile';
+// import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
 import { copyMemberCode } from '@/lib/clipboard/copy-member-code';
-import { MOCK_MEMBER } from '@/mocks/mock-member';
-import { getActiveRedeem } from '@/services/active-redeem';
+// import { getActiveRedeem } from '@/services/active-redeem';
 
-const activeRedeem = getActiveRedeem();
-const activeRedeemReward = mapActiveRedeemToReward(activeRedeem);
+// const activeRedeem = getActiveRedeem();
+// const activeRedeemReward = mapActiveRedeemToReward(activeRedeem);
 
 export default function MemberCardScreen() {
+  const { card } = useMyProfile();
+
+  if (!card) {
+    return (
+      <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 items-center justify-center">
+          <Text variant="muted">Memuat data member...</Text>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-background">
       <SafeAreaView className="flex-1" style={{ paddingBottom: 4 }}>
@@ -33,18 +44,26 @@ export default function MemberCardScreen() {
           </View>
 
           <MemberQrCard
-            memberNumber={MOCK_MEMBER.memberNumber}
-            onPressMemberNumber={() => void copyMemberCode(MOCK_MEMBER.memberNumber)}
+            memberNumber={card.memberNumber}
+            onPressMemberNumber={() => void copyMemberCode(card.memberNumber)}
           />
 
-          <MemberWalletCard {...MOCK_MEMBER} pressable={false} />
+          <MemberWalletCard
+            fullName={card.fullName}
+            memberNumber={card.memberNumber}
+            currentTier={card.currentTier}
+            pointBalance={card.pointBalance}
+            pressable={false}
+            onPressMemberNumber={() => void copyMemberCode(card.memberNumber)}
+          />
 
-          <ProfileLastRewardCard
+          {/* TODO: Hadiah sedang diklaim - implementasi nanti */}
+          {/* <ProfileLastRewardCard
             title="Hadiah sedang diklaim"
             reward={activeRedeemReward}
             footer={<ActiveRedeemCountdown expiresAt={activeRedeem.expiresAt} />}
             onPress={() => router.push('/card/redeem-qr' as Href)}
-          />
+          /> */}
         </ScrollView>
       </SafeAreaView>
     </View>
