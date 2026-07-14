@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Address;
-use App\Models\PostalCode;
-use App\Models\Village;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * @extends Factory<Address>
@@ -21,38 +21,25 @@ class AddressFactory extends Factory
      */
     public function definition(): array
     {
+        $villageId = DB::table('villages')->value('id');
+        $postalCodeId = DB::table('postal_codes')->value('id');
+
+        if ($villageId === null || $postalCodeId === null) {
+            throw new RuntimeException('Location data must be seeded before creating addresses.');
+        }
+
         $streetTypes = ['Jl.', 'Jalan', 'Komplek', 'Gang'];
-        $streetNames = [
-            'Sudirman',
-            'Thamrin',
-            'Gajah Mada',
-            'Ahmad Yani',
-            'Pahlawan',
-            'Merdeka',
-            'Diponegoro',
-            'Kartini',
-            'Pemuda',
-            'Hasanuddin',
-        ];
-
-        $street = sprintf(
-            '%s %s No. %d',
-            fake()->randomElement($streetTypes),
-            fake()->randomElement($streetNames),
-            fake()->numberBetween(1, 250)
-        );
-
-        $villageIds = Village::query()->pluck('id')->all();
-        $postalCodeIds = PostalCode::query()->pluck('id')->all();
+        $streetNames = ['Sudirman', 'Gajah Mada', 'Ahmad Yani', 'Merdeka', 'Diponegoro'];
 
         return [
-            'village_id' => $villageIds !== []
-                ? fake()->randomElement($villageIds)
-                : Village::factory(),
-            'postal_code_id' => $postalCodeIds !== []
-                ? fake()->randomElement($postalCodeIds)
-                : PostalCode::factory(),
-            'street' => $street,
+            'village_id' => $villageId,
+            'postal_code_id' => $postalCodeId,
+            'street' => sprintf(
+                '%s %s No. %d',
+                fake()->randomElement($streetTypes),
+                fake()->randomElement($streetNames),
+                fake()->numberBetween(1, 250)
+            ),
         ];
     }
 }

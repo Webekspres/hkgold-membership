@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Media;
-use App\Models\Reward;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -31,7 +30,6 @@ class MediaFactory extends Factory
         ]);
 
         return [
-            'reward_id' => null,
             'caption' => fake('id_ID')->sentence(6),
             'file_name' => $fileName,
             'file_type' => 'image/jpeg',
@@ -40,10 +38,18 @@ class MediaFactory extends Factory
         ];
     }
 
-    public function forReward(?Reward $reward = null): static
+    public function spreadsheet(): self
     {
-        return $this->state(fn (): array => [
-            'reward_id' => $reward?->id ?? Reward::factory(),
-        ]);
+        return $this->state(function (array $attributes) {
+            $fileName = 'inject-poin-'.fake()->date('Ymd').'.xlsx';
+
+            return [
+                'caption' => 'Excel Import File',
+                'file_name' => $fileName,
+                'file_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'file_url' => 'https://cdn.hkgoldvip.id/imports/'.Str::uuid().'/'.$fileName,
+                'file_size' => fake()->numberBetween(15_000, 150_000),
+            ];
+        });
     }
 }

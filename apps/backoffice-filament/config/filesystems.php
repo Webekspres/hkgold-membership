@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | R2 Wipe on migrate:fresh --seed
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, all objects in the R2 bucket are deleted automatically
+    | after `php artisan migrate:fresh --seed` (before seeding runs).
+    |
+    */
+
+    'wipe_r2_on_fresh_seed' => env('R2_WIPE_ON_FRESH_SEED', env('APP_ENV') === 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -35,6 +47,13 @@ return [
             'root' => storage_path('app/private'),
             'serve' => true,
             'throw' => false,
+            'report' => false,
+        ],
+
+        'content_staging' => [
+            'driver' => 'local',
+            'root' => storage_path('app/content-staging'),
+            'throw' => true,
             'report' => false,
         ],
 
@@ -60,6 +79,20 @@ return [
             'report' => false,
         ],
 
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+            'secret' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+            'region' => env('CLOUDFLARE_R2_REGION', 'auto'),
+            'bucket' => env('CLOUDFLARE_R2_BUCKET'),
+            'url' => env('CLOUDFLARE_R2_PUBLIC_URL'),
+            'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+            'options' => [
+                'SignatureVersion' => 'v4',
+            ],
+        ],
     ],
 
     /*

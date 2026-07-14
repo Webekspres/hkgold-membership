@@ -16,18 +16,28 @@ class PostalCodesTable
     {
         return $table
             ->columns([
-                TextColumn::make('code')
+                TextColumn::make('kodepos')
                     ->label('Kode Pos')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
+
+                TextColumn::make('city.nama')
+                    ->label('Kota/Kabupaten')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('subDistrict.nama')
+                    ->label('Kecamatan')
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('addresses_count')
                     ->label('Jumlah Alamat')
                     ->counts('addresses')
                     ->sortable(),
             ])
-            ->defaultSort('code')
+            ->defaultSort('kodepos')
             ->filters([])
             ->recordActions([
                 ActionGroup::make([

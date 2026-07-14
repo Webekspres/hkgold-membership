@@ -16,7 +16,8 @@ class ListVillages extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah Kelurahan'),
+                ->label('Tambah Kelurahan')
+                ->goldStyle(),
         ];
     }
 }

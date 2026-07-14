@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Villages\Tables;
 
+use App\Models\City;
 use App\Models\Province;
-use App\Models\Regency;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -20,55 +20,55 @@ class VillagesTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('nama')
                     ->label('Nama Kelurahan')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.name')
+                TextColumn::make('subDistrict.nama')
                     ->label('Kecamatan')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.regency.name')
+                TextColumn::make('subDistrict.city.nama')
                     ->label('Kota/Kabupaten')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('district.regency.province.name')
+                TextColumn::make('subDistrict.city.province.nama')
                     ->label('Provinsi')
                     ->searchable()
                     ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('nama')
             ->filters([
                 SelectFilter::make('province_id')
                     ->label('Provinsi')
-                    ->options(fn (): array => Province::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Province::query()->orderBy('nama')->pluck('nama', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
                         fn (Builder $query): Builder => $query->whereHas(
-                            'district.regency',
+                            'subDistrict.city',
                             fn (Builder $query): Builder => $query->where('province_id', $data['value']),
                         ),
                     )),
 
-                SelectFilter::make('regency_id')
+                SelectFilter::make('city_id')
                     ->label('Kota/Kabupaten')
-                    ->options(fn (): array => Regency::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => City::query()->orderBy('nama')->pluck('nama', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         filled($data['value'] ?? null),
                         fn (Builder $query): Builder => $query->whereHas(
-                            'district',
-                            fn (Builder $query): Builder => $query->where('regency_id', $data['value']),
+                            'subDistrict',
+                            fn (Builder $query): Builder => $query->where('city_id', $data['value']),
                         ),
                     )),
 
-                SelectFilter::make('district_id')
+                SelectFilter::make('sub_district_id')
                     ->label('Kecamatan')
-                    ->relationship('district', 'name')
+                    ->relationship('subDistrict', 'nama')
                     ->searchable()
                     ->preload(),
             ])

@@ -17,20 +17,21 @@ class MemberAnomaly extends Model
 
     protected $table = 'member_anomalies';
 
-    public const UPDATED_AT = null;
+    public $timestamps = false;
 
     protected $fillable = [
         'member_id',
-        'last_active_at',
-        'inactivity_duration_days',
+        'last_mutation_at',
+        'hoarded_points',
+        'detected_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'last_active_at' => 'datetime',
-            'inactivity_duration_days' => 'integer',
-            'created_at' => 'datetime',
+            'last_mutation_at' => 'datetime',
+            'hoarded_points' => 'integer',
+            'detected_at' => 'datetime',
         ];
     }
 

@@ -4,41 +4,30 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\StaffFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
     /** @use HasFactory<StaffFactory> */
-    use HasFactory, HasUuids;
+    use HasAuditableActivityLogs, HasFactory, SoftDeletes;
 
     protected $table = 'staffs';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
+        'user_id',
         'branch_id',
-        'allowed_ip',
-        'is_device_approved',
+        'employee_code',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'is_device_approved' => 'boolean',
-        ];
-    }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class);
     }
 
     public function branch(): BelongsTo
@@ -48,21 +37,21 @@ class Staff extends Model
 
     public function uploadedBatches(): HasMany
     {
-        return $this->hasMany(PointInjectionBatch::class, 'uploaded_by_id');
+        return $this->hasMany(PointInjectionBatch::class, 'staff_id');
     }
 
-    public function confirmedInvoices(): HasMany
+    public function redeemInvoices(): HasMany
     {
-        return $this->hasMany(RedeemInvoice::class, 'confirmed_by_id');
+        return $this->hasMany(RedeemInvoice::class, 'staff_id');
     }
 
-    public function cancelledInvoices(): HasMany
+    public function changePhoneRequests(): HasMany
     {
-        return $this->hasMany(RedeemInvoice::class, 'cancelled_by_id');
+        return $this->hasMany(PhoneApproval::class, 'requested_by_id');
     }
 
-    public function approvedPhones(): HasMany
+    public function changePhoneApprovals(): HasMany
     {
-        return $this->hasMany(PhoneApproval::class, 'approved_by');
+        return $this->hasMany(PhoneApproval::class, 'approved_by_id');
     }
 }

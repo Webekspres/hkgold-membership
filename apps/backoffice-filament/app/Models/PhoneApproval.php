@@ -16,20 +16,25 @@ class PhoneApproval extends Model
     /** @use HasFactory<PhoneApprovalFactory> */
     use HasFactory, HasUuids;
 
-    protected $table = 'phone_approvals';
+    protected $table = 'change_phone_approvals';
 
     protected $fillable = [
         'member_id',
-        'old_phone',
-        'new_phone',
+        'requested_by_id',
+        'approved_by_id',
+        'old_phone_number',
+        'new_phone_number',
         'status',
-        'approved_by',
+        'reason',
+        'action_notes',
+        'processed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => ApprovalStatus::class,
+            'processed_at' => 'datetime',
         ];
     }
 
@@ -38,8 +43,13 @@ class PhoneApproval extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function approver(): BelongsTo
+    public function requestedBy(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'approved_by');
+        return $this->belongsTo(Staff::class, 'requested_by_id');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'approved_by_id');
     }
 }

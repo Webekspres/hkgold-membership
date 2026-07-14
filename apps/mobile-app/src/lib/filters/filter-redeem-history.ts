@@ -1,0 +1,57 @@
+import { EMPTY_DATE_RANGE, isWithinDateRange } from '@/lib/date-range-filter';
+import {
+  createDefaultRewardFilter,
+  hasActiveRewardFilter,
+} from '@/lib/filters/filter-rewards';
+import type { DateRange, RewardFilterState, RewardPointsBounds } from '@/types/filter';
+import type { RedeemHistoryItem } from '@/types/redeem';
+
+export type RedeemHistoryFilterState = RewardFilterState & {
+  dateRange: DateRange;
+};
+
+export function createDefaultRedeemHistoryFilter(
+  bounds: RewardPointsBounds
+): RedeemHistoryFilterState {
+  return {
+    ...createDefaultRewardFilter(bounds),
+    dateRange: EMPTY_DATE_RANGE,
+  };
+}
+
+export function getRedeemHistoryPointsBounds(items: RedeemHistoryItem[]): RewardPointsBounds {
+  if (items.length === 0) {
+    return { min: 0, max: 0 };
+  }
+
+  const points = items.map((item) => item.pointsRequired);
+
+  return {
+    min: Math.min(...points),
+    max: Math.max(...points),
+  };
+}
+
+export function applyRedeemHistoryFilters(
+  items: RedeemHistoryItem[],
+  filter: RedeemHistoryFilterState
+): RedeemHistoryItem[] {
+  const byCategory =
+    filter.categoryIds.length === 0
+      ? items
+      : items.filter((item) => filter.categoryIds.includes(item.categoryId));
+
+  const byPoints = byCategory.filter(
+    (item) => item.pointsRequired >= filter.pointsMin && item.pointsRequired <= filter.pointsMax
+  );
+
+  return byPoints.filter((item) => isWithinDateRange(item.redeemedAt, filter.dateRange));
+}
+
+export function hasActiveRedeemHistoryFilter(
+  filter: RedeemHistoryFilterState,
+  bounds: RewardPointsBounds
+) {
+  const hasDateFilter = Boolean(filter.dateRange.startDate || filter.dateRange.endDate);
+  return hasActiveRewardFilter(filter, bounds) || hasDateFilter;
+}

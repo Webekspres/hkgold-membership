@@ -15,18 +15,20 @@ class BranchRewardStock extends Model
     /** @use HasFactory<BranchRewardStockFactory> */
     use HasFactory, HasUuids;
 
-    protected $table = 'branch_reward_stocks';
+    protected $table = 'reward_branch_stocks';
 
     protected $fillable = [
         'branch_id',
         'reward_id',
-        'stock_quantity',
+        'actual_stock',
+        'held_stock',
     ];
 
     protected function casts(): array
     {
         return [
-            'stock_quantity' => 'integer',
+            'actual_stock' => 'integer',
+            'held_stock' => 'integer',
         ];
     }
 

@@ -16,7 +16,8 @@ class ListPostalCodes extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah Kode Pos'),
+                ->label('Tambah Kode Pos')
+                ->goldStyle(),
         ];
     }
 }

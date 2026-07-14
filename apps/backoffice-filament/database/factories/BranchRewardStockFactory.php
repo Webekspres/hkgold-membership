@@ -24,7 +24,8 @@ class BranchRewardStockFactory extends Factory
         return [
             'branch_id' => Branch::factory(),
             'reward_id' => Reward::factory(),
-            'stock_quantity' => fake()->numberBetween(0, 50),
+            'actual_stock' => fake()->numberBetween(0, 50),
+            'held_stock' => fake()->numberBetween(0, 10),
         ];
     }
 }

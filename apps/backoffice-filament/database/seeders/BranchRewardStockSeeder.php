@@ -34,7 +34,10 @@ class BranchRewardStockSeeder extends Seeder
                         'branch_id' => $branch->id,
                         'reward_id' => $reward->id,
                     ],
-                    ['stock_quantity' => fake()->numberBetween(2, 40)],
+                    [
+                        'actual_stock' => fake()->numberBetween(2, 40),
+                        'held_stock' => fake()->numberBetween(0, 5),
+                    ],
                 );
             }
         }

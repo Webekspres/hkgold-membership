@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\PostalCodes\Schemas;
 
 use App\Models\PostalCode;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rule;
@@ -15,12 +16,26 @@ class PostalCodeForm
     {
         return $schema
             ->components([
-                TextInput::make('code')
+                Select::make('city_id')
+                    ->label('Kota/Kabupaten')
+                    ->relationship('city', 'nama')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+
+                Select::make('sub_district_id')
+                    ->label('Kecamatan')
+                    ->relationship('subDistrict', 'nama')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+
+                TextInput::make('kodepos')
                     ->label('Kode Pos')
                     ->required()
                     ->maxLength(20)
                     ->rules(fn (?PostalCode $record): array => [
-                        Rule::unique('postal_codes', 'code')->ignore($record?->id),
+                        Rule::unique('postal_codes', 'kodepos')->ignore($record?->id),
                     ]),
             ]);
     }

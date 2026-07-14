@@ -1,516 +1,880 @@
 // schema.prisma
-// Sistem Manajemen Member Terintegrasi - HK GOLD VIP (Versi Final Relasi Media)
-// Stack Kompatibilitas: Laravel Filament (PHP) & Express.js Engine (Node.js)
+// Sistem Loyalitas Mala Emas (HK GOLD VIP) — Versi 2
+// Stack: Laravel 13 Eloquent (Filament) & ElysiaJS + Prisma (Express Engine)
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
+  output   = "../../apps/api-elysia/node_modules/.prisma/client"
 }
 
 datasource db {
-    provider = "mysql"
-    url      = env("DATABASE_URL")
+  provider = "mysql"
 }
 
-// ==========================================
-// 1. CORE AUTHENTICATION ENTITY (SHARED BASE)
-// ==========================================
+// =============================================================================
+// ENUMS
+// =============================================================================
 
 enum Role {
-    SUPER_ADMIN
-    EXECUTIVE
-    STORE_MANAGER
-    MARKETING
-    CUSTOMER
+  ADMINISTRATOR
+  SUPERADMIN
+  MARKETING
+  STORE_MANAGER
+  MEMBER
 }
 
-model User {
-    id             String  @id @default(uuid()) @db.Char(36)
-    email          String  @unique @db.VarChar(255)
-    phone          String  @unique @db.VarChar(50) // Digunakan bersama email sebagai kredensial unik nasional
-    password       String  @db.VarChar(255)
-    name           String  @db.VarChar(255)
-    role           Role
-    profilePhotoId String? @unique @map("profile_photo_id") @db.Char(36) // @unique menjamin relasi 1-to-1
-    isActive       Boolean @default(true) @map("is_active")
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Polymorphic Relations 1-to-1
-    staff        Staff?
-    member       Member?
-    profilePhoto Media?  @relation(fields: [profilePhotoId], references: [id], onDelete: SetNull)
-
-    @@map("users")
+enum MemberTier {
+  SILVER
+  GOLD
+  PLATINUM
+  SAPPHIRE
 }
 
-// ==========================================
-// 2. USER PROFILE EXTENSIONS (STAFF & MEMBER)
-// ==========================================
-
-model Staff {
-    id               String  @id @db.Char(36) // PK sekaligus FK merujuk ke User.id
-    branchId         String? @map("branch_id") @db.Char(36)
-    allowedIp        String? @map("allowed_ip") @db.VarChar(50)
-    isDeviceApproved Boolean @default(false) @map("is_device_approved")
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    user              User                  @relation(fields: [id], references: [id], onDelete: Cascade)
-    branch            Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
-    uploadedBatches   PointInjectionBatch[]
-    confirmedInvoices RedeemInvoice[]       @relation("InvoiceConfirmedBy")
-    cancelledInvoices RedeemInvoice[]       @relation("InvoiceCancelledBy")
-    approvedPhones    PhoneApproval[]       @relation("PhoneApprovedBy")
-
-    @@index([branchId])
-    @@map("staffs")
+enum InjectionStatus {
+  PENDING
+  VALIDATED
+  FAILED
+  SUCCESS
 }
 
-enum TierStatus {
-    SILVER
-    GOLD
-    PLATINUM
-    SAPPHIRE
-}
-
-model Member {
-    id                 String     @id @db.Char(36) // PK sekaligus FK merujuk ke User.id
-    addressId          String?    @map("address_id") @db.Char(36)
-    memberCode         String     @unique @map("member_code") @db.VarChar(50)
-    dob                DateTime?  @map("dob") @db.Date
-    totalPoints        Decimal    @default(0) @map("total_points") @db.Decimal(15, 2)
-    tier               TierStatus @default(SILVER)
-    phoneChangePending Boolean    @default(false) @map("phone_change_pending")
-
-    createdAt DateTime  @default(now()) @map("created_at")
-    updatedAt DateTime  @updatedAt @map("updated_at")
-    deletedAt DateTime? @map("deleted_at")
-
-    // Relations
-    user             User                 @relation(fields: [id], references: [id], onDelete: Cascade)
-    address          Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
-    mutations        PointMutation[]
-    invoices         RedeemInvoice[]
-    phoneApprovals   PhoneApproval[]
-    inactivityLogs   MemberAnomaly[]
-    fraudSuspectsAs1 FraudSuspect[]       @relation("SuspectMemberOne")
-    fraudSuspectsAs2 FraudSuspect[]       @relation("SuspectMemberTwo")
-    annualArchives   PointAnnualArchive[]
-
-    @@index([addressId])
-    @@map("members")
-}
-
-// ==========================================
-// 3. NORMALIZED ADDRESS MASTER ENTITIES
-// ==========================================
-
-model Province {
-    id   String @id @default(uuid()) @db.Char(36)
-    name String @db.VarChar(150)
-
-    regencies Regency[]
-
-    @@map("provinces")
-}
-
-model Regency {
-    id         String @id @default(uuid()) @db.Char(36)
-    provinceId String @map("province_id") @db.Char(36)
-    name       String @db.VarChar(150)
-
-    province  Province   @relation(fields: [provinceId], references: [id], onDelete: Cascade)
-    districts District[]
-
-    @@index([provinceId])
-    @@map("regencies")
-}
-
-model District {
-    id        String @id @default(uuid()) @db.Char(36)
-    regencyId String @map("regency_id") @db.Char(36)
-    name      String @db.VarChar(150)
-
-    regency  Regency   @relation(fields: [regencyId], references: [id], onDelete: Cascade)
-    villages Village[]
-
-    @@index([regencyId])
-    @@map("districts")
-}
-
-model Village {
-    id         String @id @default(uuid()) @db.Char(36)
-    districtId String @map("district_id") @db.Char(36)
-    name       String @db.VarChar(150)
-
-    district  District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
-    addresses Address[]
-
-    @@index([districtId])
-    @@map("villages")
-}
-
-model PostalCode {
-    id   String @id @default(uuid()) @db.Char(36)
-    code String @unique @db.VarChar(20)
-
-    addresses Address[]
-
-    @@map("postal_codes")
-}
-
-model Address {
-    id           String @id @default(uuid()) @db.Char(36)
-    villageId    String @map("village_id") @db.Char(36)
-    postalCodeId String @map("postal_code_id") @db.Char(36)
-    street       String @db.Text
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    village    Village    @relation(fields: [villageId], references: [id])
-    postalCode PostalCode @relation(fields: [postalCodeId], references: [id])
-    members    Member[]
-    branches   Branch[]
-
-    @@index([villageId])
-    @@index([postalCodeId])
-    @@map("addresses")
-}
-
-// ==========================================
-// 4. OPERATIONAL & OPERATING INFRASTRUCTURE
-// ==========================================
-
-model Branch {
-    id        String   @id @default(uuid()) @db.Char(36)
-    addressId String?  @map("address_id") @db.Char(36)
-    code      String   @unique @db.VarChar(50)
-    name      String   @db.VarChar(255)
-    phone     String?  @db.VarChar(50)
-    latitude  Decimal? @db.Decimal(10, 8)
-    longitude Decimal? @db.Decimal(11, 8)
-    isActive  Boolean  @default(true) @map("is_active")
-    openTime  String   @default("08:00") @map("open_time") @db.VarChar(5)
-    closeTime String   @default("17:00") @map("close_time") @db.VarChar(5)
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    address        Address?              @relation(fields: [addressId], references: [id], onDelete: SetNull)
-    staffs         Staff[]
-    rewardStocks   BranchRewardStock[]
-    pointBatches   PointInjectionBatch[]
-    pointMutations PointMutation[]
-    redeemInvoices RedeemInvoice[]
-
-    @@index([addressId])
-    @@map("branches")
-}
-
-// ==========================================
-// 5. SECURITY & FRAUD TRACKING ENTITIES
-// ==========================================
-
-model MemberAnomaly {
-    id                     String   @id @default(uuid()) @db.Char(36)
-    memberId               String   @map("member_id") @db.Char(36)
-    lastActiveAt           DateTime @map("last_active_at") @db.DateTime
-    inactivityDurationDays Int      @map("inactivity_duration_days")
-
-    createdAt DateTime @default(now()) @map("created_at")
-
-    // Relations
-    member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-    @@index([memberId])
-    @@map("member_anomalies")
-}
-
-model FraudSuspect {
-    id              String  @id @default(uuid()) @db.Char(36)
-    member1Id       String  @map("member_1_id") @db.Char(36)
-    member2Id       String  @map("member_2_id") @db.Char(36)
-    confidenceScore Decimal @map("confidence_score") @db.Decimal(5, 2)
-    reason          String  @db.Text
-    isResolved      Boolean @default(false) @map("is_resolved")
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    member1 Member @relation("SuspectMemberOne", fields: [member1Id], references: [id], onDelete: Cascade)
-    member2 Member @relation("SuspectMemberTwo", fields: [member2Id], references: [id], onDelete: Cascade)
-
-    @@index([member1Id])
-    @@index([member2Id])
-    @@map("fraud_suspects")
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB_BROWSER
 }
 
 enum ApprovalStatus {
-    PENDING
-    APPROVED
-    REJECTED
+  PENDING
+  APPROVED
+  REJECTED
 }
 
-model PhoneApproval {
-    id         String         @id @default(uuid()) @db.Char(36)
-    memberId   String         @map("member_id") @db.Char(36)
-    oldPhone   String         @map("old_phone") @db.VarChar(50)
-    newPhone   String         @map("new_phone") @db.VarChar(50)
-    status     ApprovalStatus @default(PENDING)
-    approvedBy String?        @map("approved_by") @db.Char(36)
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-    approver Staff? @relation("PhoneApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
-
-    @@index([memberId])
-    @@index([approvedBy])
-    @@map("phone_approvals")
+enum OtpType {
+  STAFF_DEVICE_REGISTRATION // OTP untuk lock device 42 staf internal
+  REDEEM_VALIDATION         // OTP WhatsApp saat Store Manager klik "Konfirmasi Tukarkan"
 }
 
-// ==========================================
-// 6. LOYALTY ENGINE & POINT ENTITIES
-// ==========================================
-
-enum BatchStatus {
-    PENDING
-    PROCESSING
-    COMPLETED
-    FAILED
+enum NotificationPlatform {
+  WEB_BROWSER_PUSH // Web Push API (FCM/Vapid) untuk browser staf
+  MOBILE_APP_PUSH  // Firebase Cloud Messaging (FCM) / APNS untuk React Native member
+  WEB_ADMIN_IN_APP // Format khusus database-notifications milik Laravel Filament
 }
 
-model PointInjectionBatch {
-    id            String      @id @default(uuid()) @db.Char(36)
-    branchId      String      @map("branch_id") @db.Char(36)
-    uploadedById  String      @map("uploaded_by_id") @db.Char(36)
-    filename      String      @db.VarChar(255)
-    fileUrl       String      @map("file_url") @db.Text
-    status        BatchStatus @default(PENDING)
-    totalRows     Int         @default(0) @map("total_rows")
-    processedRows Int         @default(0) @map("processed_rows")
-    errorLog      String?     @map("error_log") @db.LongText
-
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    branch     Branch          @relation(fields: [branchId], references: [id])
-    uploadedBy Staff           @relation(fields: [uploadedById], references: [id])
-    mutations  PointMutation[]
-
-    @@index([branchId])
-    @@index([uploadedById])
-    @@map("point_injection_batches")
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
-enum MutationType {
-    EARN
-    REDEEM
-    ADJUSTMENT
-    EXPIRED
+enum CampaignStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
-model PointMutation {
-    id                String       @id @default(uuid()) @db.Char(36)
-    memberId          String       @map("member_id") @db.Char(36)
-    branchId          String?      @map("branch_id") @db.Char(36)
-    batchId           String?      @map("batch_id") @db.Char(36)
-    type              MutationType
-    points            Decimal      @db.Decimal(15, 2)
-    transactionDate   DateTime     @map("transaction_date") @db.DateTime
-    description       String?      @db.Text
-    transactionAmount Decimal      @map("transaction_amount") @db.Decimal(15, 2)
-    invoiceReference  String?      @map("invoice_reference") @db.VarChar(100)
-    uploadDate        DateTime     @default(now()) @map("upload_date")
-
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    // Relations
-    member Member               @relation(fields: [memberId], references: [id], onDelete: Cascade)
-    branch Branch?              @relation(fields: [branchId], references: [id], onDelete: SetNull)
-    batch  PointInjectionBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
-
-    @@index([memberId])
-    @@index([branchId])
-    @@index([batchId])
-    @@map("point_mutations")
+enum ContentType {
+  NEWS  // Artikel berita seputar emas & promo ritel
+  EVENT // Jadwal kalender pameran emas luar kota
 }
 
-model PointAnnualArchive {
-    id             String  @id @default(uuid()) @db.Char(36)
-    memberId       String  @map("member_id") @db.Char(36)
-    pointsSnapshot Decimal @map("points_snapshot") @db.Decimal(15, 2)
-    archiveYear    Int     @map("archive_year")
-
-    createdAt DateTime @default(now()) @map("created_at")
-
-    // Relations
-    member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-    @@index([memberId])
-    @@map("point_annual_archives")
+enum ContentStatus {
+  DRAFT     @map("draft")
+  ARCHIVED  @map("archived")
+  PUBLISHED @map("published")
 }
 
-// ==========================================
-// 7. CATALOG, INVENTORY & REDEEM ENTITIES
-// ==========================================
+enum RedeemStatus {
+  COMPLETED // Sukses diklaim dan diserahkan ke pelanggan
+  REFUNDED  // Dibatalkan darurat oleh Store Manager (Poin balik, stok balik)
+}
+
+enum FraudStatus {
+  PENDING_REVIEW // Ditampung untuk diperiksa manual oleh Administrator pusat
+  CLEARED        // Dinyatakan bukan fraud setelah diperiksa
+  SUSPENDED      // Resmi diblokir karena terbukti melakukan kloning identitas
+}
+
+// =============================================================================
+// MASTER LOKASI (WILAYAH INDONESIA — sesuai alamat.sql)
+// =============================================================================
+
+model Nation {
+  id              Int      @id @default(autoincrement())
+  nationCode      Int      @map("nation_code") @db.UnsignedInt
+  iso2            String   @db.VarChar(2)
+  iso3            String   @db.VarChar(3)
+  nama            String   @db.VarChar(100)
+  mataUang        String   @map("mata_uang") @db.VarChar(50)
+  kodeMataUang    String   @map("kode_mata_uang") @db.VarChar(10)
+  simbolMataUang  String   @map("simbol_mata_uang") @db.VarChar(10)
+  satuanBerat     String   @map("satuan_berat") @db.VarChar(10)
+  satuanPanjang   String   @map("satuan_panjang") @db.VarChar(10)
+  latitude        Decimal? @db.Decimal(15, 11)
+  longitude       Decimal? @db.Decimal(15, 11)
+  isProvinsi      Boolean  @default(false) @map("is_provinsi")
+  isKabkota       Boolean  @default(false) @map("is_kabkota")
+  isKecamatan     Boolean  @default(false) @map("is_kecamatan")
+  isKelurahan     Boolean  @default(false) @map("is_kelurahan")
+  isKodepos       Boolean  @default(false) @map("is_kodepos")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  provinces Province[]
+
+  @@map("nations")
+}
+
+model Province {
+  id        Int      @id @default(autoincrement())
+  nationId  Int      @map("nation_id")
+  nama      String   @db.VarChar(150)
+  latitude  Decimal? @db.Decimal(15, 11)
+  longitude Decimal? @db.Decimal(15, 11)
+
+  nation Nation @relation(fields: [nationId], references: [id], onDelete: Cascade)
+  cities City[]
+
+  @@index([nationId])
+  @@map("provinces")
+}
+
+model City {
+  id         Int      @id @default(autoincrement())
+  provinceId Int      @map("province_id")
+  nama       String   @db.VarChar(150)
+  latitude   Decimal? @db.Decimal(15, 11)
+  longitude  Decimal? @db.Decimal(15, 11)
+
+  province     Province      @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  subDistricts SubDistrict[]
+  postalCodes  PostalCode[]
+
+  @@index([provinceId])
+  @@map("cities")
+}
+
+model SubDistrict {
+  id        Int      @id @default(autoincrement())
+  cityId    Int      @map("city_id")
+  nama      String   @db.VarChar(150)
+  latitude  Decimal? @db.Decimal(15, 11)
+  longitude Decimal? @db.Decimal(15, 11)
+
+  city        City         @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  villages    Village[]
+  postalCodes PostalCode[]
+
+  @@index([cityId])
+  @@map("sub_districts")
+}
+
+model Village {
+  id            Int      @id @default(autoincrement())
+  subDistrictId Int      @map("sub_district_id")
+  nama          String   @db.VarChar(150)
+  latitude      Decimal? @db.Decimal(15, 11)
+  longitude     Decimal? @db.Decimal(15, 11)
+
+  subDistrict SubDistrict @relation(fields: [subDistrictId], references: [id], onDelete: Cascade)
+  addresses   Address[]
+
+  @@index([subDistrictId])
+  @@map("villages")
+}
+
+model PostalCode {
+  id            Int    @id @default(autoincrement())
+  cityId        Int    @map("city_id")
+  subDistrictId Int    @map("sub_district_id")
+  kodepos       String @db.VarChar(20)
+
+  city        City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  subDistrict SubDistrict @relation(fields: [subDistrictId], references: [id], onDelete: Cascade)
+  addresses   Address[]
+
+  @@index([cityId, subDistrictId])
+  @@index([kodepos])
+  @@map("postal_codes")
+}
+
+model Address {
+  id           String @id @default(uuid()) @db.Char(36)
+  villageId    Int    @map("village_id")
+  postalCodeId Int    @map("postal_code_id")
+  street       String @map("street") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  village    Village    @relation(fields: [villageId], references: [id])
+  postalCode PostalCode @relation(fields: [postalCodeId], references: [id])
+  members    Member[]
+  branches   Branch[]
+
+  @@index([villageId])
+  @@index([postalCodeId])
+  @@map("addresses")
+}
+
+// =============================================================================
+// MEDIA (POLYMORPHIC VIA PIVOT — BUKAN FK LANGSUNG KE REWARD)
+// =============================================================================
+
+model Media {
+  id        String   @id @default(uuid()) @db.Char(36)
+  caption   String?  @map("caption") @db.Text
+  fileName  String   @map("file_name") @db.VarChar(255)
+  fileType  String   @map("file_type") @db.VarChar(255)
+  fileUrl   String   @map("file_url") @db.Text
+  fileSize  Int      @map("file_size") @db.Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profilePhotoUser    User?                 @relation("UserProfilePhoto")
+  rewardImages        RewardImage[]
+  contentCoverImages  ContentCoverImage[]
+  promotionBanners    PromotionBanner[]
+  pointInjectionBatch PointInjectionBatch?
+  branchImages        BranchImage[]
+
+  @@map("media")
+}
+
+// =============================================================================
+// CABANG OPERASIONAL
+// =============================================================================
+
+model Branch {
+  id                Int      @id @default(autoincrement())
+  branchCode        String   @unique @map("branch_code") @db.VarChar(10) // e.g., 'HK01', 'HKONLINE'
+  name              String   @map("name") @db.VarChar(100)
+  address           String   @map("address") @db.Text // Alamat teks bebas untuk tampilan
+  addressId         String?  @map("address_id") @db.Char(36) // Relasi ke master alamat ternormalisasi
+  phone             String?  @map("phone") @db.VarChar(20)
+  locationUrl       String?  @map("location_url") @db.VarChar(500) // Link Google Maps lokasi cabang
+  isOnlineWarehouse Boolean  @default(false) @map("is_online_warehouse")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  normalizedAddress  Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  staffs             Staff[]
+  membersRegistered  Member[]             @relation("BranchRegistration")
+  rewardBranchStocks RewardBranchStock[]
+  redeemInvoices     RedeemInvoice[]
+  redeemTokens       RedeemToken[]
+  clockInLogs        StaffClockInLog[]
+  pointMutations     PointMutation[]
+  images             BranchImage[]
+
+  @@index([addressId])
+  @@map("branches")
+}
+
+model BranchImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  branchId  Int      @map("branch_id")
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, mediaId])
+  @@index([mediaId])
+  @@map("branch_images")
+}
+
+// =============================================================================
+// AUTENTIKASI & PROFIL PENGGUNA
+// =============================================================================
+
+model User {
+  id             String    @id @default(uuid()) @db.Char(36)
+  email          String    @unique @map("email") @db.VarChar(255)
+  password       String    @map("password") @db.VarChar(255)
+  role           Role      @map("role")
+  fullName       String    @map("full_name") @db.VarChar(150)
+  profilePhotoId String?   @unique @map("profile_photo_id") @db.Char(36)
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  profilePhoto   Media?          @relation("UserProfilePhoto", fields: [profilePhotoId], references: [id], onDelete: SetNull)
+  staff          Staff?
+  member         Member?
+  trustedDevices TrustedDevice[]
+  notifications  Notification[]
+  notificationCampaigns NotificationCampaign[]
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+model Staff {
+  id           Int       @id @default(autoincrement())
+  userId       String    @unique @map("user_id") @db.Char(36)
+  branchId     Int       @map("branch_id")
+  employeeCode String    @unique @map("employee_code") @db.VarChar(20)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch                Branch                @relation(fields: [branchId], references: [id])
+  clockInLogs           StaffClockInLog[]
+  pointInjectionBatches PointInjectionBatch[]
+  processedRedeemInvoices RedeemInvoice[]
+  changePhoneRequests   ChangePhoneApproval[] @relation("RequestChangePhone")
+  changePhoneApprovals  ChangePhoneApproval[] @relation("ApproveChangePhone")
+
+  @@index([branchId])
+  @@map("staffs")
+}
+
+model Member {
+  id                   String     @id @default(uuid()) @db.Char(36)
+  userId               String     @unique @map("user_id") @db.Char(36)
+  registeredAtBranchId Int?       @map("registered_at_branch_id")
+  addressId            String?    @map("address_id") @db.Char(36)
+  memberNumber         String     @unique @map("member_number") @db.VarChar(15)
+  phoneNumber          String     @unique @map("phone_number") @db.VarChar(20)
+  currentTier          MemberTier @default(SILVER) @map("current_tier")
+  pointBalance         Int        @default(0) @map("point_balance") // Single Wallet Terpusat
+  highestPoint         Int        @default(0) @map("highest_point")
+  lastActivityAt       DateTime   @default(now()) @map("last_activity_at")
+  isSuspended          Boolean    @default(false) @map("is_suspended")
+  birthDate            DateTime?  @map("birth_date")
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+  deletedAt            DateTime?  @map("deleted_at")
+
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registeredBranch   Branch?              @relation("BranchRegistration", fields: [registeredAtBranchId], references: [id], onDelete: SetNull)
+  domicileAddress    Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  pointMutations     PointMutation[]
+  pointAnnualArchives PointAnnualArchive[]
+  changePhoneApprovals ChangePhoneApproval[]
+  redeemInvoices     RedeemInvoice[]
+  redeemTokens       RedeemToken[]
+  anomalies          MemberAnomaly[]
+
+  @@index([registeredAtBranchId])
+  @@index([addressId])
+  @@map("members")
+}
+
+model TrustedDevice {
+  id           String         @id @default(uuid()) @db.Char(36)
+  userId       String         @map("user_id") @db.Char(36)
+  deviceUuid   String         @unique @map("device_uuid") @db.VarChar(255)
+  deviceName   String         @map("device_name") @db.VarChar(100)
+  platform     DevicePlatform @map("platform")
+  isApproved   Boolean        @default(false) @map("is_approved")
+  authorizedAt DateTime?      @map("authorized_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("trusted_devices")
+}
+
+model ChangePhoneApproval {
+  id             String         @id @default(uuid()) @db.Char(36)
+  memberId       String?        @map("member_id") @db.Char(36)
+  requestedById  Int            @map("requested_by_id")
+  approvedById   Int?           @map("approved_by_id")
+  oldPhoneNumber String         @map("old_phone_number") @db.VarChar(20)
+  newPhoneNumber String         @unique @map("new_phone_number") @db.VarChar(20)
+  status         ApprovalStatus @default(PENDING) @map("status")
+  reason         String?        @map("reason") @db.Text
+  actionNotes    String?        @map("action_notes") @db.Text
+  processedAt    DateTime?      @map("processed_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  member      Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  requestedBy Staff   @relation("RequestChangePhone", fields: [requestedById], references: [id])
+  approvedBy  Staff?  @relation("ApproveChangePhone", fields: [approvedById], references: [id])
+
+  @@index([memberId])
+  @@index([requestedById])
+  @@index([approvedById])
+  @@map("change_phone_approvals")
+}
+
+model StaffClockInLog {
+  id        BigInt   @id @default(autoincrement())
+  staffId   Int      @map("staff_id")
+  branchId  Int      @map("branch_id")
+  clockInAt DateTime @default(now()) @map("clock_in_at")
+  loginIp   String   @map("login_ip") @db.VarChar(45)
+  userAgent String   @map("user_agent") @db.Text
+
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([staffId])
+  @@index([branchId])
+  @@map("staff_clock_in_logs")
+}
+
+// =============================================================================
+// NOTIFIKASI & OTP
+// =============================================================================
+
+model OtpVerification {
+  id         String   @id @default(uuid()) @db.Char(36)
+  identifier String   @map("identifier") @db.VarChar(100)
+  otpCode    String   @map("otp_code") @db.VarChar(10)
+  type       OtpType  @map("type")
+  isUsed     Boolean  @default(false) @map("is_used")
+  expiredAt  DateTime @map("expired_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier, otpCode])
+  @@map("otp_verifications")
+}
+
+model Notification {
+  id              String                     @id @default(uuid()) @db.Char(36)
+  userId          String?                    @map("user_id") @db.Char(36)
+  notificationKey String?                    @map("notification_key") @db.Char(36)
+  title           String                     @map("title") @db.VarChar(150)
+  body            String                     @map("body") @db.Text
+  platform        NotificationPlatform       @map("platform")
+  status          NotificationDeliveryStatus @default(PENDING) @map("status")
+  dataPayload     Json?                      @map("data_payload")
+  readAt          DateTime?                  @map("read_at")
+  sentAt          DateTime?                  @map("sent_at")
+  failedAt        DateTime?                  @map("failed_at")
+  errorMessage    String?                    @map("error_message") @db.VarChar(500)
+  attemptCount    Int                        @default(0) @map("attempt_count")
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, platform, createdAt])
+  @@index([status, createdAt])
+  @@unique([userId, notificationKey, platform])
+  @@map("notifications")
+}
+
+model NotificationCampaign {
+  id            String         @id @default(uuid()) @db.Char(36)
+  title         String         @map("title") @db.VarChar(150)
+  body          String         @map("body") @db.Text
+  platforms     Json           @map("platforms")
+  criteriaJson  Json?          @map("criteria_json")
+  targetedCount Int            @default(0) @map("targeted_count")
+  acceptedCount Int?           @map("accepted_count")
+  failedCount   Int?           @map("failed_count")
+  status        CampaignStatus @default(PENDING) @map("status")
+  errorMessage  String?        @map("error_message") @db.VarChar(500)
+  createdById   String?        @map("created_by_id") @db.Char(36)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("notification_campaigns")
+}
+
+// =============================================================================
+// KATALOG HADIAH
+// =============================================================================
 
 model CategoryReward {
-    id        String   @id @default(uuid()) @db.Char(36)
-    name      String   @db.VarChar(255)
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement())
+  name        String   @map("name") @db.VarChar(100)
+  slug        String   @unique @map("slug") @db.VarChar(100)
+  description String?  @map("description") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-    // Relations
-    rewards Reward[]
+  rewards Reward[]
 
-    @@map("category_rewards")
+  @@map("category_rewards")
 }
 
 model Reward {
-    id               String    @id @default(uuid()) @db.Char(36)
-    categoryRewardId String    @map("category_reward_id") @db.Char(36)
-    name             String    @db.VarChar(255)
-    description      String?   @db.Text
-    pointsRequired   Decimal   @map("points_required") @db.Decimal(15, 2)
-    validUntil       DateTime? @map("valid_until") @db.Date
-    isActive         Boolean   @default(true) @map("is_active")
+  id             String   @id @default(uuid()) @db.Char(36)
+  categoryId     Int      @map("category_id")
+  name           String   @map("name") @db.VarChar(150)
+  sku            String   @unique @map("sku") @db.VarChar(50)
+  description    String   @map("description") @db.Text
+  pointsRequired Int      @map("points_required")
+  isActive       Boolean  @default(true) @map("is_active")
+  startAt        DateTime @map("start_at")
+  endAt          DateTime @map("end_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+  category           CategoryReward      @relation(fields: [categoryId], references: [id])
+  rewardImages       RewardImage[]
+  rewardBranchStocks RewardBranchStock[]
+  redeemTokens       RedeemToken[]
+  redeemInvoices     RedeemInvoice[]
 
-    // Relations (1-to-Many ke Media)
-    branchStocks   BranchRewardStock[]
-    invoices       RedeemInvoice[]
-    categoryReward CategoryReward      @relation(fields: [categoryRewardId], references: [id], onDelete: Cascade)
-    media          Media[]
-
-    @@index([categoryRewardId])
-    @@map("rewards")
+  @@index([categoryId])
+  @@map("rewards")
 }
 
-model BranchRewardStock {
-    id            String @id @default(uuid()) @db.Char(36)
-    branchId      String @map("branch_id") @db.Char(36)
-    rewardId      String @map("reward_id") @db.Char(36)
-    stockQuantity Int    @default(0) @map("stock_quantity")
+model RewardImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  rewardId  String   @map("reward_id") @db.Char(36)
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
 
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  media  Media  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
 
-    // Relations
-    branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-    reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-
-    @@unique([branchId, rewardId])
-    @@map("branch_reward_stocks")
+  @@unique([rewardId, mediaId])
+  @@index([mediaId])
+  @@map("reward_images")
 }
 
-model Media {
-    id        String   @id @default(uuid()) @db.Char(36)
-    rewardId  String?  @map("reward_id") @db.Char(36) // Nullable, diisi jika media milik galeri Reward
-    caption   String?  @db.Text
-    fileName  String   @db.VarChar(255)
-    fileType  String   @db.VarChar(255)
-    fileUrl   String   @db.Text
-    fileSize  Int      @db.Int
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
+model RewardBranchStock {
+  id          String   @id @default(uuid()) @db.Char(36)
+  rewardId    String   @map("reward_id") @db.Char(36)
+  branchId    Int      @map("branch_id")
+  actualStock Int      @default(0) @map("actual_stock")
+  heldStock   Int      @default(0) @map("held_stock")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-    // Relations
-    reward  Reward?  @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-    user    User? // Back-reference 1-to-1 dari User
-    content Content? // Back-reference 1-to-1 dari Content
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
 
-    @@index([rewardId])
-    @@map("media")
+  @@unique([rewardId, branchId])
+  @@index([branchId])
+  @@map("reward_branch_stocks")
 }
 
-enum InvoiceStatus {
-    PENDING
-    CONFIRMED
-    CANCELLED
-    TIMEOUT
+// =============================================================================
+// CMS KONTEN
+// =============================================================================
+
+model Content {
+  id              String        @id @default(uuid()) @db.Char(36)
+  type            ContentType   @map("type")
+  title           String        @map("title") @db.VarChar(200)
+  slug            String        @unique @map("slug") @db.VarChar(200)
+  bodyContent     String        @map("body_content") @db.LongText
+  eventDate       DateTime?     @map("event_date")
+  locationAddress String?       @map("location_address") @db.Text
+  locationUrl     String?       @map("location_url") @db.VarChar(500)
+  status          ContentStatus @default(DRAFT) @map("status")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  contentCoverImages ContentCoverImage[]
+
+  @@map("contents")
+}
+
+model ContentCoverImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  contentId String   @map("content_id") @db.Char(36)
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  media   Media   @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([contentId, mediaId])
+  @@index([mediaId])
+  @@map("content_cover_images")
+}
+
+model PromotionBanner {
+  id        String   @id @default(uuid()) @db.Char(36)
+  name      String   @map("name") @db.VarChar(150)
+  mediaId   String   @map("media_id") @db.Char(36)
+  sortOrder Int      @default(0) @map("sort_order")
+  linkUrl   String?  @map("link_url") @db.VarChar(500)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@index([mediaId])
+  @@map("promotion_banners")
+}
+
+// =============================================================================
+// KONFIGURASI DINAMIS (TIPE TRANSAKSI, TIER, KONVERSI)
+// =============================================================================
+
+model TransactionType {
+  id          Int      @id @default(autoincrement())
+  typeKey     String   @unique @map("type_key") @db.VarChar(50)
+  displayName String   @map("display_name") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  conversionRules       ConversionRule[]
+  pointInjectionDetails PointInjectionDetail[]
+  pointMutations        PointMutation[]
+
+  @@map("transaction_types")
+}
+
+model TierMember {
+  id        Int        @id @default(autoincrement())
+  tierCode  MemberTier @unique @map("tier_code")
+  minPoints Int        @map("min_points")
+  maxPoints Int        @map("max_points")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  conversionRules ConversionRule[]
+  tierBenefits    TierBenefit[]
+
+  @@map("tier_members")
+}
+
+model ConversionRule {
+  id                String   @id @default(uuid()) @db.Char(36)
+  transactionTypeId Int      @map("transaction_type_id")
+  tierMemberId      Int      @map("tier_member_id")
+  conversionNominal Decimal  @map("conversion_nominal") @db.Decimal(15, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  transactionType TransactionType @relation(fields: [transactionTypeId], references: [id], onDelete: Cascade)
+  tierMember      TierMember      @relation(fields: [tierMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionTypeId, tierMemberId])
+  @@index([tierMemberId])
+  @@map("conversion_rules")
+}
+
+model TierBenefit {
+  id           String   @id @default(uuid()) @db.Char(36)
+  tierMemberId Int      @map("tier_member_id")
+  title        String   @db.VarChar(255)
+  description  String   @db.VarChar(255)
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tierMember TierMember @relation(fields: [tierMemberId], references: [id], onDelete: Cascade)
+
+  @@index([tierMemberId, sortOrder])
+  @@map("tier_benefits")
+}
+
+// =============================================================================
+// REKAYASA & STAGING POIN
+// =============================================================================
+
+model PointInjectionBatch {
+  id                  String   @id @default(uuid()) @db.Char(36)
+  staffId             Int?     @map("staff_id")
+  mediaId             String   @unique @map("media_id") @db.Char(36)
+  totalRows           Int      @default(0) @map("total_rows")
+  successfulRows      Int      @default(0) @map("successful_rows")
+  failedRows          Int      @default(0) @map("failed_rows")
+  totalPointsInjected Int      @default(0) @map("total_points_injected")
+  resolved            Boolean   @default(false) @map("resolved")
+  uploadedAt          DateTime  @default(now()) @map("uploaded_at")
+  importStartedAt     DateTime? @map("import_started_at")
+  processingStartedAt DateTime? @map("processing_started_at")
+
+  staff   Staff?                 @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  media   Media                  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  details PointInjectionDetail[]
+
+  @@index([staffId])
+  @@map("point_injection_batches")
+}
+
+model PointInjectionDetail {
+  id                BigInt          @id @default(autoincrement())
+  batchId           String          @map("batch_id") @db.Char(36)
+  rowNumber         Int             @map("row_number")
+  rawMemberNumber   String          @map("raw_member_number") @db.VarChar(50)
+  rawBranchCode     String          @map("raw_branch_code") @db.VarChar(20)
+  purchaseNominal   Decimal         @map("purchase_nominal") @db.Decimal(15, 2)
+  transactionTypeId Int?            @map("transaction_type_id")
+  transactionDate   DateTime?       @map("transaction_date")
+  calculatedPoints  Int             @default(0) @map("calculated_points")
+  status            InjectionStatus @default(PENDING) @map("status")
+  errorMessage      String?         @map("error_message") @db.Text
+  processedAt       DateTime?       @map("processed_at")
+
+  batch           PointInjectionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  transactionType TransactionType?    @relation(fields: [transactionTypeId], references: [id], onDelete: Restrict)
+
+  @@index([batchId])
+  @@index([transactionTypeId])
+  @@map("point_injection_details")
+}
+
+model PointMutation {
+  id                String   @id @default(uuid()) @db.Char(36)
+  memberId          String   @map("member_id") @db.Char(36)
+  branchId          Int?     @map("branch_id")
+  referenceId       String?  @map("reference_id") @db.VarChar(100)
+  transactionTypeId Int?     @map("transaction_type_id")
+  purchaseNominal   Decimal  @default(0.00) @map("purchase_nominal") @db.Decimal(15, 2)
+  pointsIssued      Int      @default(0) @map("points_issued")
+  pointsRedeemed    Int      @default(0) @map("points_redeemed")
+  balanceSnapshot   Int      @map("balance_snapshot")
+  transactionDate   DateTime @map("transaction_date")
+  uploadedAt        DateTime @default(now()) @map("uploaded_at")
+
+  member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  transactionType TransactionType? @relation(fields: [transactionTypeId], references: [id], onDelete: Restrict)
+
+  @@index([memberId])
+  @@index([branchId])
+  @@index([transactionTypeId])
+  @@map("point_mutations")
+}
+
+model PointAnnualArchivePeriod {
+  id                  String               @id @default(uuid()) @db.Char(36)
+  archiveYear         Int                  @unique @map("archive_year")
+  name                String               @map("name") @db.VarChar(150)
+  totalMembers        Int                  @default(0) @map("total_members")
+  frozenPointsTotal   Int                  @default(0) @map("frozen_points_total")
+  earnedPointsTotal   Int                  @default(0) @map("earned_points_total")
+  redeemedPointsTotal Int                  @default(0) @map("redeemed_points_total")
+  archivedAt          DateTime?            @map("archived_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  archives PointAnnualArchive[]
+
+  @@map("point_annual_archive_periods")
+}
+
+model PointAnnualArchive {
+  id                String                   @id @default(uuid()) @db.Char(36)
+  periodId          String                   @map("period_id") @db.Char(36)
+  memberId          String?                  @map("member_id") @db.Char(36)
+  frozenPointsTotal Int                      @map("frozen_points_total")
+  highestPoint      Int                      @map("highest_point")
+  lastTierPosition  MemberTier               @map("last_tier_position")
+  frozenAt          DateTime                 @default(now()) @map("frozen_at")
+
+  period PointAnnualArchivePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  member Member?                  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([periodId])
+  @@index([memberId])
+  @@map("point_annual_archives")
+}
+
+// =============================================================================
+// REDEEM ENGINE (TRANSITIONAL & INVOICING)
+// =============================================================================
+
+model RedeemToken {
+  id         String   @id @default(uuid()) @db.Char(36)
+  memberId   String   @map("member_id") @db.Char(36)
+  rewardId   String   @map("reward_id") @db.Char(36)
+  branchId   Int      @map("branch_id")
+  tokenCode  String   @unique @map("token_code") @db.VarChar(10)
+  heldPoints Int      @map("held_points")
+  isUsed     Boolean  @default(false) @map("is_used")
+  expiredAt  DateTime @map("expired_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@index([memberId])
+  @@index([rewardId])
+  @@index([branchId])
+  @@index([tokenCode, isUsed, expiredAt])
+  @@map("redeem_tokens")
 }
 
 model RedeemInvoice {
-    id             String        @id @default(uuid()) @db.Char(36)
-    invoiceNumber  String        @unique @map("invoice_number") @db.VarChar(100)
-    memberId       String        @map("member_id") @db.Char(36)
-    branchId       String        @map("branch_id") @db.Char(36)
-    rewardId       String        @map("reward_id") @db.Char(36)
-    pointsDeducted Decimal       @map("points_deducted") @db.Decimal(15, 2)
-    status         InvoiceStatus @default(PENDING)
-    qrToken        String        @unique @map("qr_token") @db.VarChar(255)
-    expiresAt      DateTime      @map("expires_at") @db.DateTime
-    qrExpiresAt    DateTime      @map("qr_expires_at") @db.DateTime
-    confirmedById  String?       @map("confirmed_by_id") @db.Char(36)
-    cancelledById  String?       @map("cancelled_by_id") @db.Char(36)
+  id             String       @id @default(uuid()) @db.Char(36)
+  invoiceNumber  String       @unique @map("invoice_number") @db.VarChar(50)
+  memberId       String?      @map("member_id") @db.Char(36)
+  staffId        Int          @map("staff_id")
+  branchId       Int          @map("branch_id")
+  rewardId       String       @map("reward_id") @db.Char(36)
+  pointsRedeemed Int          @map("points_redeemed")
+  status         RedeemStatus @default(COMPLETED) @map("status")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-    createdAt DateTime  @default(now()) @map("created_at")
-    updatedAt DateTime  @updatedAt @map("updated_at")
-    deletedAt DateTime? @map("deleted_at")
+  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  staff  Staff   @relation(fields: [staffId], references: [id])
+  branch Branch  @relation(fields: [branchId], references: [id])
+  reward Reward  @relation(fields: [rewardId], references: [id])
 
-    // Relations
-    member      Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-    branch      Branch @relation(fields: [branchId], references: [id])
-    reward      Reward @relation(fields: [rewardId], references: [id])
-    confirmedBy Staff? @relation("InvoiceConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
-    cancelledBy Staff? @relation("InvoiceCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
-
-    @@index([memberId])
-    @@index([branchId])
-    @@index([qrToken])
-    @@map("redeem_invoices")
+  @@index([memberId])
+  @@index([staffId])
+  @@index([branchId])
+  @@index([rewardId])
+  @@map("redeem_invoices")
 }
 
-// ==========================================
-// 8. MOBILE APP CMS CONTENT ENTITY
-// ==========================================
+// =============================================================================
+// ANTI-FRAUD ENGINE & AUDIT LOG
+// =============================================================================
 
-enum ContentType {
-    NEWS
-    EVENT
-    EXHIBITION
-    BANNER
+model MemberAnomaly {
+  id             String   @id @default(uuid()) @db.Char(36)
+  memberId       String   @map("member_id") @db.Char(36)
+  lastMutationAt DateTime @map("last_mutation_at")
+  hoardedPoints  Int      @map("hoarded_points")
+  detectedAt     DateTime @default(now()) @map("detected_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("member_anomalies")
 }
 
-model Content {
-    id          String      @id @default(uuid()) @db.Char(36)
-    type        ContentType
-    title       String      @db.VarChar(255)
-    body        String      @db.LongText
-    location    String?     @db.VarChar(255)
-    startDate   DateTime?   @map("start_date") @db.DateTime
-    endDate     DateTime?   @map("end_date") @db.DateTime
-    isPublished Boolean     @default(true) @map("is_published")
-    mediaId     String      @unique @map("media_id") @db.Char(36) // @unique menjamin relasi 1-to-1
+model FraudSuspect {
+  id                String      @id @default(uuid()) @db.Char(36)
+  detectedName      String      @map("detected_name") @db.VarChar(150)
+  detectedBirthDate DateTime    @map("detected_birth_date")
+  suspectMemberIds  Json        @map("suspect_member_ids")
+  status            FraudStatus @default(PENDING_REVIEW) @map("status")
+  adminNotes        String?     @map("admin_notes") @db.Text
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
 
-    createdAt DateTime @default(now()) @map("created_at")
-    updatedAt DateTime @updatedAt @map("updated_at")
-
-    image Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
-    @@index([mediaId])
-    @@map("contents")
+  @@map("fraud_suspects")
 }
 
-model LoyaltyConfig {
-    id             String     @id @default(uuid()) @db.Char(36)
-    tier           TierStatus @unique
-    multiplierCost Decimal    @map("multiplier_cost") @db.Decimal(15, 2)
+model ActivityLog {
+  id            String   @id @default(uuid()) @db.Char(36)
+  userId        String?  @map("user_id") @db.Char(36)
+  action        String   @map("action") @db.VarChar(100)
+  description   String   @map("description") @db.Text
+  auditableType String   @map("auditable_type") @db.VarChar(100)
+  auditableId   String   @map("auditable_id") @db.VarChar(50)
+  beforeJson    Json?    @map("before_json")
+  afterJson     Json?    @map("after_json")
+  ipAddress     String   @map("ip_address") @db.VarChar(45)
+  createdAt     DateTime @default(now()) @map("created_at")
 
-    updatedAt DateTime @updatedAt @map("updated_at")
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-    @@map("loyalty_configs")
+  @@index([userId])
+  @@index([auditableType, auditableId])
+  @@map("activity_logs")
 }

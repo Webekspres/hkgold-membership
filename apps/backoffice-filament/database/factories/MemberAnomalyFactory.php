@@ -20,13 +20,11 @@ class MemberAnomalyFactory extends Factory
      */
     public function definition(): array
     {
-        $lastActive = fake()->dateTimeBetween('-180 days', '-90 days');
-        $daysInactive = (int) now()->diffInDays($lastActive);
-
         return [
             'member_id' => Member::factory(),
-            'last_active_at' => $lastActive,
-            'inactivity_duration_days' => $daysInactive,
+            'last_mutation_at' => fake()->dateTimeBetween('-180 days', '-30 days'),
+            'hoarded_points' => fake()->numberBetween(50_000, 500_000),
+            'detected_at' => fake()->dateTimeBetween('-30 days', 'now'),
         ];
     }
 }

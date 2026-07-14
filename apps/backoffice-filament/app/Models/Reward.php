@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\RewardFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,31 +15,39 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Reward extends Model
 {
     /** @use HasFactory<RewardFactory> */
-    use HasFactory, HasUuids;
+    use HasAuditableActivityLogs, HasFactory, HasUuids;
 
     protected $table = 'rewards';
 
     protected $fillable = [
-        'category_reward_id',
+        'category_id',
         'name',
+        'sku',
         'description',
         'points_required',
-        'valid_until',
         'is_active',
+        'start_at',
+        'end_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'points_required' => 'decimal:2',
-            'valid_until' => 'date',
+            'points_required' => 'integer',
             'is_active' => 'boolean',
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
         ];
     }
 
     public function categoryReward(): BelongsTo
     {
-        return $this->belongsTo(CategoryReward::class);
+        return $this->belongsTo(CategoryReward::class, 'category_id');
+    }
+
+    public function rewardImages(): HasMany
+    {
+        return $this->hasMany(RewardImage::class)->orderBy('sort_order');
     }
 
     public function branchStocks(): HasMany
@@ -49,10 +58,5 @@ class Reward extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(RedeemInvoice::class);
-    }
-
-    public function media(): HasMany
-    {
-        return $this->hasMany(Media::class);
     }
 }
