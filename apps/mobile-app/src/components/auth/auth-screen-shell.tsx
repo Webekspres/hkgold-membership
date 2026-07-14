@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui/card';
+import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 
 const CARD_CLASSNAME =
   'w-full border-stone-200 bg-stone-50 shadow-md shadow-stone-900/10';
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
     backgroundColor: 'transparent',
   },
   scroll: {

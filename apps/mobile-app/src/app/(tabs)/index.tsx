@@ -2,6 +2,10 @@ import { useCallback } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  HomeHeroHeader,
+  HOME_HERO_CARD_OVERLAP,
+} from "@/components/home/home-hero-header";
 import { MemberWalletCard } from "@/components/home/member-wallet-card";
 import { HomeShortcutGrid } from "@/components/home/home-shortcut-grid";
 import { LatestNewsSection } from "@/components/home/latest-news-section";
@@ -10,7 +14,6 @@ import { PromotionBannerSlider } from "@/components/home/promotion-banner-slider
 import { UpcomingEventsSection } from "@/components/home/upcoming-events-section";
 import { RewardCatalogSection } from "@/components/home/reward-catalog-section";
 import { createPullToRefreshControl } from "@/components/shared/pull-to-refresh";
-import { Text } from "@/components/ui/text";
 import { useHomeRewardCatalog } from "@/hooks/use-home-reward-catalog";
 import { useLatestNews } from "@/hooks/use-latest-news";
 import { useMyProfile } from "@/hooks/use-my-profile";
@@ -56,33 +59,33 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <SafeAreaView className="flex-1" style={{ paddingBottom: 4 }}>
+      <SafeAreaView className="flex-1" edges={["left", "right", "bottom"]} style={{ paddingBottom: 4 }}>
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-6 pb-6 pt-4"
+          contentContainerClassName="gap-6 pb-6"
           showsVerticalScrollIndicator={false}
           refreshControl={createPullToRefreshControl({
             refreshing,
             onRefresh,
           })}
         >
-          <View className="gap-1 px-4">
-            <Text variant="h3" className="text-stone-900">
-              Halo, {card?.firstName ?? "Member"}
-            </Text>
-            <Text variant="muted">Selamat datang di HK Gold VIP</Text>
-          </View>
+          <View>
+            <HomeHeroHeader firstName={card?.firstName ?? "Member"} />
 
-          {card ? (
-            <View className="px-4">
-              <MemberWalletCard
-                fullName={card.fullName}
-                memberNumber={card.memberNumber}
-                currentTier={card.currentTier}
-                pointBalance={card.pointBalance}
-              />
-            </View>
-          ) : null}
+            {card ? (
+              <View
+                className="px-4"
+                style={{ marginTop: -HOME_HERO_CARD_OVERLAP }}
+              >
+                <MemberWalletCard
+                  fullName={card.fullName}
+                  memberNumber={card.memberNumber}
+                  currentTier={card.currentTier}
+                  pointBalance={card.pointBalance}
+                />
+              </View>
+            ) : null}
+          </View>
 
           <HomeShortcutGrid />
 

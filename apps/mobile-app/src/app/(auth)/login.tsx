@@ -18,6 +18,7 @@ import { GoldButton } from "@/components/shared/gold-button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { LOGO_ASSETS } from "@/config/assets";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/lib/sonner";
 
@@ -57,7 +58,7 @@ export default function LoginScreen() {
     <AuthScreenShell scrollable>
       <CardHeader className="items-center gap-4">
         <Image
-          source={require("@/assets/logo/logo-hkgold.webp")}
+          source={LOGO_ASSETS.hkgold}
           style={authLogoStyle.logo}
           contentFit="contain"
         />

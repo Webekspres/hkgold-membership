@@ -24,6 +24,11 @@ export type AuthResponse = {
   member: AuthMember;
 };
 
+export type ChangePasswordRequest = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 export type ApiEnvelope<T> = {
   success: boolean;
   message: string;
