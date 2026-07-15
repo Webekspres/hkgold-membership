@@ -5,9 +5,15 @@ declare(strict_types=1);
 use App\Enums\DevicePushTokenPlatform;
 use App\Models\DevicePushToken;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    // Laravel 13 web stack uses PreventRequestForgery; feature tests don't carry a CSRF cookie.
+    $this->withoutMiddleware(PreventRequestForgery::class);
+});
 
 test('staff dapat mendaftarkan token web push', function (): void {
     $user = User::factory()->administrator()->create();

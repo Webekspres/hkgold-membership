@@ -12,5 +12,8 @@
   "10": "Elysia with Bun runtime",
   "11": "media.service.ts",
   "12": "index.ts",
-  "13": "MemberProfileData"
+  "13": "MemberProfileData",
+  "14": "reward.service.ts",
+  "15": "tier.service.ts",
+  "16": "promotion-banner.service.ts"
 }

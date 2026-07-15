@@ -25,7 +25,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'token_expiry_minutes' => (int) env('REDEEM_TOKEN_EXPIRY_MINUTES', 4320),
+    'token_expiry_minutes' => (int) env('REDEEM_TOKEN_EXPIRY_MINUTES', 30),
 
     'otp_expiry_minutes' => (int) env('REDEEM_OTP_EXPIRY_MINUTES', 5),
 

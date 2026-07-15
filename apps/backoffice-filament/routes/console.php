@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('activity-log:prune --months=12')
     ->monthly()
     ->withoutOverlapping();
+
+Schedule::command('redeem:release-expired-tokens')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

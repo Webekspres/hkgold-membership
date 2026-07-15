@@ -3,6 +3,11 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+// Doppler injects DB_DATABASE=dev; force test DB before any TestCase boots.
+putenv('DB_DATABASE=hkgold_membership_test');
+$_ENV['DB_DATABASE'] = 'hkgold_membership_test';
+$_SERVER['DB_DATABASE'] = 'hkgold_membership_test';
+
 /*
 |--------------------------------------------------------------------------
 | Test Case

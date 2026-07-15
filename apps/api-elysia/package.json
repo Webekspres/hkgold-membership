@@ -2,8 +2,8 @@
   "name": "api-elysia",
   "version": "1.0.50",
   "scripts": {
-    "test": "doppler run -- bun test",
-    "test:watch": "doppler run -- bun test --watch",
+    "test": "doppler run -- bun test --preload ./src/test-setup.ts",
+    "test:watch": "doppler run -- bun test --preload ./src/test-setup.ts --watch",
     "dev": "doppler run -- bun run --watch src/index.ts",
     "start": "doppler run -- bun run src/index.ts"
   },

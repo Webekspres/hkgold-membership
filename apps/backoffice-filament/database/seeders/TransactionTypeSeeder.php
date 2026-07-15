@@ -17,6 +17,7 @@ class TransactionTypeSeeder extends Seeder
         $types = [
             ['PERHIASAN', 'Perhiasan'],
             ['BERLIAN',   'Berlian'],
+            ['REDEEM',    'Redeem Poin'],
         ];
 
         foreach ($types as [$typeKey, $displayName]) {

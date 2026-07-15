@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown';
@@ -8,14 +9,29 @@ import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-
 import { GoldButton } from '@/components/shared/gold-button';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/config/theme';
+import { useActiveRedeem } from '@/hooks/use-active-redeem';
 import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
 import { copyRedeemToken } from '@/lib/clipboard/copy-redeem-token';
-import { getActiveRedeem } from '@/services/active-redeem';
-
-const activeRedeem = getActiveRedeem();
-const activeRedeemReward = mapActiveRedeemToReward(activeRedeem);
 
 export default function RedeemQrScreen() {
+  const { activeRedeem, isLoading, isFetched } = useActiveRedeem();
+
+  useEffect(() => {
+    if (isFetched && !activeRedeem) {
+      router.replace('/card');
+    }
+  }, [isFetched, activeRedeem]);
+
+  if (isLoading || !activeRedeem) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#b45309" />
+      </View>
+    );
+  }
+
+  const activeRedeemReward = mapActiveRedeemToReward(activeRedeem);
+
   return (
     <View className="flex-1 bg-background">
       <SafeAreaView className="flex-1" style={{ paddingBottom: 4 }}>
@@ -32,9 +48,9 @@ export default function RedeemQrScreen() {
           </View>
 
           <QrCodeCard
-            value={activeRedeem.redeemToken}
-            label={activeRedeem.redeemToken}
-            onPressLabel={() => void copyRedeemToken(activeRedeem.redeemToken)}
+            value={activeRedeem.tokenCode}
+            label={activeRedeem.tokenCode}
+            onPressLabel={() => void copyRedeemToken(activeRedeem.tokenCode)}
             copyAccessibilityLabel="Salin token redeem"
           />
 

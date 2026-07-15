@@ -58,6 +58,14 @@ class ShieldRolesSeeder extends Seeder
             );
         }
 
+        foreach ([Role::SuperAdmin, Role::Administrator, Role::StoreManager] as $role) {
+            $this->syncResourceGroupPermissionsForRole(
+                strtolower($role->value),
+                $this->redeemTokenResources(),
+                fullAccess: true,
+            );
+        }
+
         $this->syncSuperAdminPermissions();
         $this->syncMemberLookupPermissionsForRole(strtolower(Role::Marketing->value));
         $this->syncMemberLookupPermissionsForRole(strtolower(Role::StoreManager->value));
@@ -364,6 +372,16 @@ class ShieldRolesSeeder extends Seeder
     {
         return [
             'RedeemInvoice',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function redeemTokenResources(): array
+    {
+        return [
+            'RedeemToken',
         ];
     }
 

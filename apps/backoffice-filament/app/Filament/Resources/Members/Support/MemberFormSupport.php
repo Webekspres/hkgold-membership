@@ -57,8 +57,18 @@ class MemberFormSupport
 
     public static function generateMemberNumber(): string
     {
+        $prefix = now()->format('ym');
+
+        $lastNumber = Member::query()
+            ->where('member_number', 'like', "{$prefix}-%")
+            ->orderByDesc('member_number')
+            ->value('member_number');
+
+        $lastSeq = $lastNumber ? (int) substr((string) $lastNumber, 5) : 0;
+
         do {
-            $code = 'HK'.chr(random_int(65, 90)).str_pad((string) random_int(0, 9_999_999), 7, '0', STR_PAD_LEFT);
+            $lastSeq++;
+            $code = sprintf('%s-%04d', $prefix, $lastSeq);
         } while (Member::query()->where('member_number', $code)->exists());
 
         return $code;

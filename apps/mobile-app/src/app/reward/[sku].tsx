@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh'
 import { RewardBranchStockCard } from '@/components/reward/reward-branch-stock-card';
 import { RewardRedeemDialog } from '@/components/reward/reward-redeem-dialog';
 import { Text } from '@/components/ui/text';
+import { useCreateRedeemToken } from '@/hooks/use-create-redeem-token';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useRewardDetail } from '@/hooks/use-reward-detail';
 import { toast } from '@/lib/sonner';
@@ -22,6 +23,7 @@ export default function RewardDetailScreen() {
   const { reward, isLoading, isError, refetch } = useRewardDetail(
     typeof sku === 'string' ? sku : undefined,
   );
+  const createRedeem = useCreateRedeemToken();
 
   const refresh = useCallback(() => refetch(), [refetch]);
   const { refreshing, onRefresh } = usePullToRefresh(refresh);
@@ -31,10 +33,24 @@ export default function RewardDetailScreen() {
     setRedeemDialogOpen(true);
   };
 
-  /** Dummy — redeem API belum ada. */
   const handleConfirmRedeem = () => {
-    setRedeemDialogOpen(false);
-    toast.info('Fitur penukaran belum tersedia', { duration: 3500 });
+    if (!reward || !selectedBranchStock) return;
+
+    createRedeem.mutate(
+      { rewardId: reward.id, branchId: selectedBranchStock.branchId },
+      {
+        onSuccess: () => {
+          setRedeemDialogOpen(false);
+          toast.success('Token redeem berhasil dibuat', { duration: 3000 });
+          router.push('/card/redeem-qr');
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : 'Gagal menukar hadiah', {
+            duration: 4000,
+          });
+        },
+      },
+    );
   };
 
   if (isLoading) {
@@ -116,6 +132,7 @@ export default function RewardDetailScreen() {
         open={redeemDialogOpen}
         onOpenChange={setRedeemDialogOpen}
         branchStock={selectedBranchStock}
+        isConfirming={createRedeem.isPending}
         onConfirm={handleConfirmRedeem}
       />
     </>

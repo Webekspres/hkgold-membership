@@ -116,7 +116,7 @@ class MemberLookupPage extends Page
             ->components([
                 TextInput::make('member_number')
                     ->label('Kode Member')
-                    ->placeholder('Contoh: HKA1234567')
+                    ->placeholder('Contoh: 2606-0001')
                     ->required()
                     ->maxLength(50)
                     ->columnSpanFull(),

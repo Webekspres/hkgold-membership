@@ -7,6 +7,8 @@ import { addressRoutes } from "./modules/address/routes/address.routes";
 import { memberRoutes } from "./modules/member/routes/member.routes";
 import { mediaRoutes } from "./modules/media/routes/media.routes";
 import { rewardRoutes } from "./modules/reward/routes/reward.routes";
+import { redeemRoutes } from "./modules/redeem/routes/redeem.routes";
+import { otpRoutes } from "./modules/otp/routes/otp.routes";
 import { tierRoutes } from "./modules/tier/routes/tier.routes";
 import { promotionBannerRoutes } from "./modules/promotion-banner/routes/promotion-banner.routes";
 
@@ -20,6 +22,8 @@ const app = new Elysia()
   .use(memberRoutes)
   .use(mediaRoutes)
   .use(rewardRoutes)
+  .use(redeemRoutes)
+  .use(otpRoutes)
   .use(tierRoutes)
   .use(promotionBannerRoutes)
   .listen({

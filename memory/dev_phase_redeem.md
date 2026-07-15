@@ -1,292 +1,323 @@
 # Rencana Implementasi — Fitur Redeem Point
 
-Referensi: `memory/flow_redeem_point.md`, `packages/database/schema.prisma`.
-
-## Keputusan Desain (Locked)
-
-| Keputusan | Nilai |
-|---|---|
-| Durasi expired token | **30 menit** (`REDEEM_TOKEN_EXPIRY_MINUTES`, default di kode) — env template saat ini masih `4320`, harus dikoreksi di Fase 0 |
-| Durasi expired OTP | 5 menit (`REDEEM_OTP_EXPIRY_MINUTES`) |
-| Format `token_code` | 10 karakter alfanumerik random uppercase, **tanpa prefix/dash** (contoh: `X7R92QK3TM`) — muat di kolom `VARCHAR(10)`, tidak perlu migrasi kolom |
-| OTP WhatsApp | Full integrasi Fonnte dari awal (token sudah di Doppler) |
-| Pembagi tanggung jawab data | Lihat bagian "Pembagian Data" di bawah |
-
-### Pembagian Data (kenapa tidak semua HTTP call)
-
-`api-elysia` dan `backoffice-filament` membaca/menulis **database MySQL yang sama** (`hkgold_backoffice_filament`) — Prisma dan Eloquent hanya dua ORM berbeda di atas satu sumber data (lihat `@@map` di `schema.prisma`). Karena itu:
-
-- **api-elysia (Prisma)** — pemilik alur *mobile-initiated*: membuat `RedeemToken` (reservasi poin + stok), membaca riwayat (`RedeemInvoice`), dan **satu-satunya** yang boleh bicara ke Fonnte (endpoint internal untuk OTP).
-- **backoffice-filament (Eloquent)** — pemilik alur *cashier-initiated*: query & update `RedeemToken`/`RewardBranchStock`/`RedeemInvoice` **langsung ke DB sendiri** (tidak perlu HTTP call ke Elysia untuk baca/tulis token). Filament **hanya** memanggil api-elysia lewat endpoint internal untuk kirim/verifikasi OTP (sesuai keputusan sebelumnya: Fonnte logic terpusat di api-elysia).
-- Endpoint internal (`/internal/otp/*`) dilindungi header `X-Internal-Secret` = `MOBILE_API_INTERNAL_SECRET` (harus identik di kedua Doppler config).
+Referensi bisnis/pipeline: `memory/flow_redeem_point.md`.  
+Schema: `packages/database/schema.prisma`.
 
 ---
 
-## Fase 0 — Persiapan Lintas Platform
+## Keputusan desain (locked)
 
-### 0.1 Koreksi env token expiry (3 file)
-- `apps/api-elysia/.env.example` → `REDEEM_TOKEN_EXPIRY_MINUTES=30`
-- `apps/backoffice-filament/.env.example` & `.env.testing` → `REDEEM_TOKEN_EXPIRY_MINUTES=30`
-- Update juga nilai di Doppler (`dev_backend`, `dev_backoffice`) — dilakukan manual oleh user.
+| Keputusan                                               | Nilai                                                                       |
+| ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Durasi expired token                                    | **30 menit** (`REDEEM_TOKEN_EXPIRY_MINUTES`)                                |
+| Durasi expired OTP                                      | **5 menit** (`REDEEM_OTP_EXPIRY_MINUTES`)                                   |
+| Format `token_code`                                     | 10 char alfanumerik uppercase, **tanpa prefix/dash** (contoh: `X7R92QK3TM`) |
+| OTP WhatsApp                                            | Full Fonnte dari awal — hanya lewat `api-elysia`                            |
+| `PointMutation`                                         | Ditulis **saat konfirmasi kasir** (bersama invoice), bukan saat reservasi   |
+| Token expired tanpa klaim                               | **Termasuk scope** — job release + refund poin + `held_stock -= 1`          |
+| Cabang kasir                                            | Hanya boleh konfirmasi token dengan `branch_id` = cabang staf login         |
+| Refund darurat pasca-invoice (`RedeemStatus::REFUNDED`) | **Di luar MVP** — dijadwalkan setelah klaim normal jalan                    |
 
-### 0.2 Model Eloquent `RedeemToken` (Laravel)
-- File: `apps/backoffice-filament/app/Models/RedeemToken.php`
-- `HasUuids`, `casts`: `is_used` → bool, `expired_at`/`created_at` → datetime.
-- Relasi: `member()` (belongsTo Member), `reward()` (belongsTo Reward), `branch()` (belongsTo Branch).
-- Scope `available()`: `where('is_used', false)->where('expired_at', '>', now())`.
-- Tidak perlu migration baru — tabel `redeem_tokens` sudah ada.
+### Pembagian data (kenapa tidak semua HTTP)
 
-### 0.3 Kontrak DTO (dicatat, bukan kode)
-Disepakati bentuk response supaya mobile & api-elysia selaras:
+`api-elysia` dan `backoffice-filament` memakai **MySQL yang sama**. Prisma & Eloquent = dua ORM, satu DB.
+
+- **api-elysia** — alur mobile: buat `RedeemToken` (+ potong poin + naikkan `held_stock`); baca riwayat `RedeemInvoice`; **satu-satunya** yang bicara ke Fonnte (`/internal/otp/*`).
+- **backoffice-filament** — alur kasir: query/update token/stok/invoice **langsung DB**; HTTP ke api-elysia **hanya untuk OTP**; job release expired.
+- Internal OTP dilindungi header `X-Internal-Secret` = `MOBILE_API_INTERNAL_SECRET` (sama di `dev_backend` + `dev_backoffice`).
+
+### Status persiapan (sudah dikerjakan)
+
+| Item                                                                      | Status                                                       |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Dependensi `qrcode` + `ioredis` (api-elysia)                              | ✅                                                           |
+| Dependensi `simplesoftwareio/simple-qrcode` + `html5-qrcode` (backoffice) | ✅                                                           |
+| Template env Fonnte / Redis / `MOBILE_API_*` / `REDEEM_*`                 | ✅ (`REDEEM_TOKEN_EXPIRY_MINUTES=30`)                         |
+| `config/redeem.php` (default expiry 30)                                   | ✅                                                           |
+| Secret Doppler (`FONNTE_TOKEN`, Redis, `MOBILE_API_*`, expiry 30)         | ✅ diisi user                                                |
+| Model + factory + seeder `RedeemToken` (Laravel)                          | ✅ Fase 0                                                    |
+| Kontrak DTO mobile↔API (§0.3)                                           | ✅ dokumen saja — file types di Fase 1                       |
+| Kode bisnis redeem / OTP / Filament wizard / wire mobile                  | ❌ belum (Fase 1+)                                           |
+
+---
+
+## Fase 0 — Persiapan lintas platform
+
+### 0.1 Koreksi env token expiry → 30 — ✅ selesai
+
+- Template `.env.example` (api + backoffice) + `.env.testing` + default `config/redeem.php` = `30`
+- Doppler diset manual oleh user
+
+### 0.2 Model Eloquent `RedeemToken` — ✅ selesai
+
+- `app/Models/RedeemToken.php` + factory + seeder (campuran available/used/expired)
+- Scope `available()`, tanpa `updated_at` (sesuai Prisma)
+- Relasi inverse `redeemTokens()` di Member / Reward / Branch
+
+### 0.3 Kontrak DTO (mobile ↔ api-elysia) — ✅ dokumen saja
+
+Tidak ada file types di Fase 0. Implementasi TypeScript di `src/modules/redeem/types/` baru di **Fase 1**.
 
 ```ts
 // POST /api/redeem/token → 201
 { success: true, message: string, data: {
-  redeemId: string; tokenCode: string; heldPoints: number;
-  expiresAt: string; reward: { sku, name, imageUrl }; branch: { name, address };
+  redeemId: string;       // = RedeemToken.id
+  tokenCode: string;      // 10 char A-Z0-9, tanpa prefix
+  heldPoints: number;
+  expiresAt: string;      // ISO — now + REDEEM_TOKEN_EXPIRY_MINUTES (30)
+  reward: { sku: string; name: string; imageUrl: string | null };
+  branch: { id: number; name: string; address: string };
 }}
 
-// GET /api/redeem/active → 200 (data: null jika tidak ada redeem aktif)
-// GET /api/redeem/history → 200 (paginated, dari tabel redeem_invoices)
+// GET /api/redeem/active → 200 (data: null jika tidak ada token available)
+// GET /api/redeem/history → 200 paginated dari redeem_invoices (bukan tokens)
+// GET /api/redeem/history/:id → 200 detail invoice milik member
 ```
+
+Error bisnis (HTTP 4xx + `message` jelas): `INSUFFICIENT_POINTS`, `INSUFFICIENT_STOCK`, `MEMBER_SUSPENDED`, `REWARD_NOT_ACTIVE`, `BRANCH_STOCK_MISSING`.
 
 ---
 
-## Fase 1 — `apps/api-elysia`: Modul Redeem (Reservasi Poin & Token)
+## Fase 1 — `apps/api-elysia`: modul redeem (reservasi)
 
-Folder baru: `apps/api-elysia/src/modules/redeem/` (ikuti struktur modul `reward/`).
+Folder: `apps/api-elysia/src/modules/redeem/` (pola `reward/`).
 
-### 1.1 `types/redeem.types.ts`
-`CreateRedeemTokenRequest`, `RedeemTokenResponse`, `ActiveRedeemResponse`, `RedeemHistoryItemResponse`, `RedeemErrorCode` (`INSUFFICIENT_POINTS`, `INSUFFICIENT_STOCK`, `MEMBER_SUSPENDED`, `REWARD_NOT_ACTIVE`).
+### 1.1–1.2 Types & interface
 
-### 1.2 `interfaces/redeem.interface.ts`
-Kontrak method service: `createRedeemToken`, `getActiveRedeemToken`, `getRedeemHistory`.
+`CreateRedeemTokenRequest`, response DTO, `RedeemErrorCode`, interface service: `createRedeemToken`, `getActiveRedeemToken`, `getRedeemHistory`, `getRedeemHistoryById`.
 
-### 1.3 `services/redeem.service.ts` — algoritma `createRedeemToken(memberId, rewardId, branchId)`
+### 1.3 `services/redeem.service.ts` — `createRedeemToken`
+
 ```
 db.$transaction(async (tx) => {
-  reward = tx.reward.findUnique(rewardId)
-  if (!reward.isActive || now < reward.startAt || now > reward.endAt) throw REWARD_NOT_ACTIVE
+  reward = find reward; guard isActive + window startAt/endAt
+  stock = find RewardBranchStock(rewardId, branchId); guard exists
+  available = actualStock - heldStock; guard available >= 1
+  member = find; guard !isSuspended; guard pointBalance >= pointsRequired
 
-  stock = tx.rewardBranchStock.findUnique({ rewardId, branchId })
-  available = stock.actualStock - stock.heldStock
-  if (available < 1) throw INSUFFICIENT_STOCK
-
-  member = tx.member.findUnique(memberId)
-  if (member.isSuspended) throw MEMBER_SUSPENDED
-  if (member.pointBalance < reward.pointsRequired) throw INSUFFICIENT_POINTS
-
-  tokenCode = generateUniqueTokenCode(tx)   // loop random 10-char sampai unik
-  tx.member.update({ pointBalance: { decrement: reward.pointsRequired } })
-  tx.rewardBranchStock.update({ heldStock: { increment: 1 } })
-  token = tx.redeemToken.create({
-    memberId, rewardId, branchId, tokenCode,
-    heldPoints: reward.pointsRequired, isUsed: false,
-    expiredAt: now + REDEEM_TOKEN_EXPIRY_MINUTES,
-  })
-  return token
+  tokenCode = generateUniqueTokenCode() // 10 char A-Z0-9 uppercase
+  update member.pointBalance -= pointsRequired
+  update stock.heldStock += 1
+  create RedeemToken { heldPoints, isUsed:false, expiredAt: now+30m }
+  // TIDAK create PointMutation / RedeemInvoice di sini
+  return token + join reward/branch/media
 })
 ```
-> Catatan: poin dipotong saat reservasi tapi **belum** membuat baris `PointMutation` (ledger permanen baru ditulis Laravel saat invoice terbit, sesuai `flow_redeem_point.md`). Ini titik desain yang perlu di-review saat implementasi — jika tim ingin ledger juga tercatat di reservasi, tambahkan `PointMutation` di sini dengan `pointsRedeemed=0` placeholder (didiskusikan saat coding, jangan diasumsikan).
 
-`getActiveRedeemToken(memberId)`: `findFirst` `RedeemToken` where `memberId`, `isUsed=false`, `expiredAt>now`, order `createdAt desc`.
+`getActiveRedeemToken`: `isUsed=false && expiredAt>now`, order `createdAt desc`, max satu yang ditampilkan (jika ada >1 legacy, ambil terbaru).
 
-`getRedeemHistory(memberId, cursor)`: query `RedeemInvoice` (bukan `RedeemToken`) where `memberId`, cursor pagination (pola sama seperti `reward.service.ts`).
+`getRedeemHistory`: dari `RedeemInvoice` milik member, cursor pagination (pola reward).
 
-### 1.4 `routes/redeem.routes.ts`
-- `POST /api/redeem/token` — `requireActiveUser` + `requireNotSuspended` (middleware sudah ada) → body `{ rewardId, branchId }`.
-- `GET /api/redeem/active` — auth.
-- `GET /api/redeem/history` — auth, paginated.
-- Register di `src/index.ts`: `.use(redeemRoutes)`.
+### 1.4 Routes
 
-### 1.5 `__tests__/redeem-token-creation.test.ts`
-Integration test (pola sama `reward-home-preview.test.ts`): seed member+reward+stock, assert saldo terpotong, `heldStock` naik, token unik & `expiredAt` = now+30menit. Test kasus gagal: poin kurang, stok habis, member suspended.
+- `POST /api/redeem/token` — `requireActiveUser` + `requireNotSuspended`
+- `GET /api/redeem/active`, `GET /api/redeem/history`, `GET /api/redeem/history/:id`
+- Register di `src/index.ts`
+
+### 1.5 Test
+
+`__tests__/redeem-token-creation.test.ts`: happy path + poin kurang + stok habis + suspended + reward nonaktif.
 
 ---
 
-## Fase 2 — `apps/api-elysia`: OTP & Fonnte (Endpoint Internal)
+## Fase 2 — `apps/api-elysia`: OTP & Fonnte (internal)
 
-Folder: `apps/api-elysia/src/modules/otp/` (modul baru, dipisah dari `redeem` karena dipakai lintas domain).
+Folder: `apps/api-elysia/src/modules/otp/`.
 
-### 2.1 `services/fonnte.service.ts`
-`sendWhatsappMessage(phone: string, message: string)` → `fetch(`${FONNTE_BASE_URL}/send`, { headers: { Authorization: FONNTE_TOKEN }, body: { target: phone, message } })`.
+### 2.1 `fonnte.service.ts`
 
-### 2.2 `services/otp.service.ts` — hybrid Redis + DB
-```
-generateOtp(identifier, type):
-  code = random 6 digit
-  redis.set(`otp:${type}:${identifier}`, code, EX = OTP_EXPIRY_MINUTES * 60)
-  db.otpVerification.create({ identifier, otpCode: code, type, expiredAt: now+OTP_EXPIRY_MINUTES })
-  fonnte.sendWhatsappMessage(identifier, `Kode OTP HK GOLD VIP Anda: ${code}`)
+`sendWhatsappMessage(phone, message)` → `POST ${FONNTE_BASE_URL}/send` + `Authorization: FONNTE_TOKEN`.  
+Normalisasi phone: pastikan format yang diterima Fonnte (biasanya `62…` tanpa `+`).
 
-verifyOtp(identifier, type, inputCode):
-  cached = redis.get(`otp:${type}:${identifier}`)
-  if (cached === inputCode) { redis.del(key); db.otpVerification.updateMany(...isUsed=true); return true }
-  // fallback jika Redis miss (restart/expired cache tapi DB belum expired)
-  row = db.otpVerification.findFirst({ identifier, type, otpCode: inputCode, isUsed: false, expiredAt: { gt: now } })
-  if (row) { db.otpVerification.update({ isUsed: true }); return true }
-  return false
-```
+### 2.2 `otp.service.ts` — hybrid Redis DB2 + `otp_verifications`
+
+- `generateOtp(identifier, type=REDEEM_VALIDATION)` → Redis EX + INSERT DB + kirim WA
+- `verifyOtp` → Redis hit dulu; fallback DB row unused & belum expired → mark `is_used`
+- Rate-limit sederhana (opsional MVP): max N kirim OTP / token / 5 menit (Redis counter)
 
 ### 2.3 `middleware/internal-auth.middleware.ts`
-Cek header `X-Internal-Secret === process.env.MOBILE_API_INTERNAL_SECRET`, else `401`.
 
-### 2.4 `routes/otp.routes.ts` (prefix `/internal/otp`)
-- `POST /internal/otp/send` — guarded `internal-auth` → body `{ identifier, type }`.
-- `POST /internal/otp/verify` — guarded `internal-auth` → body `{ identifier, type, otpCode }` → `{ valid: boolean }`.
-- Register di `src/index.ts` dengan prefix `/internal`.
+Header `X-Internal-Secret` === `MOBILE_API_INTERNAL_SECRET`, else 401.
+
+### 2.4 Routes `/internal/otp/send` + `/internal/otp/verify`
+
+Register terpisah; **jangan** di-mount di balik JWT member.
 
 ### 2.5 Test
-Mock `fetch` Fonnte, assert Redis+DB konsisten, assert fallback DB jalan saat Redis key sengaja dihapus manual di test.
+
+Mock `fetch` Fonnte; Redis+DB konsisten; fallback DB saat Redis key hilang.
 
 ---
 
-## Fase 3 — `apps/backoffice-filament`: Resource Dasar `RedeemToken`
+## Fase 3 — `apps/backoffice-filament`: resource dasar `RedeemToken`
 
-Folder: `apps/backoffice-filament/app/Filament/Resources/RedeemTokens/` (struktur split, ikuti pola `Members/`).
+Folder: `app/Filament/Resources/RedeemTokens/` (split seperti `Members/`).
 
-| File | Isi |
-|---|---|
-| `RedeemTokenResource.php` | Thin; `navigationGroup = 'Redeem Poin'`; `navigationLabel = 'Antrean Kupon'`; `canCreate()` → `false` (token hanya lahir dari mobile) |
-| `Schemas/RedeemTokenInfolist.php` | Detail: nama member, no. HP, reward, cabang, token code, held points, countdown expired, badge status |
-| `Tables/RedeemTokensTable.php` | Kolom: `token_code`, `member.full_name`, `reward.name`, `branch.name`, `held_points`, badge `is_used`/expired, filter cabang & status |
-| `Pages/ListRedeemTokens.php`, `Pages/ViewRedeemToken.php` | Tanpa Create/Edit page |
+| File                                                | Isi                                                                   |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| `RedeemTokenResource.php`                           | Group `Redeem Poin`; label **Antrean Kupon**; `canCreate=false`       |
+| `Schemas/RedeemTokenInfolist.php`                   | Member, HP, reward, cabang, token, held points, expired, badge status |
+| `Tables/RedeemTokensTable.php`                      | Kolom + filter cabang/status/expired; default sort terbaru            |
+| `Pages/ListRedeemTokens.php`, `ViewRedeemToken.php` | Tanpa Create/Edit                                                     |
 
-Registrasi: pastikan `RedeemToken` masuk grup `Redeem Poin` yang sama dengan `RedeemInvoiceResource` (grup sudah ada di `AppPanelProvider`).
+Policy/Shield: hanya role staf cabang + admin pusat (ikuti pola resource sejenis).
 
 ---
 
-## Fase 4 — `apps/backoffice-filament`: Wizard Verifikasi & Konfirmasi
-
-Folder: `app/Filament/Resources/RedeemTokens/Actions/VerifyRedeemTokenAction.php` + `app/Services/Redeem/`.
+## Fase 4 — `apps/backoffice-filament`: wizard verifikasi & konfirmasi
 
 ### 4.1 `app/Services/Redeem/FonnteOtpClient.php`
-Wrapper `Http::withHeaders(['X-Internal-Secret' => config('redeem.mobile_api.internal_secret')])`:
-- `send(string $phone): void` → `POST {mobile_api.url}/internal/otp/send`
-- `verify(string $phone, string $otpCode): bool` → `POST {mobile_api.url}/internal/otp/verify`
 
-### 4.2 `VerifyRedeemTokenAction` — wizard 3 langkah (mirror `PointMutations/Actions/InjectManualPointAction.php`)
-```
-Step 1 "Masukkan Token":
-  input token_code → query RedeemToken::available()->where('token_code', $input)->with(member,reward,branch)->first()
-  jika null → Halt + notifikasi error "Token tidak valid/sudah dipakai/expired"
-  simpan record ke wizard state, tampilkan detail utk dicocokkan KTP
+HTTP ke `{config('redeem.mobile_api.url')}/internal/otp/*` + header secret.
 
-Step 2 "Kirim OTP":
-  tombol "Kirim OTP" → FonnteOtpClient::send($token->member->phone_number)
-  notifikasi sukses "OTP terkirim via WhatsApp"
+### 4.2 `VerifyRedeemTokenAction` (header action di List)
 
-Step 3 "Konfirmasi":
-  input otp_code → submit →
-    valid = FonnteOtpClient::verify($token->member->phone_number, $otp_code)
-    jika !valid → Halt + notifikasi error "Kode OTP salah/expired"
-    jika valid → RedeemConfirmationService::confirm($token, auth staff id)
-```
+Mirror wizard `InjectManualPointAction` — 3 step:
 
-### 4.3 `app/Services/Redeem/RedeemConfirmationService.php`
+1. **Token** — input teks **atau** scan (`html5-qrcode`); query `available()` + `branch_id = auth staff branch` (superadmin/administrator boleh semua cabang); tampil detail KTP-check.
+2. **Kirim OTP** — `FonnteOtpClient::send(member.phone)`.
+3. **Konfirmasi** — input OTP → verify → `RedeemConfirmationService::confirm`.
+
+### 4.3 `RedeemConfirmationService`
+
 ```php
-DB::transaction(function () use ($token, $staffId) {
-    $token->refresh();
-    abort_if($token->is_used || $token->expired_at->isPast(), 422, 'Token tidak lagi valid.');
+DB::transaction(function () {
+  $token->refresh();
+  abort_unless(!$token->is_used && $token->expired_at->isFuture(), ...);
+  abort_unless(branchAllowed(...), ...);
 
-    $token->update(['is_used' => true]);
+  $token->update(['is_used' => true]);
 
-    $stock = RewardBranchStock::where('reward_id', $token->reward_id)
-        ->where('branch_id', $token->branch_id)
-        ->lockForUpdate()->first();
-    $stock->decrement('actual_stock');
-    $stock->decrement('held_stock');
+  $stock = RewardBranchStock::...->lockForUpdate()->firstOrFail();
+  abort_if($stock->actual_stock < 1 || $stock->held_stock < 1, ...);
+  $stock->decrement('actual_stock');
+  $stock->decrement('held_stock');
 
-    $invoice = RedeemInvoice::create([
-        'invoice_number'  => $this->generateInvoiceNumber($token->branch),
-        'member_id'       => $token->member_id,
-        'staff_id'        => $staffId,
-        'branch_id'       => $token->branch_id,
-        'reward_id'       => $token->reward_id,
-        'points_redeemed' => $token->held_points, // snapshot murni, tidak berubah lagi
-        'status'          => RedeemStatus::Completed,
-    ]);
+  $invoice = RedeemInvoice::create([..., 'points_redeemed' => $token->held_points, 'status' => COMPLETED]);
 
-    ActivityLog::create([...'auditable_type' => RedeemInvoice::class, 'auditable_id' => $invoice->id]);
+  PointMutation::create([
+    'member_id' => $token->member_id,
+    'branch_id' => $token->branch_id,
+    'reference_id' => $invoice->invoice_number, // atau invoice id
+    'points_redeemed' => $token->held_points,
+    'balance_snapshot' => $member->fresh()->point_balance,
+    'transaction_date' => now(),
+    // transaction_type_id: pakai type key REDEEM jika sudah ada di master; jika belum → seeder tipis di Fase 0/4
+  ]);
+
+  ActivityLog::... auditable RedeemInvoice
 });
 ```
-Format `invoice_number` disarankan: `INV-{branchCode}-{YYYYMMDD}-{sequence4digit}`.
 
-### 4.4 Wiring
-Tombol utama `[📥 Verifikasi & Scan Token]` di `Pages/ListRedeemTokens.php::getHeaderActions()` — panggil `VerifyRedeemTokenAction`. Jangan aktifkan `canCreate()` (sesuai konvensi non-CRUD action project).
+Format invoice: `INV-{branchCode}-{YYYYMMDD}-{seq4}`.
+
+### 4.4 Pastikan `TransactionType` dengan `type_key=REDEEM` ada (seeder/cek master) sebelum write `PointMutation`.
 
 ### 4.5 Test
-`tests/Feature/Redeem/RedeemConfirmationServiceTest.php` (pola `ManualPointInjectionServiceTest.php`):
-- Happy path: stok berkurang 1, token `is_used=true`, invoice tercipta dengan snapshot poin benar.
-- Idempotency: confirm token yang sudah `is_used=true` → harus gagal (`abort_if`), tidak boleh decrement stok dua kali.
-- Token expired → gagal.
+
+`tests/Feature/Redeem/RedeemConfirmationServiceTest.php`: happy path, double confirm, expired, salah cabang, stok inkonsisten.
 
 ---
 
-## Fase 5 — `apps/mobile-app`: Wiring Redeem Flow ke API
+## Fase 5 — `apps/backoffice-filament`: job release token expired
 
-### 5.1 `src/services/redeem.ts` (baru)
-`createRedeemToken(rewardId, branchId)`, `getActiveRedeem()`, `getRedeemHistory(cursor?)` — pakai `apiClient` (axios) + `ApiEnvelope<T>`, pola sama `src/services/rewards.ts`.
+**Termasuk scope MVP** (karena token hanya 30 menit — tanpa ini poin & `held_stock` macet).
 
-### 5.2 Selaraskan tipe
-- `src/types/active-redeem.ts` & `src/types/redeem.ts` → mapping status API (`COMPLETED`/`REFUNDED`) ke label UI (`selesai`/`ditolak`) di satu tempat (`src/lib/format/` atau helper baru), jangan duplikat mapping di banyak file.
+### 5.1 `app/Services/Redeem/ReleaseExpiredRedeemTokenService.php`
 
-### 5.3 `src/components/reward/reward-redeem-dialog.tsx`
-Ganti dummy `"Fitur penukaran belum tersedia"` → panggil `redeem.ts#createRedeemToken` → sukses: `router.push('/(tabs)/card/redeem-qr')`; gagal: toast pesan sesuai `RedeemErrorCode` (poin kurang / stok habis / akun ditangguhkan).
+Per token expired unused (batch kecil + `lockForUpdate`):
 
-### 5.4 `src/app/reward/[sku].tsx`
-Confirm handler pakai dialog di atas (bukan `toast.info` placeholder).
+- `point_balance += held_points`
+- `held_stock -= 1` (guard `held_stock > 0`)
+- tulis activity log `redeem_token_expired_release`
+- **jangan** set `is_used=true` (token memang tidak dipakai); cukup expired alami
+- idempotent: skip jika `held_stock` sudah tidak mencerminkan hold / pakai activity log marker
 
-### 5.5 `src/app/(tabs)/card/redeem-qr.tsx` + `src/services/active-redeem.ts`
-Ganti mock → `getActiveRedeem()`. Handle `data === null` (tidak ada redeem aktif) dengan empty state, bukan crash.
+### 5.2 `app/Console/Commands/ReleaseExpiredRedeemTokensCommand.php`
 
-### 5.6 `src/app/(tabs)/card/index.tsx`
-Un-comment kartu active-redeem, wire ke service baru.
+Signature: `redeem:release-expired-tokens`. Jadwalkan di `routes/console.php` / scheduler (mis. tiap 5 menit).
 
-### 5.7 `src/app/redeem/index.tsx`, `src/app/redeem/[id].tsx`, `src/services/redeem-history.ts`
-Ganti mock → `getRedeemHistory()` / detail by id dari API.
+### 5.3 Test
 
-### 5.8 QA manual
-Redeem end-to-end di device/emulator (poin habis di UI setelah redeem, QR muncul, countdown jalan) lalu cross-check hasilnya muncul benar di Filament `RedeemTokenResource`.
+Token expired → poin balik, held turun, tidak double-refund pada run kedua.
 
 ---
 
-## Fase 6 — Integrasi End-to-End & Hardening
+## Fase 6 — `apps/mobile-app`: wire ke API
 
-### 6.1 Uji flow penuh lintas 3 app
-Mobile create token → Filament verifikasi token → kirim OTP → input OTP → konfirmasi → cek: poin mobile tetap terpotong, stok cabang berkurang, invoice muncul di `RedeemInvoiceResource`, riwayat redeem mobile terupdate.
+### 6.1 `src/services/redeem.ts`
 
-### 6.2 Race condition & idempotency
-- Prisma `$transaction` (Fase 1) sudah atomik untuk reservasi.
-- Laravel `lockForUpdate()` pada `RewardBranchStock` (Fase 4) wajib ada agar dua kasir tidak bisa confirm token yang sama bersamaan.
-- Double-submit tombol "Konfirmasi" di Filament → `abort_if($token->is_used)` mencegah invoice dobel.
+`createRedeemToken`, `getActiveRedeem`, `getRedeemHistory`, `getRedeemHistoryById` via `apiClient` + `ApiEnvelope`.
 
-### 6.3 Token expired tanpa dipakai (usulan tambahan — **perlu konfirmasi user sebelum dikerjakan**)
-Saat ini flow doc tidak menjelaskan pengembalian poin/stok jika member reservasi tapi tidak datang ke toko sampai token expired (30 menit). Tanpa job pembersihan, poin & `heldStock` akan "hangus tertahan" selamanya. Opsi: scheduled command Laravel (`redeem:release-expired-tokens`) atau cron job Elysia yang query `RedeemToken` `isUsed=false && expiredAt<now`, refund `member.pointBalance += heldPoints`, `RewardBranchStock.heldStock -= 1`. **Tanyakan ke user dulu** apakah ini termasuk scope sebelum implementasi.
+### 6.2 Mapping status
 
-### 6.4 Observability
-Log kegagalan kirim Fonnte (jangan gagalkan create token karena WA down — hanya OTP send yang bergantung Fonnte, bukan reservasi poin).
+API `COMPLETED`/`REFUNDED` → label UI `selesai`/`ditolak` di **satu** helper (`src/lib/format/`…).
 
-### 6.5 Security review
-Pastikan `/internal/*` di api-elysia tidak diekspos ke mobile client (hanya dipanggil server-to-server dari Filament) — minimal via header secret check (Fase 2.3), idealnya juga dibatasi di level network/firewall saat production.
+### 6.3 `reward-redeem-dialog.tsx` + `reward/[sku].tsx`
+
+Ganti dummy → POST create → navigate `/(tabs)/card/redeem-qr`; toast error kode bisnis.
+
+### 6.4 `active-redeem.ts` + `card/redeem-qr.tsx` + `card/index.tsx`
+
+Ganti mock; empty state jika `data=null`; un-comment kartu active redeem.
+
+### 6.5 `redeem/index.tsx`, `redeem/[id].tsx`, `redeem-history.ts`
+
+History dari API (bukan mock).
+
+### 6.6 QA device
+
+Poin turun setelah redeem, QR + countdown 30m, muncul di Filament Antrean Kupon.
 
 ---
 
-## Ringkasan Folder per App
+## Fase 7 — Integrasi end-to-end & hardening
 
-| App | Folder utama |
-|---|---|
-| `apps/api-elysia` | `src/modules/redeem/`, `src/modules/otp/` |
-| `apps/backoffice-filament` | `app/Models/RedeemToken.php`, `app/Filament/Resources/RedeemTokens/`, `app/Services/Redeem/` |
-| `apps/mobile-app` | `src/services/redeem.ts`, `src/components/reward/reward-redeem-dialog.tsx`, `src/app/(tabs)/card/`, `src/app/redeem/`, `src/app/reward/[sku].tsx` |
+### 7.1 Uji lintas 3 app
 
-## Urutan Pengerjaan Disarankan
+Reservasi → OTP → konfirmasi → invoice + mutasi → history mobile.  
+Skenario expired → job release → poin balik + held turun.
+
+### 7.2 Race / idempotency
+
+- Prisma transaction saat reserve
+- `lockForUpdate` stok + `abort_if is_used` saat confirm
+- Job release idempotent
+- Double-submit tombol konfirmasi Filament aman
+
+### 7.3 Observability
+
+Gagal Fonnte = gagalkan **kirim OTP** saja, bukan create token. Log error Fonnte jelas.
+
+### 7.4 Security
+
+`/internal/*` tidak boleh dipakai mobile JWT; secret wajib; prod: batasi network jika memungkinkan.  
+Scan QR di browser butuh HTTPS / permission kamera (dokumentasikan untuk kasir).
+
+### 7.5 Di luar MVP (catat saja)
+
+- Emergency refund invoice (`REFUNDED`) + balikin stok/poin
+- Batasi 1 active token per member (opsional hard-rule)
+- Push notifikasi mobile saat invoice selesai / token hampir expired
+
+---
+
+## Ringkasan folder per app
+
+| App                        | Folder / file utama                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api-elysia`          | `src/modules/redeem/`, `src/modules/otp/`                                                                                 |
+| `apps/backoffice-filament` | `Models/RedeemToken.php`, `Filament/Resources/RedeemTokens/`, `Services/Redeem/`, command `redeem:release-expired-tokens` |
+| `apps/mobile-app`          | `services/redeem.ts`, `reward-redeem-dialog`, `card/redeem-qr`, `redeem/*`, `reward/[sku]`                                |
+
+## Urutan pengerjaan
 
 ```
-Fase 0 (wajib duluan)
-   ├─▶ Fase 1 + Fase 2 (api-elysia, bisa paralel)
-   ├─▶ Fase 3 (Filament model & resource dasar, bisa paralel dengan Fase 1/2)
-   └─▶ Fase 4 (Filament wizard — butuh Fase 2 selesai utk OTP client, Fase 3 utk resource)
-Fase 5 (mobile — butuh Fase 1 selesai)
-Fase 6 (integrasi & hardening — setelah 1-5 selesai)
+Fase 0
+  ├─▶ Fase 1 + Fase 2 (api-elysia, paralel)
+  ├─▶ Fase 3 (resource dasar Filament, paralel)
+  └─▶ Fase 4 (wizard) — butuh Fase 2 + 3
+Fase 5 (job release) — boleh paralel setelah model RedeemToken (0.2) + confirm service siap
+Fase 6 (mobile) — butuh Fase 1
+Fase 7 — setelah 1–6
 ```

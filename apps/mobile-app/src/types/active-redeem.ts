@@ -1,10 +1,23 @@
-export type ActiveRedeemItem = {
-  redeemId: string;
-  redeemToken: string;
-  expiresAt: string;
+export type ActiveRedeemReward = {
+  id: string;
   sku: string;
   name: string;
-  categoryName: string;
-  image: number;
-  pointsRequired: number;
+  imageUrl: string | null;
+};
+
+export type ActiveRedeemBranch = {
+  id: number;
+  name: string;
+  address: string;
+};
+
+/** Mirror API `RedeemTokenData` */
+export type ActiveRedeemItem = {
+  redeemId: string;
+  tokenCode: string;
+  heldPoints: number;
+  isUsed: boolean;
+  expiresAt: string;
+  reward: ActiveRedeemReward;
+  branch: ActiveRedeemBranch;
 };

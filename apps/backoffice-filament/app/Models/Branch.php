@@ -65,6 +65,11 @@ class Branch extends Model
         return $this->hasMany(RedeemInvoice::class);
     }
 
+    public function redeemTokens(): HasMany
+    {
+        return $this->hasMany(RedeemToken::class);
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(BranchImage::class)->orderBy('sort_order');
