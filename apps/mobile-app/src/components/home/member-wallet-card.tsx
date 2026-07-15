@@ -6,7 +6,6 @@ import { Pressable, View } from "react-native";
 
 import { SilverGradientText } from "@/components/shared/silver-gradient-text";
 import { Text } from "@/components/ui/text";
-import { getTierIconSource } from "@/config/assets";
 import {
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
@@ -39,8 +38,8 @@ const TIER_STYLES: Record<
   {
     label: string;
     textClassName: string;
-    backgroundColors: readonly string[];
-    dividerColors: readonly string[];
+    backgroundColors: any;
+    dividerColors: any;
   }
 > = {
   SILVER: {
@@ -171,7 +170,7 @@ export function MemberWalletCard({
       <View className="overflow-hidden rounded-xl border-0 px-5 py-5 shadow-lg shadow-stone-900/30">
         {/* Tier-specific background gradient */}
         <LinearGradient
-          colors={[...tier.backgroundColors]}
+          colors={tier.backgroundColors as any}
           start={GOLD_GRADIENT_START}
           end={GOLD_GRADIENT_END}
           className="absolute inset-0"
@@ -194,27 +193,28 @@ export function MemberWalletCard({
 
         <CardBottomSwoosh />
 
-        <View className="relative z-10">
-          <SilverGradientText className="mb-2 text-xl font-semibold">
+        <View className="relative z-10 pb-2">
+          <SilverGradientText className="mb-1 text-xl font-semibold">
             {fullName}
           </SilverGradientText>
 
-          <MemberNumber
-            memberNumber={memberNumber}
-            onPressMemberNumber={onPressMemberNumber}
-          />
-
+          <View className="flex-row items-stretch justify-between">
           {/* Bottom row: tier label left, points right */}
-          <View className="mt-6 flex-row items-end justify-between">
-            <Text className={cn("text-lg font-semibold", tier.textClassName)}>
-              {tier.label}
-            </Text>
+            <View className="flex-col justify-between self-stretch">
+              <MemberNumber
+                memberNumber={memberNumber}
+                onPressMemberNumber={onPressMemberNumber}
+              />
+              <Text className={cn("text-lg font-semibold", tier.textClassName)}>
+                {tier.label}
+              </Text>
+            </View>
 
-            <View className="items-end">
+            <View className="items-end pt-4">
               <Text variant="small" className="text-white/55">
                 Poin
               </Text>
-              <SilverGradientText className="text-7xl font-bold leading-tight">
+              <SilverGradientText className="text-7xl font-bold leading-none">
                 {formatPointBalance(pointBalance)}
               </SilverGradientText>
             </View>
