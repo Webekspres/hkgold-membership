@@ -4,13 +4,12 @@ import { router } from "expo-router";
 import { cssInterop } from "nativewind";
 import { Pressable, View } from "react-native";
 
-import { GoldGradientText } from "@/components/shared/gold-gradient-text";
+import { SilverGradientText } from "@/components/shared/silver-gradient-text";
 import { Text } from "@/components/ui/text";
-import { getTierIconSource } from "@/config/assets";
 import {
-  GOLD_GRADIENT_COLORS,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
+  TIER_GRADIENTS,
 } from "@/config/brand";
 import { cn } from "@/lib/utils";
 import type { MemberTier } from "@/types/auth";
@@ -39,23 +38,33 @@ const TIER_STYLES: Record<
   {
     label: string;
     textClassName: string;
+    backgroundColors: any;
+    dividerColors: any;
   }
 > = {
   SILVER: {
     label: "Silver",
     textClassName: "text-stone-200",
+    backgroundColors: TIER_GRADIENTS.SILVER.colors,
+    dividerColors: TIER_GRADIENTS.SILVER.divider,
   },
   GOLD: {
     label: "Gold",
     textClassName: "text-[#f5c842]",
+    backgroundColors: TIER_GRADIENTS.GOLD.colors,
+    dividerColors: TIER_GRADIENTS.GOLD.divider,
   },
   PLATINUM: {
     label: "Platinum",
     textClassName: "text-slate-200",
+    backgroundColors: TIER_GRADIENTS.PLATINUM.colors,
+    dividerColors: TIER_GRADIENTS.PLATINUM.divider,
   },
   SAPPHIRE: {
     label: "Sapphire",
     textClassName: "text-indigo-200",
+    backgroundColors: TIER_GRADIENTS.SAPPHIRE.colors,
+    dividerColors: TIER_GRADIENTS.SAPPHIRE.divider,
   },
 };
 
@@ -64,13 +73,6 @@ const PATTERN_FADE = [
   "rgba(10,10,10,0.45)",
   "rgba(10,10,10,0.78)",
   "rgba(10,10,10,0.94)",
-] as const;
-
-const DIVIDER_COLORS = [
-  "transparent",
-  GOLD_GRADIENT_COLORS[0],
-  GOLD_GRADIENT_COLORS[1],
-  "transparent",
 ] as const;
 
 function formatPointBalance(points: number) {
@@ -111,9 +113,9 @@ function MemberNumber({
 }) {
   const pill = (
     <View className="self-start rounded-full bg-white/10 px-3 py-1">
-      <GoldGradientText className="text-sm font-medium">
+      <SilverGradientText className="text-sm font-medium">
         {memberNumber}
-      </GoldGradientText>
+      </SilverGradientText>
     </View>
   );
 
@@ -165,7 +167,16 @@ export function MemberWalletCard({
 
   return (
     <CardWrapper pressable={pressable} className={className}>
-      <View className="overflow-hidden rounded-xl border-0 bg-[#0a0a0a] px-5 py-5 shadow-lg shadow-stone-900/30">
+      <View className="overflow-hidden rounded-xl border-0 px-5 py-5 shadow-lg shadow-stone-900/30">
+        {/* Tier-specific background gradient */}
+        <LinearGradient
+          colors={tier.backgroundColors as any}
+          start={GOLD_GRADIENT_START}
+          end={GOLD_GRADIENT_END}
+          className="absolute inset-0"
+        />
+
+        {/* Pattern overlay & fade */}
         <View className="absolute inset-0" pointerEvents="none">
           <Image
             source={require("@/assets/media/pattern-horizontal.webp")}
@@ -182,56 +193,30 @@ export function MemberWalletCard({
 
         <CardBottomSwoosh />
 
-        <View className="relative z-10">
-          <Text
-            className="mb-2 text-xl font-semibold text-white"
-            numberOfLines={2}
-          >
+        <View className="relative z-10 pb-2">
+          <SilverGradientText className="mb-1 text-xl font-semibold">
             {fullName}
-          </Text>
+          </SilverGradientText>
 
-          <View className="flex-row items-stretch">
-            <View className="min-w-0 flex-1 justify-center pr-4">
+          <View className="flex-row items-stretch justify-between">
+          {/* Bottom row: tier label left, points right */}
+            <View className="flex-col justify-between self-stretch">
               <MemberNumber
                 memberNumber={memberNumber}
                 onPressMemberNumber={onPressMemberNumber}
               />
-
-              <Text className="mt-4 text-xs uppercase tracking-wide text-white/55">
-                Saldo poin
-              </Text>
-              <GoldGradientText className="mt-0.5 text-3xl font-bold leading-tight">
-                {formatPointBalance(pointBalance)}
-              </GoldGradientText>
-              <Text variant="small" className="text-white/55">
-                Poin
+              <Text className={cn("text-lg font-semibold", tier.textClassName)}>
+                {tier.label}
               </Text>
             </View>
 
-            <LinearGradient
-              colors={[...DIVIDER_COLORS]}
-              locations={[0, 0.25, 0.75, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              className="w-[1.5px] self-stretch"
-            />
-
-            <View className="w-[30%] items-center justify-center pl-3">
-              <Image
-                source={getTierIconSource(currentTier)}
-                className="h-20 w-20"
-                contentFit="contain"
-                accessibilityLabel={`Tier ${tier.label}`}
-              />
-              <Text
-                variant="small"
-                className={cn("mt-1.5 font-semibold", tier.textClassName)}
-              >
-                {tier.label}
+            <View className="items-end pt-4">
+              <Text variant="small" className="text-white/55">
+                Poin
               </Text>
-              {/* <Text variant="small" className="text-white/55">
-                Member
-              </Text> */}
+              <SilverGradientText className="text-7xl font-bold leading-none">
+                {formatPointBalance(pointBalance)}
+              </SilverGradientText>
             </View>
           </View>
         </View>
