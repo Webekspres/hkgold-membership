@@ -17,6 +17,7 @@ Schema: `packages/database/schema.prisma`.
 | Token expired tanpa klaim                               | **Termasuk scope** — job release + refund poin + `held_stock -= 1`          |
 | Cabang kasir                                            | Hanya boleh konfirmasi token dengan `branch_id` = cabang staf login         |
 | Refund darurat pasca-invoice (`RedeemStatus::REFUNDED`) | **Di luar MVP** — dijadwalkan setelah klaim normal jalan                    |
+| Post-confirm UX (Fase 8)                                | Filament **redirect** ke detil invoice; mobile **FCM push** → `/redeem/[id]` |
 
 ### Pembagian data (kenapa tidak semua HTTP)
 
@@ -37,7 +38,8 @@ Schema: `packages/database/schema.prisma`.
 | Secret Doppler (`FONNTE_TOKEN`, Redis, `MOBILE_API_*`, expiry 30)         | ✅ diisi user                                                |
 | Model + factory + seeder `RedeemToken` (Laravel)                          | ✅ Fase 0                                                    |
 | Kontrak DTO mobile↔API (§0.3)                                           | ✅ dokumen saja — file types di Fase 1                       |
-| Kode bisnis redeem / OTP / Filament wizard / wire mobile                  | ❌ belum (Fase 1+)                                           |
+| Kode bisnis redeem / OTP / Filament wizard / wire mobile                  | ✅ Fase 1–7 (lihat section masing-masing)                    |
+| Post-confirm redirect Filament + FCM mobile                               | ✅ Fase 8 (kode selesai; drop `google-services.json` lokal untuk FCM device) |
 
 ---
 
@@ -298,7 +300,184 @@ Scan QR di browser butuh HTTPS / permission kamera (dokumentasikan untuk kasir).
 
 - Emergency refund invoice (`REFUNDED`) + balikin stok/poin
 - Batasi 1 active token per member (opsional hard-rule)
-- Push notifikasi mobile saat invoice selesai / token hampir expired
+- ~~Push notifikasi mobile saat invoice selesai~~ → pindah ke **Fase 8**
+
+---
+
+## Fase 8 — Post-confirm UX: redirect Filament + push FCM mobile
+
+**Tujuan:** setelah kasir selesai input OTP & konfirmasi sukses:
+
+1. **Filament** langsung redirect ke halaman **detil `RedeemInvoice`**.
+2. **Mobile member** menerima **push FCM** dan membuka `/redeem/[id]` (detil invoice yang sama).
+
+**Keputusan terkunci Fase 8:**
+
+| Item | Nilai |
+|---|---|
+| Redirect web | Langsung `RedeemInvoiceResource` view — bukan stay di Antrean Kupon |
+| Channel mobile | **FCM** lewat pipeline notifikasi backoffice yang sudah ada (`NotificationService` → `DeliverNotificationJob` → `FcmPushDriver`) |
+| Fail-soft push | Gagal FCM **tidak** rollback konfirmasi redeem / invoice |
+| Payload deep link | `type=redeem_invoice` + `invoiceId` (UUID) → route Expo `/redeem/[id]` |
+| Registrasi token | Mobile daftar FCM token ke tabel `device_push_tokens` (shared DB) via **api-elysia** (auth member JWT) |
+
+Reuse (jangan reinvent):
+
+- `RedeemConfirmationResult::$invoiceId` sudah ada
+- Filament `RedeemInvoiceResource` + `ViewRedeemInvoice` sudah ada
+- `App\Services\Notification\NotificationService::notifyUser()` + platform `MobileAppPush`
+- `FcmPushDriver`, `DevicePushTokenRegistry`, queue `notifications`
+- Mobile screen `/redeem/[id]` + `getRedeemHistoryById` sudah ada
+
+### 8.1 Filament — redirect setelah konfirmasi
+
+**File:** `apps/backoffice-filament/app/Filament/Resources/RedeemTokens/Actions/VerifyRedeemTokenAction.php`
+
+Setelah `$service->confirm(...)` sukses (blok yang sekarang hanya Notification + `$refresh`):
+
+1. Tetap tampilkan Notification sukses singkat (opsional; bisa diganti flash di destination).
+2. Redirect Livewire action:
+   ```php
+   redirect(RedeemInvoiceResource::getUrl('view', ['record' => $result->invoiceId]));
+   ```
+   (atau `$action->redirect(...)` sesuai pola Filament Action yang dipakai wizard).
+3. Jangan `$refresh` Antrean jika sudah redirect — yang penting navigasi ke view invoice.
+4. Pastikan permission kasir: boleh `View:RedeemInvoice` (atau akses view setelah confirm — selaraskan Shield jika tombol/view tersembunyi untuk StoreManager; kalau belum ada permission, tambah di `ShieldRolesSeeder` / policy).
+
+**Tes:** extend `VerifyRedeemTokenActionTest` (atau feature Livewire) — assert response/redirect URL mengandung path invoice view + `invoiceId`.
+
+### 8.2 Filament — kirim push FCM ke member (fire-and-forget)
+
+**Tempat panggil (pilih satu; prefer service agar idempotent dengan transaksi):**
+
+- **Disarankan:** di akhir `RedeemConfirmationService::confirm()` **setelah** invoice + stock + mutation commit, panggil helper notifikasi (bukan di Action Livewire saja — supaya semua entry confirm otomatis push).
+- Alternatif: hanya di `VerifyRedeemTokenAction` setelah confirm — lebih tipis, tapi mudah lupa jika ada caller lain nanti.
+
+**Implementasi helper (minimal):**
+
+```php
+// pseudocode — di service atau RedeemMemberNotifier kecil
+app(NotificationService::class)->notifyUser(
+    user: $member->user, // User model member
+    title: 'Penukaran poin berhasil',
+    body: sprintf('Invoice %s — %s', $invoiceNumber, $rewardName),
+    platforms: [NotificationPlatform::MobileAppPush],
+    payload: [
+        'type' => 'redeem_invoice',
+        'invoiceId' => $invoiceId,           // UUID RedeemInvoice.id
+        // opsional mirror:
+        'invoiceNumber' => $invoiceNumber,
+        'path' => '/redeem/'.$invoiceId,
+    ],
+);
+```
+
+Aturan:
+
+- Skip diam-diam jika `member.user_id` null / user tidak ada.
+- Skip jika tidak ada `DevicePushToken` aktif — `DeliverNotificationJob` sudah mark failed; konfirmasi tetap sukses.
+- FCM credential harus configured di `config/firebase.php` (sudah dipakai web push campaigns).
+- Tidak `throw` ke caller confirm jika enqueue gagal (wrap try/catch + log).
+
+**Tes Filament:**
+
+- Feature/unit: confirm sukses → row `notifications` platform `mobile_app_push` + `data_payload.invoiceId` benar; `DeliverNotificationJob` di-dispatch (`Bus::fake`).
+- Confirm tetap sukses meski `FcmPushDriver` mock return failed / no tokens.
+
+### 8.3 api-elysia — registrasi FCM token mobile
+
+Mobile perlu menyimpan token ke `device_push_tokens` (kolom existing: `user_id`, `token`, `platform`, `device_uuid`, `revoked_at`, …).
+
+**Endpoint baru** (auth member JWT — pola sama `/api/...`):
+
+| Method | Path | Body | Efek |
+|--------|------|------|------|
+| `POST` | `/api/device/push-token` | `{ token: string, deviceUuid?: string, platform?: 'MOBILE' }` | upsert token untuk `userId` login; platform default mobile |
+| `DELETE` | `/api/device/push-token` | `{ token: string }` | soft-revoke (`revoked_at=now`) — opsional logout |
+
+Catatan Prisma: model `DevicePushToken` sudah di schema shared; samakan enum platform dengan yang dibaca `DevicePushTokenRegistry` / Filament (`MOBILE` / value yang dipakai seeder).
+
+**Tes:** happy upsert, user A tidak bisa overwrite hard milik user B (unique per user+token), revoke.
+
+### 8.4 Mobile — `expo-notifications` + deep link invoice
+
+#### 8.4.1 Dependensi & permission
+
+- `expo-notifications` (+ config plugin di `app.config.ts` jika perlu).
+- Android/iOS permission + FCM project yang sama dengan credential Filament Firebase.
+- Env: pastikan Google services / Firebase app id sesuai (dokumentasikan di `.env.example` mobile jika ada key publik).
+
+#### 8.4.2 Daftar token
+
+Setelah login sukses (dan saat app foreground + permission granted):
+
+1. Ambil Expo/FCM device push token.
+2. `POST /api/device/push-token` dengan JWT.
+3. Re-register saat token refresh / app relaunch (dedupe di server).
+
+Logout: `DELETE` revoke (opsional tapi disarankan).
+
+File usulan: `src/services/device-push.ts`, hook `use-register-push-token.ts`, panggil dari root layout auth / `(tabs)/_layout`.
+
+#### 8.4.3 Handle notifikasi → navigasi
+
+Payload FCM data (string values):
+
+```json
+{
+  "type": "redeem_invoice",
+  "invoiceId": "<uuid>",
+  "path": "/redeem/<uuid>"
+}
+```
+
+Wiring:
+
+1. **Cold start:** `Notifications.getLastNotificationResponseAsync()` di root → jika `type=redeem_invoice` → `router.replace({ pathname: '/redeem/[id]', params: { id: invoiceId } })`.
+2. **Background tap:** `addNotificationResponseReceivedListener` → sama.
+3. **Foreground:** boleh tampilkan in-app toast + tombol, atau auto-navigate jika user sedang di `redeem-qr` (opsional).
+
+Invalidasi cache React Query: `invalidateQueries` active redeem + history saat push diterima / setelah navigate.
+
+#### 8.4.4 UX di `redeem-qr`
+
+Tidak wajib polling kalau FCM andal; tetap boleh **fallback ringan**: interval poll `getActiveRedeem` — jika `null` dan push terlambat, arahkan ke history list (bukan invent new path). Catat sebagai soft fallback, bukan jalur utama.
+
+### 8.5 Kontrak payload (locked)
+
+| Key | Wajib | Keterangan |
+|-----|-------|------------|
+| `type` | ya | literal `redeem_invoice` |
+| `invoiceId` | ya | UUID = `RedeemInvoice.id` = param `/redeem/[id]` |
+| `invoiceNumber` | tidak | untuk tampilan notifikasi saja |
+| `path` | tidak | hint `'/redeem/' + invoiceId` |
+
+Mobile **hanya** navigasi jika `type === 'redeem_invoice'` dan `invoiceId` non-empty.
+
+### 8.6 Urutan implementasi Fase 8
+
+```
+8.1 Redirect Filament (kecil, independen)
+  └─▶ 8.2 NotifyUser setelah confirm (Filament)
+8.3 API register push-token (api-elysia)
+  └─▶ 8.4 Mobile expo-notifications + deep link
+8.5 QA device: confirm web → HP menerima push → buka detil invoice
+```
+
+### 8.7 Kriteria selesai (Definition of Done)
+
+- [x] Kasir konfirmasi OTP → browser Filament mendarat di **View Redeem Invoice** yang baru dibuat.
+- [x] Member dengan FCM token terdaftar menerima push title/body masuk akal. (wire + enqueue; butuh `google-services.json` lokal untuk QA device)
+- [x] Tap push (cold/background) → layar `/redeem/[id]` isi = invoice yang sama. (handler wired)
+- [x] Confirm tetap sukses bila: tidak ada token FCM, credential FCM invalid, atau job queue down (log warning saja).
+- [x] Tes otomatis: Filament redirect/notify enqueue; api-elysia upsert/revoke token; mobile deep-link mapper unit kecil (parse payload → route params).
+
+### 8.8 Out of scope Fase 8
+
+- Emergency `REFUNDED` flow
+- Push “token hampir expired” reminder
+- In-app notification center full UI (cukup FCM system tray + deep link)
+- Web Push ke browser member (hanya mobile FCM)
 
 ---
 
@@ -306,9 +485,9 @@ Scan QR di browser butuh HTTPS / permission kamera (dokumentasikan untuk kasir).
 
 | App                        | Folder / file utama                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `apps/api-elysia`          | `src/modules/redeem/`, `src/modules/otp/`                                                                                 |
-| `apps/backoffice-filament` | `Models/RedeemToken.php`, `Filament/Resources/RedeemTokens/`, `Services/Redeem/`, command `redeem:release-expired-tokens` |
-| `apps/mobile-app`          | `services/redeem.ts`, `reward-redeem-dialog`, `card/redeem-qr`, `redeem/*`, `reward/[sku]`                                |
+| `apps/api-elysia`          | `src/modules/redeem/`, `src/modules/otp/`, **(+ Fase 8)** `src/modules/device/` push-token                                |
+| `apps/backoffice-filament` | `RedeemTokens/`, `Services/Redeem/`, `redeem:release-expired-tokens`, **(+ Fase 8)** notify + redirect `RedeemInvoices/` |
+| `apps/mobile-app`          | `services/redeem.ts`, redeem screens, **(+ Fase 8)** `expo-notifications`, deep link `/redeem/[id]`                      |
 
 ## Urutan pengerjaan
 
@@ -320,4 +499,5 @@ Fase 0
 Fase 5 (job release) — boleh paralel setelah model RedeemToken (0.2) + confirm service siap
 Fase 6 (mobile) — butuh Fase 1
 Fase 7 — setelah 1–6
+Fase 8 — redirect invoice Filament + FCM deep link mobile (setelah confirm + history mobile jalan)
 ```

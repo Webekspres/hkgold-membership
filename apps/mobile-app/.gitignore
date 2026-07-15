@@ -43,3 +43,7 @@ example
 # generated native folders
 /ios
 /android
+
+# Firebase mobile credentials (same project as Filament — drop locally, do not commit)
+google-services.json
+GoogleService-Info.plist

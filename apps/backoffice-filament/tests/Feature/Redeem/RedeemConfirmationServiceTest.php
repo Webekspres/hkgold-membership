@@ -3,18 +3,22 @@
 declare(strict_types=1);
 
 use App\Enums\ActivityLogAction;
+use App\Enums\NotificationPlatform;
 use App\Enums\Role;
 use App\Exceptions\Redeem\RedeemConfirmationException;
+use App\Jobs\DeliverNotificationJob;
 use App\Jobs\PersistActivityLogJob;
 use App\Models\Branch;
 use App\Models\BranchRewardStock;
 use App\Models\Member;
+use App\Models\Notification;
 use App\Models\PointMutation;
 use App\Models\RedeemInvoice;
 use App\Models\RedeemToken;
 use App\Models\Reward;
 use App\Models\Staff;
 use App\Models\User;
+use App\Services\Notification\NotificationService;
 use App\Services\Redeem\FonnteOtpClient;
 use App\Services\Redeem\RedeemConfirmationService;
 use Database\Seeders\TransactionTypeSeeder;
@@ -311,13 +315,13 @@ it('double confirm under lock leaves exactly one invoice (race-safe guard)', fun
 
     try {
         $first = $service->confirm($code, '123456', $actor, '127.0.0.1');
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         $secondError = $e;
     }
 
     try {
         $service->confirm($code, '123456', $actor, '127.0.0.1');
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         $secondError = $e;
     }
 
@@ -332,3 +336,45 @@ it('double confirm under lock leaves exactly one invoice (race-safe guard)', fun
         ->and($fx['stock']->held_stock)->toBe(0);
 });
 
+it('enqueues mobile push with redeem_invoice payload after confirm', function (): void {
+    $fx = createRedeemFixtures();
+    $service = app(RedeemConfirmationService::class);
+
+    $result = $service->confirm($fx['token']->token_code, '123456', $fx['actor'], '127.0.0.1');
+
+    $notification = Notification::query()
+        ->where('user_id', $fx['member']->user_id)
+        ->where('platform', NotificationPlatform::MobileAppPush)
+        ->first();
+
+    expect($notification)->not->toBeNull()
+        ->and($notification?->title)->toBe('Penukaran poin berhasil')
+        ->and($notification?->data_payload)->toMatchArray([
+            'type' => 'redeem_invoice',
+            'invoiceId' => $result->invoiceId,
+            'invoiceNumber' => $result->invoiceNumber,
+            'path' => '/redeem/'.$result->invoiceId,
+        ]);
+
+    Queue::assertPushed(DeliverNotificationJob::class, function (DeliverNotificationJob $job) use ($notification): bool {
+        return $job->notificationId === $notification?->id;
+    });
+});
+
+it('still confirms when notifyUser throws (fail-soft push)', function (): void {
+    $fx = createRedeemFixtures();
+
+    $this->mock(NotificationService::class, function ($mock): void {
+        $mock->shouldReceive('notifyUser')->andThrow(new RuntimeException('queue down'));
+    });
+
+    $service = app(RedeemConfirmationService::class);
+
+    $result = $service->confirm($fx['token']->token_code, '123456', $fx['actor'], '127.0.0.1');
+
+    expect($result->invoiceId)->not->toBeEmpty()
+        ->and(RedeemInvoice::query()->count())->toBe(1);
+
+    $fx['token']->refresh();
+    expect($fx['token']->is_used)->toBeTrue();
+});

@@ -6,23 +6,29 @@ namespace App\Services\Redeem;
 
 use App\Data\Redeem\RedeemConfirmationResult;
 use App\Enums\ActivityLogAction;
+use App\Enums\NotificationPlatform;
 use App\Enums\RedeemStatus;
 use App\Enums\Role;
 use App\Exceptions\Redeem\RedeemConfirmationException;
 use App\Models\BranchRewardStock;
+use App\Models\Member;
 use App\Models\PointMutation;
 use App\Models\RedeemInvoice;
 use App\Models\RedeemToken;
 use App\Models\TransactionType;
 use App\Models\User;
 use App\Services\ActivityLog\ActivityLogger;
+use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class RedeemConfirmationService
 {
     public function __construct(
         private readonly FonnteOtpClient $otpClient,
         private readonly ActivityLogger $activityLogger,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function confirm(
@@ -134,6 +140,8 @@ class RedeemConfirmationService
                 actor: $actor,
             );
 
+            $this->notifyMemberRedeemCompleted($member, $invoice, $token);
+
             return new RedeemConfirmationResult(
                 invoiceId: $invoice->id,
                 invoiceNumber: $invoiceNumber,
@@ -146,6 +154,33 @@ class RedeemConfirmationService
                 newBalance: (int) $member->point_balance,
             );
         });
+    }
+
+    private function notifyMemberRedeemCompleted(Member $member, RedeemInvoice $invoice, RedeemToken $token): void
+    {
+        if ($member->user === null) {
+            return;
+        }
+
+        try {
+            $this->notificationService->notifyUser(
+                user: $member->user,
+                title: 'Penukaran poin berhasil',
+                body: sprintf('Invoice %s — %s', $invoice->invoice_number, $token->reward?->name ?? '-'),
+                platforms: [NotificationPlatform::MobileAppPush],
+                payload: [
+                    'type' => 'redeem_invoice',
+                    'invoiceId' => $invoice->id,
+                    'invoiceNumber' => $invoice->invoice_number,
+                    'path' => '/redeem/'.$invoice->id,
+                ],
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Gagal mengantre push redeem selesai.', [
+                'invoice_id' => $invoice->id,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     public function assertBranchAllowed(User $actor, int $tokenBranchId): void

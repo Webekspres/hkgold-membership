@@ -6,6 +6,7 @@ namespace App\Filament\Resources\RedeemTokens\Actions;
 
 use App\Enums\Role;
 use App\Exceptions\Redeem\RedeemConfirmationException;
+use App\Filament\Resources\RedeemInvoices\RedeemInvoiceResource;
 use App\Filament\Resources\RedeemTokens\Support\VerifyRedeemTokenFormSupport;
 use App\Services\Redeem\FonnteOtpClient;
 use App\Services\Redeem\RedeemConfirmationService;
@@ -172,7 +173,7 @@ class VerifyRedeemTokenAction
                     ->success()
                     ->send();
 
-                $action->getLivewire()->dispatch('$refresh');
+                $action->redirect(RedeemInvoiceResource::getUrl('view', ['record' => $result->invoiceId]));
             });
     }
 }
