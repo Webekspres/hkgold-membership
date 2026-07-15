@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\TierStatus;
-use App\Models\Branch;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -47,12 +46,11 @@ class MemberFactory extends Factory
             ? $pointBalance
             : fake()->numberBetween($pointBalance, $pointBalance + 10_000);
 
-        $branchId = Branch::query()->inRandomOrder()->value('id');
-
         return [
-            'registered_at_branch_id' => fake()->boolean(80) ? $branchId : null,
+            // Default null: picking random existing branch IDs races with RefreshDatabase on shared MySQL.
+            'registered_at_branch_id' => null,
             'address_id' => null,
-            'member_number' => 'HK'.fake()->unique()->regexify('[A-Z]{1}[0-9]{7}'),
+            'member_number' => now()->format('ym').'-'.fake()->unique()->numerify('####'),
             'phone_number' => '08'.fake()->unique()->numerify('##########'),
             'current_tier' => $tier,
             'point_balance' => $pointBalance,

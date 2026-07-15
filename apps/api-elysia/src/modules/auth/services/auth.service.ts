@@ -34,39 +34,26 @@ const normalizePhoneNumber = (phone: string): string => {
   return '+' + cleaned;
 };
 
-// Member number generation: HK + letter (A-Z) + 7 digits (0000001-9999999)
+// Member number: YYMM-NNNN (4-digit sequence resets each calendar month)
 const generateMemberNumber = async (): Promise<string> => {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const now = new Date();
+  const prefix = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  // Get last member number from database
   const lastMember = await prisma.member.findFirst({
+    where: { memberNumber: { startsWith: `${prefix}-` } },
     orderBy: { memberNumber: 'desc' },
     select: { memberNumber: true }
   });
 
-  if (!lastMember) {
-    // First member ever
-    return 'HKA0000001';
+  const lastSeq = lastMember
+    ? parseInt(lastMember.memberNumber.split('-')[1] ?? '0', 10)
+    : 0;
+
+  if (Number.isNaN(lastSeq) || lastSeq >= 9999) {
+    throw new Error('Kapasitas nomor member bulan ini penuh');
   }
 
-  const lastNumber = lastMember.memberNumber;
-  const lastLetter = lastNumber.charAt(2); // HKA -> A
-  const lastDigits = parseInt(lastNumber.slice(3)); // 0000001 -> 1
-
-  // Increment
-  if (lastDigits < 9999999) {
-    const newDigits = (lastDigits + 1).toString().padStart(7, '0');
-    return `HK${lastLetter}${newDigits}`;
-  }
-
-  // Rollover to next letter
-  const letterIndex = letters.indexOf(lastLetter);
-  if (letterIndex >= 25) {
-    throw new Error('Member number capacity exceeded');
-  }
-
-  const newLetter = letters[letterIndex + 1];
-  return `HK${newLetter}0000001`;
+  return `${prefix}-${String(lastSeq + 1).padStart(4, '0')}`;
 };
 
 // Email validation

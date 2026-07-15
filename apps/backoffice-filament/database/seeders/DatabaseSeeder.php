@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             PointInjectionBatchSeeder::class,
             PointMutationSeeder::class,
             PointAnnualArchiveSeeder::class,
+            RedeemTokenSeeder::class,
             RedeemInvoiceSeeder::class,
             ContentSeeder::class,
             NotificationSeeder::class,

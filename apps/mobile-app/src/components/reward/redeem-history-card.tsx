@@ -13,31 +13,41 @@ type RedeemHistoryCardProps = {
 };
 
 export function RedeemHistoryCard({ item }: RedeemHistoryCardProps) {
+  const imageSource = item.reward.imageUrl ? { uri: item.reward.imageUrl } : undefined;
+
   return (
     <View
       style={{ paddingHorizontal: SCREEN_HORIZONTAL_PADDING }}
       className="rounded-xl border border-stone-100 shadow-md shadow-stone-900/25">
       <View className="overflow-hidden rounded-xl bg-white">
-        <Image
-          source={item.image}
-          style={{ width: '100%', aspectRatio: 1 }}
-          contentFit="cover"
-          accessibilityLabel={item.name}
-        />
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={{ width: '100%', aspectRatio: 1 }}
+            contentFit="cover"
+            accessibilityLabel={item.reward.name}
+          />
+        ) : (
+          <View className="aspect-square w-full items-center justify-center bg-stone-100">
+            <Text variant="muted" className="text-xs">
+              Tidak ada gambar
+            </Text>
+          </View>
+        )}
 
         <View className="gap-2 p-3">
           <View className="gap-1">
             <Text variant="muted" className="text-[11px] uppercase tracking-wide">
-              {item.categoryName}
+              {item.branch.name}
             </Text>
             <Text className="text-sm font-semibold leading-snug text-stone-900" numberOfLines={2}>
-              {item.name}
+              {item.reward.name}
             </Text>
           </View>
 
           <View className="rounded-lg bg-[#fffbeb] px-2.5 py-2">
             <Text className="text-xl font-bold leading-none text-[#b45309]">
-              {item.pointsRequired.toLocaleString('id-ID')}
+              {item.pointsRedeemed.toLocaleString('id-ID')}
             </Text>
             <Text className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-[#c4841a]">
               poin

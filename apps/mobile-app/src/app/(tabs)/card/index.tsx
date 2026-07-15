@@ -1,22 +1,23 @@
+import type { Href } from 'expo-router';
+import { router } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown';
+import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown';
 import { MemberQrCard } from '@/components/card/member-qr-card';
 import { MemberWalletCard } from '@/components/home/member-wallet-card';
-// import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-card';
+import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/config/theme';
+import { useActiveRedeem } from '@/hooks/use-active-redeem';
 import { useMyProfile } from '@/hooks/use-my-profile';
-// import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
+import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
 import { copyMemberCode } from '@/lib/clipboard/copy-member-code';
-// import { getActiveRedeem } from '@/services/active-redeem';
-
-// const activeRedeem = getActiveRedeem();
-// const activeRedeemReward = mapActiveRedeemToReward(activeRedeem);
 
 export default function MemberCardScreen() {
   const { card } = useMyProfile();
+  const { activeRedeem } = useActiveRedeem();
+  const activeRedeemReward = activeRedeem ? mapActiveRedeemToReward(activeRedeem) : null;
 
   if (!card) {
     return (
@@ -57,13 +58,14 @@ export default function MemberCardScreen() {
             onPressMemberNumber={() => void copyMemberCode(card.memberNumber)}
           />
 
-          {/* TODO: Hadiah sedang diklaim - implementasi nanti */}
-          {/* <ProfileLastRewardCard
-            title="Hadiah sedang diklaim"
-            reward={activeRedeemReward}
-            footer={<ActiveRedeemCountdown expiresAt={activeRedeem.expiresAt} />}
-            onPress={() => router.push('/card/redeem-qr' as Href)}
-          /> */}
+          {activeRedeem && activeRedeemReward ? (
+            <ProfileLastRewardCard
+              title="Hadiah sedang diklaim"
+              reward={activeRedeemReward}
+              footer={<ActiveRedeemCountdown expiresAt={activeRedeem.expiresAt} />}
+              onPress={() => router.push('/card/redeem-qr' as Href)}
+            />
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </View>

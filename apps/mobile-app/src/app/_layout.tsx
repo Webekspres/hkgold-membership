@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/shared/animated-icon';
 import { AppToaster } from '@/components/shared/app-toaster';
+import { useRegisterPushToken } from '@/hooks/use-register-push-token';
 import { NAV_THEME } from '@/lib/theme';
 import { getAccessToken } from '@/services/auth';
 
@@ -27,6 +28,9 @@ function AuthGate({ children }: { children: ReactNode }) {
   const segments = useSegments();
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+
+  useRegisterPushToken(ready && hasToken);
 
   useEffect(() => {
     let active = true;
@@ -43,6 +47,7 @@ function AuthGate({ children }: { children: ReactNode }) {
         router.replace('/');
       }
 
+      setHasToken(Boolean(token));
       setReady(true);
       void SplashScreen.hideAsync();
     })();

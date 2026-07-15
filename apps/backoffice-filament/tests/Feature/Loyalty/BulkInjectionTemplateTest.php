@@ -8,9 +8,7 @@ use App\Filament\Resources\PointInjectionBatches\Actions\DownloadBulkTemplateAct
 use App\Jobs\ProcessBulkInjectionJob;
 use App\Models\Branch;
 use App\Models\ConversionRule;
-use App\Models\Media;
 use App\Models\Member;
-use App\Models\PointInjectionBatch;
 use App\Models\PointInjectionDetail;
 use App\Models\TierMember;
 use App\Models\TransactionType;
@@ -62,20 +60,20 @@ it('validates template-format sample row when demo member exists', function (): 
         ],
     );
 
+    $branch = Branch::query()->where('branch_code', 'HK01')->first()
+        ?? Branch::factory()->create([
+            'branch_code' => 'HK01',
+            'address_id' => null,
+        ]);
+
     $member = Member::factory()->create([
-        'member_number' => 'HKD0000001',
+        'member_number' => '2606-0001',
         'current_tier' => TierStatus::Silver,
         'point_balance' => 0,
         'highest_point' => 0,
         'is_suspended' => false,
+        'registered_at_branch_id' => $branch->id,
     ]);
-
-    if (! Branch::query()->where('branch_code', 'HK01')->exists()) {
-        Branch::factory()->create([
-            'branch_code' => 'HK01',
-            'address_id' => null,
-        ]);
-    }
 
     $csv = bulkCsvHeader().implode(',', [
         '15-06-2026',

@@ -59,4 +59,9 @@ class Reward extends Model
     {
         return $this->hasMany(RedeemInvoice::class);
     }
+
+    public function redeemTokens(): HasMany
+    {
+        return $this->hasMany(RedeemToken::class);
+    }
 }

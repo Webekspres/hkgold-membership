@@ -38,7 +38,7 @@ describe('Auth Module - Register Endpoint', () => {
     expect(result.user.fullName).toBe(testUser.fullName);
     expect(result.user.role).toBe('MEMBER');
     expect(result.user.isActive).toBe(true);
-    expect(result.member.memberNumber).toMatch(/^HK[A-Z]\d{7}$/);
+    expect(result.member.memberNumber).toMatch(/^\d{4}-\d{4}$/);
     expect(result.member.phoneNumber).toBe('+6281234567890'); // Normalized
     expect(result.member.currentTier).toBe('SILVER');
     expect(result.member.pointBalance).toBe(0);

@@ -3,14 +3,14 @@ import type { RewardCatalogItem } from '@/types/reward';
 
 export function mapActiveRedeemToReward(activeRedeem: ActiveRedeemItem): RewardCatalogItem {
   return {
-    id: activeRedeem.redeemId,
-    sku: activeRedeem.sku,
-    name: activeRedeem.name,
+    id: activeRedeem.reward.id,
+    sku: activeRedeem.reward.sku,
+    name: activeRedeem.reward.name,
     categoryId: 0,
-    categoryName: activeRedeem.categoryName,
+    categoryName: activeRedeem.branch.name,
     categorySlug: '',
-    pointsRequired: activeRedeem.pointsRequired,
+    pointsRequired: activeRedeem.heldPoints,
     stockRemaining: 0,
-    image: activeRedeem.image,
+    image: activeRedeem.reward.imageUrl,
   };
 }

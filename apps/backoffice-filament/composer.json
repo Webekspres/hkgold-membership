@@ -52,7 +52,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "doppler run -- npx concurrently -c \"#93c5fd,#c4b5fd,#86efac,#fdba74\" \"php artisan serve --host=0.0.0.0 --port=8800\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"npm run dev\" --names='server,bulk-queue,activity-queue,vite'"
+            "doppler run -- npx concurrently -c \"#93c5fd,#c4b5fd,#86efac,#fdba74,#f472b6\" \"php artisan serve --host=0.0.0.0 --port=8800\" \"php artisan queue:work redis --queue=bulk-injection --tries=3 --timeout=300\" \"php artisan queue:work redis --queue=activity-log --tries=3 --backoff=10,30,60\" \"php artisan schedule:work\" \"npm run dev\" --names='server,bulk-queue,activity-queue,scheduler,vite'"
         ],
         "dev:flyenv": [
             "Composer\\Config::disableProcessTimeout",

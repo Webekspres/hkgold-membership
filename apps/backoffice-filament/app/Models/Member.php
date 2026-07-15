@@ -72,6 +72,11 @@ class Member extends Model
         return $this->hasMany(RedeemInvoice::class);
     }
 
+    public function redeemTokens(): HasMany
+    {
+        return $this->hasMany(RedeemToken::class);
+    }
+
     public function phoneApprovals(): HasMany
     {
         return $this->hasMany(PhoneApproval::class);

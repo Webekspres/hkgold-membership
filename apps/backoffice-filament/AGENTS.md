@@ -246,7 +246,7 @@ app/Exceptions/                 # domain exception + error code
 
 ### Members & Staff
 
-- Format nomor member: `HK` + huruf + 7 digit — gunakan `MemberFormSupport::generateMemberNumber()`.
+- Format nomor member: `YYMM-NNNN` (contoh `2606-0001`; increment 4 digit reset tiap bulan) — gunakan `MemberFormSupport::generateMemberNumber()`.
 - Field tier/status memakai enum yang ada (`TierStatus`, dll.).
 - `Member` punya `point_balance`, `highest_point`, `current_tier` — jangan asumsikan hanya `point_balance`.
 

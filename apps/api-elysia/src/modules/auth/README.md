@@ -34,7 +34,7 @@ Register user baru (otomatis membuat User + Member).
     },
     "member": {
       "id": "uuid",
-      "memberNumber": "HKA0000001",
+      "memberNumber": "2606-0001",
       "phoneNumber": "+6281234567890",
       "currentTier": "SILVER",
       "pointBalance": 0,
@@ -50,7 +50,7 @@ Login dengan email, phone number, atau member number.
 **Request Body:**
 ```json
 {
-  "identifier": "user@example.com",  // atau "081234567890" / "HKA0000001"
+  "identifier": "user@example.com",  // atau "081234567890" / "2606-0001"
   "password": "password123"
 }
 ```
@@ -58,7 +58,7 @@ Login dengan email, phone number, atau member number.
 `identifier` diterima dalam tiga bentuk:
 - **Email** — mengandung `@` (contoh: `user@example.com`)
 - **Nomor HP** — `08xxx` atau `+62xxx` (dinormalisasi ke `+62xxx`)
-- **Nomor Member** — contoh `HKA0000001`
+- **Nomor Member** — contoh `2606-0001`
 
 **Response:** Same as register
 
@@ -90,9 +90,10 @@ Refresh access token.
 
 ## Business Rules
 
-1. **Member Number Format:** `HK` + letter (A-Z) + 7 digits (0000001-9999999)
-   - Sequential per letter
-   - Rollover: HKA9999999 → HKB0000001
+1. **Member Number Format:** `YYMM-NNNN` (contoh `2606-0001`)
+   - `YY` + `MM` = tahun & bulan daftar
+   - `NNNN` = increment 4 digit, **reset ke 0001 tiap bulan baru**
+   - Kapasitas: 9999 member per bulan
 
 2. **Phone Validation:**
    - Accept 08xxx or +62xxx

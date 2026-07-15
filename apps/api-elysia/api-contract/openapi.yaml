@@ -207,7 +207,7 @@ components:
           format: uuid
         memberNumber:
           type: string
-          example: "HKA0000001"
+          example: "2606-0001"
         phoneNumber:
           type: string
           example: "+6281234567890"
@@ -247,7 +247,7 @@ components:
           format: uuid
         memberNumber:
           type: string
-          example: "HKA0000001"
+          example: "2606-0001"
         phoneNumber:
           type: string
           example: "+6281234567890"
@@ -882,7 +882,7 @@ paths:
                     isActive: true
                   member:
                     id: "550e8400-e29b-41d4-a716-446655440001"
-                    memberNumber: "HKA0000001"
+                    memberNumber: "2606-0001"
                     phoneNumber: "+6281234567890"
                     currentTier: "SILVER"
                     pointBalance: 0
@@ -939,7 +939,7 @@ paths:
                     isActive: true
                   member:
                     id: "550e8400-e29b-41d4-a716-446655440001"
-                    memberNumber: "HKA0000001"
+                    memberNumber: "2606-0001"
                     phoneNumber: "+6281234567890"
                     currentTier: "SILVER"
                     pointBalance: 1500
@@ -1099,7 +1099,7 @@ paths:
                 message: "Profil member berhasil diambil"
                 data:
                   id: "550e8400-e29b-41d4-a716-446655440001"
-                  memberNumber: "HKA0000001"
+                  memberNumber: "2606-0001"
                   phoneNumber: "+6281234567890"
                   birthDate: "1990-05-15T00:00:00.000Z"
                   currentTier: "GOLD"
@@ -1191,7 +1191,7 @@ paths:
                 message: "Profil member berhasil diperbarui"
                 data:
                   id: "550e8400-e29b-41d4-a716-446655440001"
-                  memberNumber: "HKA0000001"
+                  memberNumber: "2606-0001"
                   phoneNumber: "+6281234567891"
                   birthDate: "1990-05-15T00:00:00.000Z"
                   currentTier: "GOLD"

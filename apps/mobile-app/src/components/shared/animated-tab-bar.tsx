@@ -181,7 +181,12 @@ export default function AnimatedTabBar() {
 
   return (
     <Tabs style={styles.tabs}>
-      <TabSlot style={styles.tabSlot} />
+      <TabSlot
+        style={[
+          styles.tabSlot,
+          { paddingBottom: 64 + Math.max(insets.bottom, 12) },
+        ]}
+      />
       <TabList
         style={[
           styles.tabList,

@@ -49,7 +49,7 @@ Do not generate controllers, Filament resources, API routes, or other files unle
 
 Analyze the table's role in the Luxury Gold Retail & Loyalty ecosystem. Do not use generic fakers blindly.
 
-- `members` → realistic Indonesian names; `member_code` like `'HK' . fake()->regexify('[A-Z]{1}[0-9]{7}')`
+- `members` → realistic Indonesian names; `member_number` like `now()->format('ym').'-'.fake()->unique()->numerify('####')` (contoh `2606-0001`)
 - `point_mutations` → gold retail amounts `fake()->numberBetween(2000000, 50000000)` and tier-appropriate points
 - `branches` → central Java branch names (Pontianak, Semarang, Solo, etc.)
 - `redeem_invoices` → `InvoiceStatus` enum values (`PENDING`, `CONFIRMED`, `CANCELLED`, `TIMEOUT`)

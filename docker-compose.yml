@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_password_super_secure
-      MYSQL_DATABASE: hkgold_backoffice_filament
+      MYSQL_DATABASE: hkgold_membership
     ports:
       - "33068:3306"
     volumes:

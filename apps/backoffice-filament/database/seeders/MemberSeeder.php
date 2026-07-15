@@ -30,9 +30,11 @@ class MemberSeeder extends Seeder
         $addressIds = Address::query()->pluck('id')->all();
         $branchIds = Branch::query()->pluck('id')->all();
 
-        if (! Member::query()->where('member_number', 'HKD0000001')->exists()) {
+        $seedMemberNumber = now()->format('ym').'-0001';
+
+        if (! Member::query()->where('member_number', $seedMemberNumber)->exists()) {
             Member::factory()->create([
-                'member_number' => 'HKD0000001',
+                'member_number' => $seedMemberNumber,
                 'address_id' => $addressIds[0] ?? null,
                 'registered_at_branch_id' => Branch::query()->where('branch_code', 'HK01')->value('id'),
                 'current_tier' => TierStatus::Silver,

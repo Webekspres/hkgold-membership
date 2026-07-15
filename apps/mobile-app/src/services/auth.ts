@@ -157,6 +157,13 @@ export async function changePassword(
 
 export async function logout(): Promise<void> {
   try {
+    const { unregisterPushToken } = await import('@/services/device-push');
+    await unregisterPushToken();
+  } catch {
+    // best-effort
+  }
+
+  try {
     await Promise.all([
       SecureStore.deleteItemAsync(KEYS.accessToken),
       SecureStore.deleteItemAsync(KEYS.refreshToken),

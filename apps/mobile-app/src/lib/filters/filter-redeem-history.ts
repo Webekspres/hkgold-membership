@@ -24,7 +24,7 @@ export function getRedeemHistoryPointsBounds(items: RedeemHistoryItem[]): Reward
     return { min: 0, max: 0 };
   }
 
-  const points = items.map((item) => item.pointsRequired);
+  const points = items.map((item) => item.pointsRedeemed);
 
   return {
     min: Math.min(...points),
@@ -36,13 +36,10 @@ export function applyRedeemHistoryFilters(
   items: RedeemHistoryItem[],
   filter: RedeemHistoryFilterState
 ): RedeemHistoryItem[] {
-  const byCategory =
-    filter.categoryIds.length === 0
-      ? items
-      : items.filter((item) => filter.categoryIds.includes(item.categoryId));
-
-  const byPoints = byCategory.filter(
-    (item) => item.pointsRequired >= filter.pointsMin && item.pointsRequired <= filter.pointsMax
+  // ponytail: API history belum expose categoryId — filter kategori diabaikan sampai kontrak ditambah
+  const byPoints = items.filter(
+    (item) =>
+      item.pointsRedeemed >= filter.pointsMin && item.pointsRedeemed <= filter.pointsMax
   );
 
   return byPoints.filter((item) => isWithinDateRange(item.redeemedAt, filter.dateRange));

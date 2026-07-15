@@ -40,7 +40,7 @@ You are constrained to these strict architectural and translation rules whenever
 
 - **Business Logic Context:** You MUST analyze the table name and its role in a Luxury Gold Retail & Loyalty Engine ecosystem.
 - **Faker Generation:** Do not use generic fakers blindly.
-  - If the table is `members`, fake realistic Indonesian names and valid formatting for `member_code` (e.g., `'HK' . fake()->regexify('[A-Z]{1}[0-9]{7}')`).
+  - If the table is `members`, fake realistic Indonesian names and valid formatting for `member_number` (e.g., `now()->format('ym').'-'.fake()->unique()->numerify('####')` → `2606-0001`).
   - If the table is `point_mutations`, fake realistic gold retail transaction amounts (e.g., `fake()->numberBetween(2000000, 50000000)`) and points following the loyalty config tiers, not single digits.
   - If the table is `branches`, use the specific context of the 17 central Java branches (e.g., Pontianak, Semarang, Solo).
   - If the table is `redeem_invoices`, fake random status according to the `InvoiceStatus` enum (`PENDING`, `CONFIRMED`, `CANCELLED`, `TIMEOUT`).
