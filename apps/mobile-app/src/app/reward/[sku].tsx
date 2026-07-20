@@ -11,6 +11,7 @@ import { Text } from '@/components/ui/text';
 import { useCreateRedeemToken } from '@/hooks/use-create-redeem-token';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useRewardDetail } from '@/hooks/use-reward-detail';
+import { filterAvailableBranchStocks } from '@/lib/reward/filter-available-branch-stocks';
 import { toast } from '@/lib/sonner';
 import type { RewardBranchStockItem } from '@/types/reward';
 
@@ -60,6 +61,8 @@ export default function RewardDetailScreen() {
       </View>
     );
   }
+
+  const availableBranchStocks = reward ? filterAvailableBranchStocks(reward.branchStocks) : [];
 
   if (isError || !reward) {
     return (
@@ -114,10 +117,10 @@ export default function RewardDetailScreen() {
 
         <View className="gap-3">
           <Text className="text-base font-semibold text-stone-900">Stok per Cabang</Text>
-          {reward.branchStocks.length === 0 ? (
-            <Text variant="muted">Belum ada stok di cabang.</Text>
+          {availableBranchStocks.length === 0 ? (
+            <Text variant="muted">Stok habis di semua cabang.</Text>
           ) : (
-            reward.branchStocks.map((stock) => (
+            availableBranchStocks.map((stock) => (
               <RewardBranchStockCard
                 key={stock.branchId}
                 stock={stock}

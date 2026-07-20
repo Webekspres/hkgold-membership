@@ -62,6 +62,10 @@ class RedeemConfirmationService
                 throw RedeemConfirmationException::tokenExpired();
             }
 
+            if ($token->released_at !== null) {
+                throw RedeemConfirmationException::tokenReleased();
+            }
+
             $this->assertBranchAllowed($actor, $token->branch_id);
 
             $member = $token->member;
@@ -101,6 +105,7 @@ class RedeemConfirmationService
                 'staff_id' => $actor->staff->id,
                 'branch_id' => $token->branch_id,
                 'reward_id' => $token->reward_id,
+                'redeem_token_id' => $token->id,
                 'points_redeemed' => $token->held_points,
                 'status' => RedeemStatus::Completed,
             ]);

@@ -55,9 +55,10 @@ export function asMemberTier(tier: string): MemberTier {
     upper === 'SILVER' ||
     upper === 'GOLD' ||
     upper === 'PLATINUM' ||
+    upper === 'ELITE' ||
     upper === 'SAPPHIRE'
   ) {
-    return upper;
+    return upper === 'SAPPHIRE' ? 'ELITE' : upper;
   }
   return 'SILVER';
 }

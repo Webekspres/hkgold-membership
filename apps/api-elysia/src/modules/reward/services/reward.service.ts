@@ -1,6 +1,11 @@
 import { prisma } from '../../../db';
 import { IRewardService } from '../interfaces/reward.interface';
 import {
+  filterInStockBranchStocks,
+  hasAvailableStock,
+  sumAvailableStock,
+} from '../lib/reward-stock';
+import {
   RewardCategoryData,
   RewardCatalogItemData,
   RewardDetailData,
@@ -9,10 +14,10 @@ import {
   GetRewardsParams,
   PaginationResponse,
   encodeCursor,
-  decodeCursor
+  decodeCursor,
 } from '../types/reward.types';
 
-export class RewardService implements IRewardService {
+class RewardService implements IRewardService {
   /**
    * Helper: Get first image URL from reward images
    */
@@ -37,25 +42,6 @@ export class RewardService implements IRewardService {
     });
 
     return images.map(img => img.media.fileUrl);
-  }
-
-  /**
-   * Helper: Calculate total available stock across branches
-   * availableStock = MAX(actualStock - heldStock, 0)
-   * stockRemaining = SUM(availableStock)
-   */
-  private async calculateStockRemaining(rewardId: string, branchId?: number): Promise<number> {
-    const stocks = await prisma.rewardBranchStock.findMany({
-      where: {
-        rewardId,
-        ...(branchId ? { branchId } : {})
-      }
-    });
-
-    return stocks.reduce((total, stock) => {
-      const available = Math.max(stock.actualStock - stock.heldStock, 0);
-      return total + available;
-    }, 0);
   }
 
   /**
@@ -86,15 +72,15 @@ export class RewardService implements IRewardService {
       }
     });
 
-    return stocks.map(stock => ({
-      branchId: stock.branchId,
-      branchName: stock.branch.name,
-      subdistrict: stock.branch.normalizedAddress?.village.subDistrict.nama || '-',
-      city: stock.branch.normalizedAddress?.village.subDistrict.city.nama || '-',
-      locationUrl: stock.branch.locationUrl,
-      actualStock: stock.actualStock,
-      heldStock: stock.heldStock
-    }));
+    return filterInStockBranchStocks(stocks).map(stock => ({
+        branchId: stock.branchId,
+        branchName: stock.branch.name,
+        subdistrict: stock.branch.normalizedAddress?.village.subDistrict.nama || '-',
+        city: stock.branch.normalizedAddress?.village.subDistrict.city.nama || '-',
+        locationUrl: stock.branch.locationUrl,
+        actualStock: stock.actualStock,
+        heldStock: stock.heldStock
+      }));
   }
 
   /**
@@ -150,78 +136,109 @@ export class RewardService implements IRewardService {
     if (params.branchId) {
       andFilters.push({
         rewardBranchStocks: {
-          some: {
-            branchId: params.branchId,
-            actualStock: { gt: 0 },
-          },
+          some: { branchId: params.branchId },
         },
       });
-    }
-
-    if (params.cursor) {
-      const decoded = decodeCursor(params.cursor);
-      if (decoded) {
-        const cursorWhere = this.buildSortCursorWhere(sortBy, sortOrder, decoded);
-        if (cursorWhere) {
-          andFilters.push(cursorWhere);
-        }
-      }
     }
 
     const orderBy = this.buildOrderBy(sortBy, sortOrder);
-
-    const rewards = await prisma.reward.findMany({
-      where: { AND: andFilters },
-      take: limit + 1,
-      orderBy,
-      include: {
-        category: true,
-        rewardImages: {
-          include: { media: true },
-          orderBy: { sortOrder: 'asc' },
-          take: 1,
-        },
-        rewardBranchStocks: true,
+    const include = {
+      category: true,
+      rewardImages: {
+        include: { media: true },
+        orderBy: { sortOrder: 'asc' as const },
+        take: 1,
       },
-    });
+      rewardBranchStocks: true,
+    };
 
-    const hasMore = rewards.length > limit;
-    const data = rewards.slice(0, limit);
+    const catalogItems: RewardCatalogItemData[] = [];
+    let scanCursor = params.cursor;
+    let dbHasMore = true;
+    // ponytail: cap DB round-trips when many consecutive OOS rows; upgrade = raise or SQL filter
+    const MAX_SCAN_ROUNDS = 10;
+    let rounds = 0;
 
-    let nextCursor: string | null = null;
-    if (hasMore && data.length > 0) {
-      const lastItem = data[data.length - 1];
-      nextCursor = encodeCursor({
-        id: lastItem.id,
-        sku: lastItem.sku,
-        name: lastItem.name,
-        pointsRequired: lastItem.pointsRequired,
+    while (catalogItems.length < limit && dbHasMore && rounds < MAX_SCAN_ROUNDS) {
+      rounds += 1;
+      const roundFilters = [...andFilters];
+      if (scanCursor) {
+        const decoded = decodeCursor(scanCursor);
+        if (decoded) {
+          const cursorWhere = this.buildSortCursorWhere(sortBy, sortOrder, decoded);
+          if (cursorWhere) {
+            roundFilters.push(cursorWhere);
+          }
+        }
+      }
+
+      const rewards = await prisma.reward.findMany({
+        where: { AND: roundFilters },
+        take: limit + 1,
+        orderBy,
+        include,
+      });
+
+      if (rewards.length === 0) {
+        dbHasMore = false;
+        break;
+      }
+
+      dbHasMore = rewards.length > limit;
+      const page = rewards.slice(0, limit);
+      let lastDbRow: (typeof page)[number] | null = null;
+
+      for (const reward of page) {
+        lastDbRow = reward;
+        if (!hasAvailableStock(reward.rewardBranchStocks, params.branchId)) {
+          continue;
+        }
+
+        catalogItems.push({
+          id: reward.id,
+          sku: reward.sku,
+          name: reward.name,
+          categoryId: reward.categoryId,
+          categoryName: reward.category.name,
+          categorySlug: reward.category.slug,
+          pointsRequired: reward.pointsRequired,
+          stockRemaining: sumAvailableStock(reward.rewardBranchStocks),
+          image: reward.rewardImages[0]?.media.fileUrl || null,
+        });
+
+        if (catalogItems.length >= limit) {
+          break;
+        }
+      }
+
+      if (catalogItems.length >= limit || !dbHasMore || !lastDbRow) {
+        break;
+      }
+
+      scanCursor = encodeCursor({
+        id: lastDbRow.id,
+        sku: lastDbRow.sku,
+        name: lastDbRow.name,
+        pointsRequired: lastDbRow.pointsRequired,
       });
     }
 
-    const catalogItems: RewardCatalogItemData[] = data.map((reward) => {
-      const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
-        const available = Math.max(stock.actualStock - stock.heldStock, 0);
-        return total + available;
-      }, 0);
-
-      return {
-        id: reward.id,
-        sku: reward.sku,
-        name: reward.name,
-        categoryId: reward.categoryId,
-        categoryName: reward.category.name,
-        categorySlug: reward.category.slug,
-        pointsRequired: reward.pointsRequired,
-        stockRemaining,
-        image: reward.rewardImages[0]?.media.fileUrl || null,
-      };
-    });
+    const lastReturned = catalogItems[catalogItems.length - 1];
+    const nextCursor = lastReturned
+      ? encodeCursor({
+          id: lastReturned.id,
+          sku: lastReturned.sku,
+          name: lastReturned.name,
+          pointsRequired: lastReturned.pointsRequired,
+        })
+      : null;
+    const hasMore =
+      dbHasMore || (catalogItems.length >= limit && rounds >= MAX_SCAN_ROUNDS);
 
     return {
       data: catalogItems,
       pagination: {
-        nextCursor,
+        nextCursor: hasMore ? nextCursor : null,
         hasMore,
         limit,
       },
@@ -310,11 +327,7 @@ export class RewardService implements IRewardService {
       return null;
     }
 
-    // Calculate stock remaining
-    const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
-      const available = Math.max(stock.actualStock - stock.heldStock, 0);
-      return total + available;
-    }, 0);
+    const stockRemaining = sumAvailableStock(reward.rewardBranchStocks);
 
     // Get all images
     const images = reward.rewardImages.map(img => img.media.fileUrl);
@@ -366,7 +379,7 @@ export class RewardService implements IRewardService {
         const rewards = await prisma.reward.findMany({
           where: { categoryId, ...eligibleWhere },
           orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-          take: 2,
+          take: 10,
           include: {
             category: true,
             rewardImages: {
@@ -378,20 +391,21 @@ export class RewardService implements IRewardService {
           },
         });
 
-        if (rewards.length === 0) {
+        const inStockRewards = rewards.filter((reward) =>
+          hasAvailableStock(reward.rewardBranchStocks),
+        );
+
+        if (inStockRewards.length === 0) {
           return null;
         }
 
-        const category = rewards[0].category;
+        const category = inStockRewards[0].category;
         return {
           id: category.id,
           name: category.name,
           slug: category.slug,
-          rewards: rewards.map((reward) => {
-            const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
-              const available = Math.max(stock.actualStock - stock.heldStock, 0);
-              return total + available;
-            }, 0);
+          rewards: inStockRewards.slice(0, 2).map((reward) => {
+            const stockRemaining = sumAvailableStock(reward.rewardBranchStocks);
 
             return {
               id: reward.id,
@@ -450,29 +464,30 @@ export class RewardService implements IRewardService {
       }
     });
 
-    return categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      rewards: category.rewards.map(reward => {
-        const stockRemaining = reward.rewardBranchStocks.reduce((total, stock) => {
-          const available = Math.max(stock.actualStock - stock.heldStock, 0);
-          return total + available;
-        }, 0);
+    return categories
+      .map(category => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        rewards: category.rewards
+          .filter((reward) => hasAvailableStock(reward.rewardBranchStocks))
+          .map(reward => {
+            const stockRemaining = sumAvailableStock(reward.rewardBranchStocks);
 
-        return {
-          id: reward.id,
-          sku: reward.sku,
-          name: reward.name,
-          categoryId: reward.categoryId,
-          categoryName: category.name,
-          categorySlug: category.slug,
-          pointsRequired: reward.pointsRequired,
-          stockRemaining,
-          image: reward.rewardImages[0]?.media.fileUrl || null
-        };
-      })
-    }));
+            return {
+              id: reward.id,
+              sku: reward.sku,
+              name: reward.name,
+              categoryId: reward.categoryId,
+              categoryName: category.name,
+              categorySlug: category.slug,
+              pointsRequired: reward.pointsRequired,
+              stockRemaining,
+              image: reward.rewardImages[0]?.media.fileUrl || null
+            };
+          })
+      }))
+      .filter((category) => category.rewards.length > 0);
   }
 }
 

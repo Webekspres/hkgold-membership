@@ -134,7 +134,7 @@ class BroadcastNotificationFormSupport
             TierStatus::Silver->value => 'Silver',
             TierStatus::Gold->value => 'Gold',
             TierStatus::Platinum->value => 'Platinum',
-            TierStatus::Sapphire->value => 'Sapphire',
+            TierStatus::Elite->value => 'Elite',
         ];
     }
 
@@ -171,7 +171,7 @@ class BroadcastNotificationFormSupport
             TierStatus::Silver => 'Silver',
             TierStatus::Gold => 'Gold',
             TierStatus::Platinum => 'Platinum',
-            TierStatus::Sapphire => 'Sapphire',
+            TierStatus::Elite => 'Elite',
             default => $tier !== '' ? $tier : '—',
         };
     }

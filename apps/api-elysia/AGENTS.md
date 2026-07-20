@@ -59,8 +59,29 @@ Sistem ini menganut prinsip *Single Currency, Multi-Path* (1 Saldo Wallet Terpus
 ## 🎁 5. Siklus Hidup Hybrid Redeem Reward Engine (Token Code Generator)
 
 Saat pelanggan memicu proses klaim kupon hadiah fisik di aplikasi seluler:
-* **Penerbitan Kode:** Lahirkan string acak alfanumerik 6–8 digit yang unik di tabel `RedeemToken`.
+* **Penerbitan Kode:** Lahirkan string acak alfanumerik **10 karakter** uppercase yang unik di tabel `RedeemToken` (contoh: `X7R92QK3TM`). Mobile menampilkan QR berisi plain `tokenCode`; kasir scan di Filament (bukan lewat endpoint API ini).
 * **Batas Waktu Dinamis (Durasi Kedaluwarsa):** Batas waktu ideal di kolom `expired_at` wajib dikunci sebesar **30 menit**. Durasi ini harus membaca variabel lingkungan (Doppler / `process.env`) secara dinamis agar nilainya dapat diubah sewaktu-waktu oleh tim operasional tanpa membongkar fungsionalitas kode program.
+* **Spesifikasi alur:** `memory/dev_phase_redeem.md` + `memory/flow_redeem_point.md` (root monorepo). Konfirmasi kasir (scan/ketik token + OTP + invoice + push FCM) dikerjakan di Filament langsung ke DB; API mobile: reserve/status/history + **cancel** (refund hold) + registrasi token perangkat.
+
+### 5.1 Registrasi Device Push Token (FCM)
+
+Modul: `src/modules/device/`. Tabel shared: `device_push_tokens` (`DevicePushToken` di Prisma).
+
+| Method | Path | Body | Peran |
+| --- | --- | --- | --- |
+| `POST` | `/api/device/push-token` | `{ token, deviceUuid?, platform? }` | Upsert token FCM/APNs untuk `userId` JWT; platform default mobile |
+| `DELETE` | `/api/device/push-token` | `{ token }` | Soft-revoke (`revoked_at`) — dipanggil saat logout mobile |
+
+Auth: JWT member. Filament mengirim push lewat `FcmPushDriver` + token di tabel ini — **jangan** invent endpoint kirim-push di api-elysia.
+
+### 5.2 Cancel & status token (member)
+
+| Method | Path | Peran |
+| --- | --- | --- |
+| `POST` | `/api/redeem/cancel` | Batalkan reservasi aktif: refund `held_points`, `held_stock -= 1`, set `released_at` |
+| `GET` | `/api/redeem/token/:redeemId/status` | `active` \| `completed` (+ `invoiceId`) \| `released` \| `expired` — untuk pull-to-refresh mobile |
+
+Guard cancel: milik member, belum `is_used`, belum `released_at`, belum expired.
 
 ---
 
@@ -101,7 +122,20 @@ Prisma / `packages/database` bisa lebih maju dari MySQL lokal. Sebelum SELECT ko
 | `Branch` | lat / lng (nearest) | **Belum ada** (`locationUrl` ada) | Tidak expose nearest geo |
 | `Member` | `birthDate` | ✅ Ada | Pastikan migrasi Laravel `birth_date` sudah dijalankan |
 
-Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware), `promotion-banner`.
+Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, `redeem`, `device` (push-token).
+
+### Reward stock visibility (mobile contract)
+
+Stok tersedia dihitung sebagai `max(actualStock - heldStock, 0)` per cabang; `stockRemaining` = jumlah seluruh cabang.
+
+| Endpoint | Perilaku stok |
+| --- | --- |
+| `GET /api/reward` | Reward dengan stok total 0 disembunyikan. Filter `branchId` menyembunyikan reward jika cabang tersebut available = 0. Pagination over-fetch hingga `limit` item in-stock (max 10 round DB). |
+| `GET /api/reward/catalog` | Sama; kategori tanpa reward in-stock tidak dikembalikan. |
+| `GET /api/reward/home` | Sama; skip reward OOS meski terbaru; ambil hingga 2 in-stock per kategori. |
+| `GET /api/reward/:sku` | Reward tetap 200 walau stok total 0 (deep link); `branchStocks` hanya cabang available > 0. |
+
+Helper shared: `src/modules/reward/lib/reward-stock.ts`. Tests: `reward-stock.test.ts` (unit, tanpa DB), `reward-stock-filter.test.ts` + `reward-home-preview.test.ts` (integration, butuh `hkgold_membership_test` migrated).
 
 Saat menambah kolom: migrasi Prisma + update OpenAPI + mapper service + CMS Filament — jangan hanya ubah TypeScript response.
 
@@ -112,4 +146,4 @@ Saat menambah kolom: migrasi Prisma + update OpenAPI + mapper service + CMS Fila
 Sebelum Anda mulai menulis kode endpoint baru, membuat interface, atau memodifikasi fungsionalitas pengontrol (*controller*), eksekusi langkah-langkah diagnostik berikut:
 1. Pastikan Doppler CLI login (`doppler login`) dan `doppler.yaml` mengarah ke `hkgoldvip` / `dev_backend`. Verifikasi secret ter-inject: `doppler secrets`.
 2. Periksa kelancaran koneksi database ke target di secret Doppler (`DATABASE_URL`).
-3. Lakukan introspeksi database (`doppler run -- bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `TransactionType`) siap melayani endpoint mobile app. Bandingkan dengan gap di §8.92
+3. Lakukan introspeksi database (`doppler run -- bunx prisma db pull` atau skema migrasi dev) untuk memastikan sinkronisasi tabel-tabel utama (`User`, `Member`, `PointMutation`, `RedeemToken`, `DevicePushToken`, `TransactionType`) siap melayani endpoint mobile app. Bandingkan dengan gap di §8.

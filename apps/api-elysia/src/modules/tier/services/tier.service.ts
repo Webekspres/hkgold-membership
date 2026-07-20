@@ -11,14 +11,14 @@ const TIER_NAMES: Record<string, string> = {
   SILVER: 'Silver',
   GOLD: 'Gold',
   PLATINUM: 'Platinum',
-  SAPPHIRE: 'Sapphire'
+  ELITE: 'Elite'
 };
 
 const TIER_COLORS: Record<string, string> = {
   SILVER: '#a8a29e',
   GOLD: '#f5c842',
   PLATINUM: '#64748b',
-  SAPPHIRE: '#4338ca'
+  ELITE: '#4338ca'
 };
 
 export class TierService implements ITierService {

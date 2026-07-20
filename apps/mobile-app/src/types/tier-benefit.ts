@@ -1,4 +1,4 @@
-export type MemberTier = 'SILVER' | 'GOLD' | 'PLATINUM' | 'SAPPHIRE';
+export type MemberTier = 'SILVER' | 'GOLD' | 'PLATINUM' | 'ELITE';
 
 export type TierBenefitRow = {
   label: string;

@@ -213,7 +213,7 @@ components:
           example: "+6281234567890"
         currentTier:
           type: string
-          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+          enum: [SILVER, GOLD, PLATINUM, ELITE]
         pointBalance:
           type: number
           example: 1500
@@ -258,7 +258,7 @@ components:
           example: "1990-05-15"
         currentTier:
           type: string
-          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+          enum: [SILVER, GOLD, PLATINUM, ELITE]
         pointBalance:
           type: number
           example: 1500
@@ -718,7 +718,7 @@ components:
           example: 1
         tierCode:
           type: string
-          enum: [SILVER, GOLD, PLATINUM, SAPPHIRE]
+          enum: [SILVER, GOLD, PLATINUM, ELITE]
           example: "GOLD"
         tierName:
           type: string

@@ -53,7 +53,7 @@ class PointInjectionDetailsTable
                         'SILVER' => 'gray',
                         'GOLD' => 'warning',
                         'PLATINUM' => 'info',
-                        'SAPPHIRE' => 'primary',
+                        'ELITE' => 'primary',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => $state?->value ?? '-')

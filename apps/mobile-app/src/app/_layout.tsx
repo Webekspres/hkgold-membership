@@ -1,18 +1,19 @@
-import '@/global.css';
+import "@/global.css";
 
-import { PortalHost } from '@rn-primitives/portal';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'nativewind';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PortalHost } from "@rn-primitives/portal";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack, ThemeProvider, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState, type ReactNode } from "react";
+import { useColorScheme } from "nativewind";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AnimatedSplashOverlay } from '@/components/shared/animated-icon';
-import { AppToaster } from '@/components/shared/app-toaster';
-import { useRegisterPushToken } from '@/hooks/use-register-push-token';
-import { NAV_THEME } from '@/lib/theme';
-import { getAccessToken } from '@/services/auth';
+import { AnimatedSplashOverlay } from "@/components/shared/animated-icon";
+import { AppToaster } from "@/components/shared/app-toaster";
+import { useRegisterPushToken } from "@/hooks/use-register-push-token";
+import { useAppFonts } from "@/lib/fonts";
+import { NAV_THEME } from "@/lib/theme";
+import { getAccessToken } from "@/services/auth";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -39,12 +40,12 @@ function AuthGate({ children }: { children: ReactNode }) {
       const token = await getAccessToken();
       if (!active) return;
 
-      const inAuthGroup = segments[0] === '(auth)';
+      const inAuthGroup = segments[0] === "(auth)";
 
       if (!token && !inAuthGroup) {
-        router.replace('/login');
+        router.replace("/login");
       } else if (token && inAuthGroup) {
-        router.replace('/');
+        router.replace("/");
       }
 
       setHasToken(Boolean(token));
@@ -63,10 +64,13 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 export default function RootLayout() {
   const { setColorScheme } = useColorScheme();
+  const fontsLoaded = useAppFonts();
 
   useEffect(() => {
-    setColorScheme('light');
+    setColorScheme("light");
   }, [setColorScheme]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>

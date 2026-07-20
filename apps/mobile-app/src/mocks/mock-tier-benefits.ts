@@ -47,15 +47,15 @@ export const MOCK_TIER_BENEFIT_SLIDES: TierBenefitSlide[] = [
     ],
   },
   {
-    tier: 'SAPPHIRE',
-    title: 'Sapphire',
+    tier: 'ELITE',
+    title: 'Elite',
     subtitle: 'Tier tertinggi dengan benefit eksklusif',
     accentColors: ['#a5b4fc', '#4338ca'],
     iconClassName: 'text-indigo-200',
     textClassName: 'text-white',
     benefits: [
       { label: 'Multiplier poin', value: '2x dari setiap transaksi' },
-      { label: 'Katalog reward', value: 'Semua reward termasuk edisi Sapphire' },
+      { label: 'Katalog reward', value: 'Semua reward termasuk edisi Elite' },
       { label: 'Event member', value: 'Undangan private showcase & gala' },
       { label: 'Layanan cabang', value: 'Layanan concierge 24/7' },
       { label: 'Promo spesial', value: 'Hadiah anniversary & surprise reward' },

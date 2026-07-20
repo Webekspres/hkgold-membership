@@ -16,7 +16,7 @@ type TierBenefitSlideCardProps = {
 };
 
 export function TierBenefitSlideCard({ slide }: TierBenefitSlideCardProps) {
-  const isLightText = slide.tier === 'SAPPHIRE';
+  const isLightText = slide.tier === 'ELITE';
 
   return (
     <LinearGradient

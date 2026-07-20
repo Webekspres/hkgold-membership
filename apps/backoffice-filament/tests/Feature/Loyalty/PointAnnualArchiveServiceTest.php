@@ -159,13 +159,13 @@ it('rolls back all changes when archive process fails', function (): void {
     $failingLogger
         ->shouldReceive('log')
         ->once()
-        ->andThrow(new \RuntimeException('forced failure'));
+        ->andThrow(new RuntimeException('forced failure'));
     app()->instance(ActivityLogger::class, $failingLogger);
 
     $service = app(PointAnnualArchiveService::class);
 
     expect(fn () => $service->archive($admin, '127.0.0.1', $targetYear))
-        ->toThrow(\RuntimeException::class, 'forced failure');
+        ->toThrow(RuntimeException::class, 'forced failure');
 
     $member->refresh();
 

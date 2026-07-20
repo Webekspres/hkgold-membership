@@ -33,4 +33,15 @@ export type RedeemErrorCode =
   | 'MEMBER_SUSPENDED'
   | 'INSUFFICIENT_POINTS'
   | 'TOKEN_NOT_FOUND'
+  | 'TOKEN_ALREADY_USED'
+  | 'TOKEN_ALREADY_RELEASED'
+  | 'TOKEN_ALREADY_ACTIVE'
+  | 'TOKEN_EXPIRED'
   | 'HISTORY_NOT_FOUND';
+
+export type RedeemTokenStatusKind = 'active' | 'completed' | 'released' | 'expired';
+
+export type RedeemTokenStatus = {
+  status: RedeemTokenStatusKind;
+  invoiceId?: string;
+};

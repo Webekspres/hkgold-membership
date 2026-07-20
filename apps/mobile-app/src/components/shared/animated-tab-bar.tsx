@@ -53,14 +53,14 @@ const TABS: TabItem[] = [
     name: "reward",
     href: "/reward",
     label: "Reward",
-    labelWidth: 54, // "Reward" lebih panjang
+    labelWidth: 60, // "Reward" lebih panjang
     icon: { ios: "gift.fill", android: "redeem", web: "redeem" },
   },
   {
     name: "profile",
     href: "/profile",
     label: "Profil",
-    labelWidth: 40,
+    labelWidth: 48,
     icon: { ios: "person.fill", android: "person", web: "person" },
   },
 ];
@@ -139,12 +139,20 @@ function AnimatedTabButton({
 
       <View style={styles.tabContent}>
         {isFocused ? (
-          <SymbolView name={icon} size={TAB_ICON_SIZE} tintColor={TAB_TEXT_COLOR} />
+          <SymbolView
+            name={icon}
+            size={TAB_ICON_SIZE}
+            tintColor={TAB_TEXT_COLOR}
+          />
         ) : (
           <MaskedView
             style={styles.iconGradientMask}
             maskElement={
-              <SymbolView name={icon} size={TAB_ICON_SIZE} tintColor="#000000" />
+              <SymbolView
+                name={icon}
+                size={TAB_ICON_SIZE}
+                tintColor="#000000"
+              />
             }
           >
             <LinearGradient

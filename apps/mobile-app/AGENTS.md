@@ -26,7 +26,9 @@ Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi s
 
 **Handoff chat baru:** Baca file ini **sebelum** mengubah kode. Ini adalah sumber kebenaran untuk struktur folder, konvensi import, routing, dan status implementasi mobile app.
 
-**Branch Git aktif:** `mobile` di monorepo `hkgold-membership` (`apps/mobile-app/`).
+**Branch Git aktif:** biasanya `dev` (atau `mobile`) di monorepo `hkgold-membership` (`apps/mobile-app/`).
+
+**Spesifikasi redeem:** `memory/dev_phase_redeem.md` + `memory/flow_redeem_point.md` (root monorepo) — sumber alur reserve / OTP / invoice / FCM.
 
 ---
 
@@ -34,7 +36,7 @@ Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi s
 
 ### Fase saat ini
 
-Struktur `src/` stabil. **Auth + sebagian besar konten sudah wired ke `apps/api-elysia`** via `axios` + React Query. Sisa mock: home cabang terdekat, home katalog reward, redeem (tombol dummy).
+Struktur `src/` stabil. **Auth + konten + redeem + registrasi FCM token** sudah wired ke `apps/api-elysia` via `axios` + React Query. Sisa mock: home cabang terdekat, home katalog reward.
 
 | Area | Status | Catatan |
 | --- | --- | --- |
@@ -47,10 +49,12 @@ Struktur `src/` stabil. **Auth + sebagian besar konten sudah wired ke `apps/api-
 | Home cabang terdekat | 🟡 mock | API belum punya lat/lng / nearest |
 | Home katalog reward | 🟡 mock | list tab Reward sudah API |
 | List + detail Berita | ✅ API | search debounce + date filter; detail `/berita/[id]` (UUID) |
-| List + detail Event | ✅ API | sama; detail `/events/[id]`; **tanpa** lokasi/maps (schema `Content` tidak punya) |
+| List + detail Event | ✅ API | sama; detail `/events/[id]`; lokasi/maps jika field terisi |
 | List Cabang | ✅ API | `q` + filter kota; infinite scroll |
-| List + detail Reward | ✅ API | search + filter kategori/poin + **sort** sku/name/points; redeem UI dummy |
-| Tab Card | 🔲 | `ComingSoonScreen` |
+| List + detail Reward | ✅ API | search + filter + sort; list/catalog/home dari API **tanpa** reward stok 0; detail tampil cabang available > 0 saja (deep link stok habis → info reward + pesan stok habis) |
+| Redeem (reserve / active / history / detail / cancel) | ✅ API | `/redeem`, `/redeem/[id]`; QR redeem di `/card/redeem-qr` (plain `tokenCode` untuk scan kasir Filament); cancel + pull-refresh; profil highlight pending/selesai |
+| Push FCM (post-confirm invoice) | ✅ wire | Register token + deep link; **bukan** Expo Go — lihat §5 |
+| Tab Card | ✅ API | `(tabs)/card` — kartu member + QR; `/card/redeem-qr` saat ada reservasi aktif |
 | CMS hub `/cms` | 🔲 | `ComingSoonScreen` |
 
 ### Gap schema / kontrak (jangan asumsikan field ada)
@@ -67,13 +71,13 @@ Struktur `src/` stabil. **Auth + sebagian besar konten sudah wired ke `apps/api-
 ### Langkah berikutnya (prioritas wajar)
 
 1. Wire home nearest branch + home reward catalog (butuh keputusan API / tetap mock).
-2. Redeem flow nyata (API token) — tombol sekarang toast/dummy.
-3. Tab Card (QR) + CMS hub.
-4. Setelah CMS migrasi: `linkUrl` banner, lokasi event, (opsional) lat/lng cabang, sync `birth_date`.
+2. CMS hub.
+3. QA FCM di **development build** (bukan Expo Go) dengan `google-services.json` / `GoogleService-Info.plist` lokal.
+4. (Opsional) lat/lng cabang untuk nearest; proteksi suspended di UI; ledger mutasi poin di app.
 
-### Target jangka panjang (belum diimplementasi)
+### Target jangka panjang (belum / parsial)
 
-Ledger mutasi poin, pelacakan redeem OTP, proteksi suspended di UI, demo mode tamu. Rute baru ikut pola grup Expo Router tanpa ubah fondasi stack §2.
+Proteksi suspended di UI, demo mode tamu, in-app notification center. Rute baru ikut pola grup Expo Router tanpa ubah fondasi stack §2.
 
 ### Fondasi teknis (ringkas)
 
@@ -103,6 +107,7 @@ Anda **wajib** mematuhi stack berikut. Jangan mengganti dengan alternatif tanpa 
 | Slider poin | @react-native-community/slider | Filter reward (dua slider min/max) |
 | Dropdown | react-native-element-dropdown | Filter kota cabang |
 | Dialog | @rn-primitives/dialog + RNR `dialog` | Redeem confirmation |
+| Push (FCM/APNs) | **expo-notifications** | Token device + listener; **hanya** di luar Expo Go (lihat §5) |
 
 ### Server state & HTTP (sudah terpasang)
 
@@ -111,7 +116,7 @@ Anda **wajib** mematuhi stack berikut. Jangan mengganti dengan alternatif tanpa 
 | Server state | **@tanstack/react-query** | List infinite, home cache, profile |
 | HTTP | **axios** | `src/lib/api-client.ts` + interceptor JWT |
 | Secure storage | **expo-secure-store** | JWT |
-| QR digital card | **react-native-qrcode-svg** | Kartu member (tab Card — belum) |
+| QR digital card | **react-native-qrcode-svg** | Kartu member (`MemberQrCard`) + layar redeem (`QrCodeCard` di `/card/redeem-qr`) |
 
 Instal dependensi baru dengan `npx expo install <package>` agar versi kompatibel SDK 56.
 
@@ -148,7 +153,9 @@ apps/mobile-app/
     │   ├── (tabs)/
     │   │   ├── _layout.tsx      # Native tabs wrapper
     │   │   ├── index.tsx        # Home / dasbor member
-    │   │   ├── card.tsx
+    │   │   ├── card/
+    │   │   │   ├── index.tsx        # Kartu member
+    │   │   │   └── redeem-qr.tsx    # QR redeem aktif
     │   │   └── profile.tsx
     │   ├── events/
     │   │   ├── index.tsx        # List event
@@ -161,6 +168,9 @@ apps/mobile-app/
     │   ├── reward/
     │   │   ├── index.tsx
     │   │   └── [sku].tsx
+    │   ├── redeem/
+    │   │   ├── index.tsx        # Active / history redeem
+    │   │   └── [id].tsx         # Detail invoice (UUID)
     │   └── cms.tsx
     ├── components/
     │   ├── ui/                  # Komponen RNR (button, text, card, input, …)
@@ -176,12 +186,13 @@ apps/mobile-app/
     │   └── layout/              # grid, carousel, screen-layout tokens
     ├── mocks/                   # Fixture sisa (home nearest/catalog, dll.)
     ├── types/                   # Shared domain types
-    ├── services/                # Facade HTTP / mock tipis
-    ├── hooks/                   # React Query hooks per domain + use-debounced-value
+    ├── services/                # Facade HTTP (auth, redeem, device-push, …)
+    ├── hooks/                   # React Query + use-register-push-token
     ├── lib/
     │   ├── api-client.ts        # axios + JWT interceptor
     │   ├── filters/             # filter-events, filter-news, filter-rewards, …
     │   ├── format/              # format-event-date, format-news-date, …
+    │   ├── notifications/       # handle-redeem-push (deep link payload FCM)
     │   ├── utils.ts             # cn() helper
     │   ├── theme.ts             # THEME + NAV_THEME (stone)
     │   ├── date-range-filter.ts
@@ -237,7 +248,7 @@ Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, 
 
 - **Detail konten:** `ContentDetailScreen` + `ContentDetailImageSlider` (rasio 1:1) — dipakai event, berita, reward.
 - **CTA emas:** `GoldButton` (`@/components/shared/gold-button`) — gradien dari `@/config/brand`.
-- **Placeholder:** `ComingSoonScreen` — tab Card, CMS, fallback detail tidak ditemukan.
+- **Placeholder:** `ComingSoonScreen` — CMS, fallback detail tidak ditemukan.
 - **Filter tanggal:** `DateRangeFilterModal` → state `DateRange` dari `@/lib/date-range-filter`.
 - **Search list:** `SearchInput` + debounce 500ms; kirim `q` hanya jika panjang **> 2**.
 - **Layout horizontal:** `SCREEN_HORIZONTAL_PADDING` dari `@/constants/layout/screen-layout`.
@@ -247,7 +258,8 @@ Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, 
 | URL | File | Keterangan |
 | --- | --- | --- |
 | `/` | `(tabs)/index` | Home member |
-| `/card` | `(tabs)/card` | Coming soon |
+| `/card` | `(tabs)/card` | Kartu member + QR |
+| `/card/redeem-qr` | `(tabs)/card/redeem-qr` | QR redeem aktif (`tokenCode` 10 char — discan kasir di backoffice) |
 | `/profile` | `(tabs)/profile` | Profile + tier (API) |
 | `/login`, `/register` | `(auth)/login`, `(auth)/register` | Route group — URL tanpa `(auth)` |
 | `/events` | `events/index` | List event |
@@ -312,6 +324,12 @@ Gunakan `@/components/ui/text` dengan variant RNR (`h1`, `small`, `muted`, `code
   - `import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigation'`
 - **Dokumentasi migrasi:** https://docs.expo.dev/router/migrate/sdk-55-to-56/
 - **Web bundler:** Metro (`app.json` → `web.bundler: "metro"`) — hanya untuk dev; produksi fokus native.
+- **Push / `expo-notifications` (wajib):**
+  - Remote push **tidak didukung di Expo Go** (Android SDK 53+): import barrel `expo-notifications` bisa **throw** (side-effect auto-registration).
+  - Di Expo Go: **jangan** static-import `expo-notifications`. Guard dengan `isRunningInExpoGo()`; load dinamis hanya di luar Expo Go (`device-push.ts`, `use-register-push-token.ts`).
+  - Uji FCM nyata: **development build** / EAS (`npx expo run:android` / `run:ios`), bukan Expo Go.
+  - Kredensial client: `google-services.json` (Android) + `GoogleService-Info.plist` (iOS) — **project Firebase yang sama** dengan FCM Filament. **Bukan** Service Account JSON string di env mobile.
+  - File kredensial client di-gitignore; jangan commit.
 
 ---
 
@@ -361,11 +379,25 @@ Jangan ubah import di screen saat API siap — **ganti implementasi di `src/serv
 | Konten | `GET /api/content?type=NEWS\|EVENT` (`q`, `dateFrom`, `dateTo`, cursor); `GET /api/content/:id` |
 | Banner | `GET /api/promotion-banner` |
 | Cabang | `GET /api/branch`, `GET /api/branch/cities` |
-| Reward | `GET /api/reward` (`search`, filter, `sortBy`/`sortOrder`), `GET /api/reward/categories`, `GET /api/reward/:sku` |
+| Reward | `GET /api/reward` (`search`, filter, `sortBy`/`sortOrder`; hanya in-stock), `GET /api/reward/categories`, `GET /api/reward/:sku` (detail boleh stok habis; `branchStocks` filtered server-side, mobile guard `filterAvailableBranchStocks`) |
+| Redeem | `POST /api/redeem/token`, `GET /api/redeem/active`, `POST /api/redeem/cancel`, `GET /api/redeem/token/:id/status`, history |
+| Device push | `POST /api/device/push-token`, `DELETE /api/device/push-token` (JWT member) |
+
+### Push FCM (post-confirm redeem)
+
+Setelah kasir konfirmasi OTP di Filament (scan/ketik token di wizard Antrean Kupon), member dapat push `MobileAppPush` (fail-soft di server). Payload data (string): `type=redeem_invoice`, `invoiceId=<uuid>` → navigasi `/redeem/[id]`.
+
+| File | Peran |
+| --- | --- |
+| `src/services/device-push.ts` | Ambil FCM/APNs token → `POST /api/device/push-token`; revoke saat logout |
+| `src/hooks/use-register-push-token.ts` | Register saat login + listener tap notifikasi |
+| `src/lib/notifications/handle-redeem-push.ts` | Parse payload → route Expo Router |
+
+Invalidasi React Query `active-redeem` + `redeem-history` saat tap push / setelah navigate.
 
 ### Domain data (referensi schema)
 
-Member, poin, tier (`SILVER` / `GOLD` / `PLATINUM` / `SAPPHIRE`), redeem token & invoice, konten CMS, banner promosi — model di `packages/database/schema.prisma`. Lihat gap schema di §1 sebelum menambah field UI.
+Member, poin, tier (`SILVER` / `GOLD` / `PLATINUM` / `ELITE`), redeem token & invoice, konten CMS, banner promosi — model di `packages/database/schema.prisma`. Lihat gap schema di §1 sebelum menambah field UI.
 
 ### Media
 

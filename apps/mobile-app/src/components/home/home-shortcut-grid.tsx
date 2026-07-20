@@ -7,19 +7,18 @@ import { Platform, Pressable, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
 import { HOME_SHORTCUTS } from "@/config/home-shortcuts";
+import {
+  GOLD_GRADIENT_COLORS,
+  GOLD_GRADIENT_SHORTCUT_END,
+  GOLD_GRADIENT_SHORTCUT_START,
+} from "@/config/brand";
 import { cn } from "@/lib/utils";
 
 cssInterop(LinearGradient, { className: "style" });
 
 const ICON_COLOR = "#ffffff";
 const SHORTCUT_SIZE = 44;
-const SHORTCUT_ICON = 16;
-/** Referensi mockup: kuning terang → amber dalam. */
-export const SHORTCUT_GRADIENT = ["#D1A13B", "#ebca86", "#9A6B1F"] as [
-  string,
-  string,
-  string,
-];
+const SHORTCUT_ICON = 20;
 
 type HomeShortcutGridProps = {
   className?: string;
@@ -53,9 +52,9 @@ export function HomeShortcutGrid({ className }: HomeShortcutGridProps) {
                 }
               >
                 <LinearGradient
-                  colors={SHORTCUT_GRADIENT}
-                  start={{ x: 0.15, y: 0 }}
-                  end={{ x: 0.85, y: 1 }}
+                  colors={[...GOLD_GRADIENT_COLORS]}
+                  start={GOLD_GRADIENT_SHORTCUT_START}
+                  end={GOLD_GRADIENT_SHORTCUT_END}
                   className="items-center justify-center rounded-full"
                   style={{
                     height: SHORTCUT_SIZE,

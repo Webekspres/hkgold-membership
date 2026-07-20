@@ -21,7 +21,7 @@ class TierMemberSeeder extends Seeder
             [TierStatus::Silver, 0, 1000],
             [TierStatus::Gold, 1001, 2000],
             [TierStatus::Platinum, 2001, 4000],
-            [TierStatus::Sapphire, 4001, 99999],
+            [TierStatus::Elite, 4001, 99999],
         ];
 
         foreach ($tiers as [$tier, $minPoints, $maxPoints]) {
@@ -56,10 +56,10 @@ class TierMemberSeeder extends Seeder
                 ['title' => 'Bonus poin transaksi', 'description' => 'Tambahan poin pada transaksi tertentu sesuai ketentuan.'],
                 ['title' => 'Akses event eksklusif', 'description' => 'Undangan acara dan preview koleksi terbatas.'],
             ],
-            TierStatus::Sapphire->value => [
+            TierStatus::Elite->value => [
                 ['title' => 'Personal shopping assistant', 'description' => 'Pendampingan khusus untuk pemilihan koleksi premium.'],
                 ['title' => 'Undangan private sale', 'description' => 'Akses penjualan privat sebelum dibuka ke publik.'],
-                ['title' => 'Benefit VIP lengkap', 'description' => 'Semua benefit tier di bawahnya plus privilege Sapphire.'],
+                ['title' => 'Benefit VIP lengkap', 'description' => 'Semua benefit tier di bawahnya plus privilege Elite.'],
             ],
         ];
 

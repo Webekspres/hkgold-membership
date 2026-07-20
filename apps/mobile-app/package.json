@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/libre-baskerville": "^0.4.3",
+    "@expo-google-fonts/rubik": "^0.4.2",
     "@expo/ui": "~56.0.18",
     "@react-native-community/slider": "^5.2.0",
     "@react-native-masked-view/masked-view": "0.3.2",

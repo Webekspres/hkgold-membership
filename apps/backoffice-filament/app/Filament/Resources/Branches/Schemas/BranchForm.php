@@ -67,7 +67,7 @@ class BranchForm
                 Section::make('Alamat')
                     ->columnSpanFull()
                     ->columns(3)
-                     ->collapsible()
+                    ->collapsible()
                     ->schema([
                         TextInput::make('location_url')
                             ->label('Link Google Maps')

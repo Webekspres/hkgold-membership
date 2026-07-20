@@ -37,7 +37,7 @@ class MemberInfolist
                                 TierStatus::Silver => 'Silver',
                                 TierStatus::Gold => 'Gold',
                                 TierStatus::Platinum => 'Platinum',
-                                TierStatus::Sapphire => 'Sapphire',
+                                TierStatus::Elite => 'Elite',
                             }),
                     ]),
                 Section::make('Kontak & Akun')

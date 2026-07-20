@@ -18,6 +18,7 @@ use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -87,7 +88,11 @@ class AppPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn (): \Illuminate\Contracts\View\View => view('filament.partials.firebase-web-push'),
+                fn (): View => view('filament.partials.firebase-web-push'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): View => view('filament.partials.redeem-token-scanner-assets'),
             );
     }
 }

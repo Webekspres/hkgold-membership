@@ -25,7 +25,7 @@ export const TIER_ICON_ASSETS: Record<MemberTier, ImageSource> = {
   SILVER: require('@/assets/media/tier/tier-silver.webp'),
   GOLD: require('@/assets/media/tier/tier-gold.webp'),
   PLATINUM: require('@/assets/media/tier/tier-platinum.webp'),
-  SAPPHIRE: require('@/assets/media/tier/tier-sapphire.webp'),
+  ELITE: require('@/assets/media/tier/tier-elite.webp'),
 };
 
 export function getTierIconSource(tier: MemberTier | string): ImageSource {

@@ -38,7 +38,7 @@ class MemberFactory extends Factory
             TierStatus::Silver->value => fake()->numberBetween(0, 49),
             TierStatus::Gold->value => fake()->numberBetween(50, 199),
             TierStatus::Platinum->value => fake()->numberBetween(200, 499),
-            TierStatus::Sapphire->value => fake()->numberBetween(500, 2000),
+            TierStatus::Elite->value => fake()->numberBetween(500, 2000),
         ];
 
         $pointBalance = $pointsByTier[$tier->value];

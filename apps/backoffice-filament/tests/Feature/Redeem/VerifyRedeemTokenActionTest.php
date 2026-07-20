@@ -80,6 +80,60 @@ function createVerifyActionFixtures(): array
     ];
 }
 
+it('normalizes token codes from plain, lowercase, and noisy scan payloads', function (): void {
+    expect(VerifyRedeemTokenFormSupport::normalizeTokenCode('WIZARDTOK1'))->toBe('WIZARDTOK1')
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode('  wizardtok1  '))->toBe('WIZARDTOK1')
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode("WIZARDTOK1\n"))->toBe('WIZARDTOK1')
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode('prefix-WIZARDTOK1-suffix'))->toBe('WIZARDTOK1')
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode('https://hkgold.test/redeem?token=WIZARDTOK1'))->toBe('WIZARDTOK1')
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode('SHORT'))->toBeNull()
+        ->and(VerifyRedeemTokenFormSupport::normalizeTokenCode(''))->toBeNull();
+});
+
+it('preview view data returns error for missing token', function (): void {
+    $preview = VerifyRedeemTokenFormSupport::buildPreviewViewData(['token_code' => '']);
+
+    expect($preview['error'])->toBe('Masukkan kode token pada langkah sebelumnya.')
+        ->and($preview['sections'])->toBeEmpty();
+});
+
+it('otp step view data returns snapshot fields for valid token', function (): void {
+    $fx = createVerifyActionFixtures();
+
+    $otpStep = VerifyRedeemTokenFormSupport::buildOtpStepViewData([
+        'token_code' => $fx['token']->token_code,
+    ]);
+
+    expect($otpStep['error'])->toBeNull()
+        ->and($otpStep['tokenCode'])->toBe($fx['token']->token_code)
+        ->and($otpStep['memberNumber'])->toBe((string) $fx['member']->member_number)
+        ->and($otpStep['rewardName'])->toBe((string) $fx['token']->reward?->name)
+        ->and($otpStep['pointsLabel'])->toBe('1.000 pts')
+        ->and($otpStep['otpStatus'])->toBe('SUCCESS')
+        ->and($otpStep['maskedPhone'])->toMatch('/0812\*\*\*\*890/');
+});
+
+it('masks phone numbers for otp step display', function (): void {
+    expect(VerifyRedeemTokenFormSupport::maskPhoneNumber('081234567890'))->toBe('0812****890')
+        ->and(VerifyRedeemTokenFormSupport::maskPhoneNumber('62'))->toBe('****');
+});
+
+it('resend redeem otp sends via fonnte client', function (): void {
+    $fx = createVerifyActionFixtures();
+
+    $this->mock(FonnteOtpClient::class, function ($mock) use ($fx): void {
+        $mock->shouldReceive('send')
+            ->once()
+            ->with('081234567890', $fx['token']->token_code)
+            ->andReturnNull();
+    });
+
+    $token = VerifyRedeemTokenFormSupport::findAvailableToken($fx['token']->token_code);
+    expect($token)->not->toBeNull();
+
+    VerifyRedeemTokenFormSupport::sendRedeemOtp($token);
+});
+
 it('wizard happy path via FormSupport + confirmation service', function (): void {
     $fx = createVerifyActionFixtures();
 
@@ -87,11 +141,19 @@ it('wizard happy path via FormSupport + confirmation service', function (): void
     expect($found)->not->toBeNull()
         ->and($found?->id)->toBe($fx['token']->id);
 
-    $preview = VerifyRedeemTokenFormSupport::buildPreviewHtml([
+    $preview = VerifyRedeemTokenFormSupport::buildPreviewViewData([
         'token_code' => $fx['token']->token_code,
     ]);
-    expect($preview)->toContain($fx['token']->token_code)
-        ->and($preview)->toContain((string) $fx['member']->member_number);
+    expect($preview['error'])->toBeNull()
+        ->and($preview['sections'])->not->toBeEmpty();
+
+    $flatValues = collect($preview['sections'])
+        ->flatMap(fn (array $section): array => $section['rows'])
+        ->pluck('value')
+        ->implode(' ');
+
+    expect($flatValues)->toContain($fx['token']->token_code)
+        ->and($flatValues)->toContain((string) $fx['member']->member_number);
 
     $service = app(RedeemConfirmationService::class);
     $result = $service->confirm(

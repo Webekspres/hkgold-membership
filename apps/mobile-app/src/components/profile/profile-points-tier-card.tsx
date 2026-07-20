@@ -33,7 +33,7 @@ const TIER_TEXT_COLORS: Record<MemberTier, string> = {
   SILVER: "text-stone-200",
   GOLD: "text-[#f5c842]",
   PLATINUM: "text-slate-200",
-  SAPPHIRE: "text-indigo-200",
+  ELITE: "text-indigo-200",
 };
 
 function formatPoints(points: number) {

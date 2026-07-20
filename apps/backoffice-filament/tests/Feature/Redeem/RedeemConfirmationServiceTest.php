@@ -127,7 +127,8 @@ it('confirms redeem happy path and writes invoice + mutation + stock', function 
     $invoice = RedeemInvoice::query()->where('invoice_number', $result->invoiceNumber)->firstOrFail();
     expect($invoice->points_redeemed)->toBe(1000)
         ->and($invoice->member_id)->toBe($fx['member']->id)
-        ->and($invoice->staff_id)->toBe($fx['staff']->id);
+        ->and($invoice->staff_id)->toBe($fx['staff']->id)
+        ->and($invoice->redeem_token_id)->toBe($fx['token']->id);
 
     $mutation = PointMutation::query()
         ->where('receipt_number', $result->invoiceNumber)
@@ -169,6 +170,32 @@ it('rejects expired token without writes', function (): void {
 
     $fx['token']->refresh();
     expect($fx['token']->is_used)->toBeFalse();
+});
+
+it('rejects released (cancelled) token without writes', function (): void {
+    $fx = createRedeemFixtures();
+    $fx['token']->update(['released_at' => now()]);
+
+    $balanceBefore = (int) $fx['member']->fresh()->point_balance;
+    $actualBefore = (int) $fx['stock']->fresh()->actual_stock;
+    $heldBefore = (int) $fx['stock']->fresh()->held_stock;
+
+    $service = app(RedeemConfirmationService::class);
+
+    expect(fn () => $service->confirm($fx['token']->token_code, '123456', $fx['actor'], '127.0.0.1'))
+        ->toThrow(RedeemConfirmationException::class, 'Token redeem sudah dibatalkan.');
+
+    expect(RedeemInvoice::query()->count())->toBe(0)
+        ->and(PointMutation::query()->count())->toBe(0);
+
+    $fx['token']->refresh();
+    $fx['stock']->refresh();
+    $fx['member']->refresh();
+
+    expect($fx['token']->is_used)->toBeFalse()
+        ->and($fx['member']->point_balance)->toBe($balanceBefore)
+        ->and($fx['stock']->actual_stock)->toBe($actualBefore)
+        ->and($fx['stock']->held_stock)->toBe($heldBefore);
 });
 
 it('rejects store manager from wrong branch', function (): void {

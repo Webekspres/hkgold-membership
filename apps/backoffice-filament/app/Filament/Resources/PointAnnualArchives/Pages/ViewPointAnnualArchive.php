@@ -79,7 +79,7 @@ class ViewPointAnnualArchive extends ViewRecord implements HasTable
                         TierStatus::Silver => 'Silver',
                         TierStatus::Gold => 'Gold',
                         TierStatus::Platinum => 'Platinum',
-                        TierStatus::Sapphire => 'Sapphire',
+                        TierStatus::Elite => 'Elite',
                     })
                     ->sortable(),
 
@@ -96,7 +96,7 @@ class ViewPointAnnualArchive extends ViewRecord implements HasTable
                         TierStatus::Silver->value => 'Silver',
                         TierStatus::Gold->value => 'Gold',
                         TierStatus::Platinum->value => 'Platinum',
-                        TierStatus::Sapphire->value => 'Sapphire',
+                        TierStatus::Elite->value => 'Elite',
                     ]),
             ])
             ->actions([

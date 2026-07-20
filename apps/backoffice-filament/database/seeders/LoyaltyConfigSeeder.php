@@ -19,7 +19,7 @@ class LoyaltyConfigSeeder extends Seeder
             [TierStatus::Silver, 10000],
             [TierStatus::Gold, 12500],
             [TierStatus::Platinum, 15000],
-            [TierStatus::Sapphire, 20000],
+            [TierStatus::Elite, 20000],
         ];
 
         foreach ($configs as [$tier, $multiplier]) {

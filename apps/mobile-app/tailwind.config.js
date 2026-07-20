@@ -1,5 +1,20 @@
 const { hairlineWidth } = require('nativewind/theme');
 
+const FONT = {
+  sans: {
+    regular: 'Rubik_400Regular',
+    medium: 'Rubik_500Medium',
+    semibold: 'Rubik_600SemiBold',
+    bold: 'Rubik_700Bold',
+  },
+  serif: {
+    regular: 'LibreBaskerville_400Regular',
+    medium: 'LibreBaskerville_500Medium',
+    semibold: 'LibreBaskerville_600SemiBold',
+    bold: 'LibreBaskerville_700Bold',
+  },
+};
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
@@ -64,7 +79,53 @@ module.exports = {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+      fontFamily: {
+        sans: [FONT.sans.regular],
+        'libre-baskerville': [FONT.serif.regular],
+      },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    function ({ addUtilities }) {
+      addUtilities({
+        '.font-sans': {
+          fontFamily: FONT.sans.regular,
+          fontWeight: '400',
+        },
+        '.font-libre-baskerville': {
+          fontFamily: FONT.serif.regular,
+          fontWeight: '400',
+        },
+        '.font-libre-baskerville-medium': {
+          fontFamily: FONT.serif.medium,
+          fontWeight: '400',
+        },
+        '.font-libre-baskerville-semibold': {
+          fontFamily: FONT.serif.semibold,
+          fontWeight: '400',
+        },
+        '.font-libre-baskerville-bold': {
+          fontFamily: FONT.serif.bold,
+          fontWeight: '400',
+        },
+        '.font-medium': {
+          fontFamily: FONT.sans.medium,
+          fontWeight: '400',
+        },
+        '.font-semibold': {
+          fontFamily: FONT.sans.semibold,
+          fontWeight: '400',
+        },
+        '.font-bold': {
+          fontFamily: FONT.sans.bold,
+          fontWeight: '400',
+        },
+        '.font-extrabold': {
+          fontFamily: FONT.sans.bold,
+          fontWeight: '400',
+        },
+      });
+    },
+  ],
 };

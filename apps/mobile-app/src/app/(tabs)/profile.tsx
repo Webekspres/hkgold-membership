@@ -15,9 +15,14 @@ import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ActiveRedeemCountdown } from "@/components/card/active-redeem-countdown";
 import { ProfileLastRewardCard } from "@/components/profile/profile-last-reward-card";
 import { ProfileMemberCard } from "@/components/profile/profile-member-card";
-import { ProfileMenuList, type ProfileMenuItem } from "@/components/profile/profile-menu-list";
+import {
+  ProfileMenuList,
+  type ProfileMenuItem,
+  type ProfileMenuSection,
+} from "@/components/profile/profile-menu-list";
 import { createPullToRefreshControl } from "@/components/shared/pull-to-refresh";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,33 +36,52 @@ import {
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/hooks/use-auth";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useProfileRedeemHighlight } from "@/hooks/use-profile-redeem-highlight";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { copyMemberCode } from "@/lib/clipboard/copy-member-code";
 import { toast } from "@/lib/sonner";
-import { getRewardList } from "@/services/rewards";
 
-const LAST_REDEEMED_REWARD = getRewardList()[0];
-
-const profileMenus: ProfileMenuItem[] = [
-  { key: "redeem-history", title: "Riwayat Redeem", icon: History },
-  { key: "reward-catalog", title: "Katalog Reward", icon: Gift },
-  { key: "tier-benefit", title: "Tier Benefit", icon: Crown },
-  { key: "event", title: "Event", icon: BellRing },
-  { key: "news", title: "Berita", icon: Newspaper },
-  { key: "branch-location", title: "Lokasi Cabang", icon: MapPin },
-  { key: "faq", title: "FAQ", icon: HelpCircle },
-  { key: "change-password", title: "Ganti Password", icon: Key },
-  { key: "account-settings", title: "Pengaturan Akun", icon: Settings },
-  { key: "logout", title: "Logout", icon: LogOut, destructive: true },
+const profileMenuSections: ProfileMenuSection[] = [
+  {
+    key: "activity",
+    title: "Aktivitas",
+    items: [
+      { key: "redeem-history", title: "Riwayat Redeem", icon: History },
+      { key: "reward-catalog", title: "Katalog Reward", icon: Gift },
+      { key: "tier-benefit", title: "Tier Benefit", icon: Crown },
+    ],
+  },
+  {
+    key: "content",
+    title: "Konten & Info",
+    items: [
+      { key: "event", title: "Event", icon: BellRing },
+      { key: "news", title: "Berita", icon: Newspaper },
+      { key: "branch-location", title: "Lokasi Cabang", icon: MapPin },
+      { key: "faq", title: "FAQ", icon: HelpCircle },
+    ],
+  },
+  {
+    key: "account",
+    title: "Akun",
+    items: [
+      { key: "change-password", title: "Ganti Password", icon: Key },
+      { key: "account-settings", title: "Pengaturan Akun", icon: Settings },
+      { key: "logout", title: "Logout", icon: LogOut, destructive: true },
+    ],
+  },
 ];
 
 export default function ProfileScreen() {
   const { logout } = useAuth();
   const { card, refetch: refetchProfile } = useMyProfile();
+  const { highlight, refetch: refetchRedeemHighlight } = useProfileRedeemHighlight();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const refresh = useCallback(() => refetchProfile(), [refetchProfile]);
+  const refresh = useCallback(async () => {
+    await Promise.all([refetchProfile(), refetchRedeemHighlight()]);
+  }, [refetchProfile, refetchRedeemHighlight]);
   const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   function handlePressProfileMenu(item: ProfileMenuItem) {
@@ -135,9 +159,33 @@ export default function ProfileScreen() {
             </>
           ) : null}
 
-          <ProfileLastRewardCard reward={LAST_REDEEMED_REWARD} onPress={() => router.push("/cms")} />
+          {highlight.kind === "pending" ? (
+            <ProfileLastRewardCard
+              title={highlight.title}
+              reward={highlight.reward}
+              footer={<ActiveRedeemCountdown expiresAt={highlight.activeRedeem.expiresAt} />}
+              onPress={() => router.push(highlight.href as Href)}
+            />
+          ) : highlight.kind === "completed" ? (
+            <ProfileLastRewardCard
+              title={highlight.title}
+              reward={highlight.reward}
+              onPress={() => router.push(highlight.href)}
+            />
+          ) : (
+            <View className="gap-2">
+              <Text className="text-base font-bold text-stone-900">
+                Reward terakhir diklaim
+              </Text>
+              <View className="rounded-xl border border-dashed border-amber-200/80 bg-amber-50/50 px-4 py-6">
+                <Text className="text-center text-sm text-stone-600">
+                  Belum ada reward diklaim
+                </Text>
+              </View>
+            </View>
+          )}
 
-          <ProfileMenuList items={profileMenus} onPressItem={handlePressProfileMenu} />
+          <ProfileMenuList sections={profileMenuSections} onPressItem={handlePressProfileMenu} />
         </ScrollView>
       </SafeAreaView>
 

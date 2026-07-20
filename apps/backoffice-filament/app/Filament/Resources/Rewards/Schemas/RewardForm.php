@@ -35,8 +35,6 @@ class RewardForm
                             ->required()
                             ->native(false),
 
-                       
-
                         TextInput::make('name')
                             ->label('Nama reward')
                             ->required()
@@ -85,7 +83,7 @@ class RewardForm
                             ->required()
                             ->columnSpanFull(),
 
-                            Toggle::make('is_active')
+                        Toggle::make('is_active')
                             ->label('Aktif')
                             ->default(true)
                             ->columnSpanFull(),

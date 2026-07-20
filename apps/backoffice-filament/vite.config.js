@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [
             laravel({
-                input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/firebase-messaging.js'],
+                input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/firebase-messaging.js', 'resources/js/redeem-token-scanner.js'],
                 refresh: true,
                 fonts: [
                     bunny('Instrument Sans', {

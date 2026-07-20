@@ -22,7 +22,7 @@ export function ProfileLastRewardCard({
   pressable = true,
 }: ProfileLastRewardCardProps) {
   const cardClassName =
-    'flex-row gap-3 rounded-xl border border-stone-200 bg-white shadow-md shadow-stone-900/15';
+    'flex-row gap-3 rounded-xl border border-amber-200/60 bg-white shadow-md shadow-amber-900/10';
 
   const cardContent = (
     <>
@@ -38,14 +38,14 @@ export function ProfileLastRewardCard({
         accessibilityLabel={reward.name}
       />
       <View className="min-w-0 flex-1 justify-center gap-1">
-        <Text variant="muted" className="text-[11px] uppercase tracking-wide">
+        <Text className="text-[11px] font-medium uppercase tracking-wide text-[#9A6B1F]">
           {reward.categoryName}
         </Text>
         <Text className="text-base font-semibold leading-snug text-stone-900" numberOfLines={2}>
           {reward.name}
         </Text>
         {footer ?? (
-          <Text className="text-sm font-medium text-amber-700">
+          <Text className="text-sm font-medium text-[#9A6B1F]">
             {reward.pointsRequired.toLocaleString('id-ID')} poin
           </Text>
         )}
@@ -55,7 +55,7 @@ export function ProfileLastRewardCard({
 
   return (
     <View className="gap-2">
-      <Text className="text-base font-semibold text-stone-900">{title}</Text>
+      <Text className="text-base font-bold text-stone-900">{title}</Text>
       {pressable && onPress ? (
         <Pressable className={cn(cardClassName, 'active:opacity-90')} onPress={onPress}>
           {cardContent}
