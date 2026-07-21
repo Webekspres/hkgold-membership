@@ -21,7 +21,7 @@ Seluruh layanan pendukung (Infrastruktur Docker) dijalankan pada laptop terpisah
 * **IP Server Node Eksternal:** `192.168.0.193`
 * **Env (Doppler):** Project `hkgoldvip`, config `dev_backend` (`doppler.yaml`). Jangan commit secret. Template keys: `.env.example`. Jalankan API dengan `bun run dev` / `bun run start` (script membungkus `doppler run`). Perintah one-off (Prisma, dll.): `doppler run -- bunx prisma …`. Jangan hardcode env di kode — baca dari `process.env`.
 * **Koneksi Database (MySQL):** Migrasi boleh (`doppler run -- bunx prisma migrate dev`) ke DB eksternal sesuai secret Doppler. Jangan menebak/menulis nilai secret ke kode.
-* **S3 Object Storage Blueprint:** Media memakai AWS SDK v3 / Client S3; semua kredensial dari env (Doppler). Lokal = MinIO; produksi = Cloudflare R2 tanpa ubah logic.
+* **S3 Object Storage Blueprint:** Media memakai AWS SDK v3 / Client S3; semua kredensial dari env (Doppler). Lokal = MinIO; produksi = Cloudflare R2 tanpa ubah logic. Avatar member: key prefix `member/photo/`, WebP via `sharp`, delete object saat media dihapus.
 
 ---
 
@@ -53,6 +53,7 @@ Gerbang login aplikasi mobile React Native melayani pelanggan (Member) menggunak
 Sistem ini menganut prinsip *Single Currency, Multi-Path* (1 Saldo Wallet Terpusat, namun nominal pembagi perolehannya dibedakan dinamis via tabel `transaction_types`).
 * **Mekanisme Pembacaan:** API ElysiaJS untuk penayangan riwayat mutasi poin (`PointMutation`) wajib **membaca langsung secara real-time** melalui Prisma Client Query menuju tabel master `transaction_types` dan `conversion_rules`.
 * **Dilarang Melakukan Caching Redis** untuk alur ini guna menjamin konsistensi angka pembukuan pusat (ledger) dan transparansi mutasi saldo di gawai smartphone pelanggan secara mutlak.
+* **Status implementasi:** prinsip di atas adalah kontrak. **Modul/route mobile untuk list `PointMutation` belum ada** di `src/modules/` — jangan asumsikan endpoint ledger sudah live.
 
 ---
 
@@ -121,8 +122,28 @@ Prisma / `packages/database` bisa lebih maju dari MySQL lokal. Sebelum SELECT ko
 | `Content` (NEWS) | kategori | **Belum ada** | Detail tanpa category |
 | `Branch` | lat / lng (nearest) | **Belum ada** (`locationUrl` ada) | Tidak expose nearest geo |
 | `Member` | `birthDate` | ✅ Ada | Pastikan migrasi Laravel `birth_date` sudah dijalankan |
+| `Member` | `gender` | ✅ Ada | `MALE` \| `FEMALE` \| null; migrasi Filament + Prisma |
+| `TierBenefit` | `title`, `description`, `sortOrder`, `isActive` | ✅ Ada | Exposed via `GET /api/tier/levels` |
 
-Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, `redeem`, `device` (push-token).
+Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, **`faq`** (`GET /api/faq` — list terurut `sortOrder`), `redeem`, `device` (push-token), **`member`** (GET/PATCH `/me`, PUT `/me/avatar`), **`address`** (`/options`, `/cascade-options`), **`tier`** (`/levels` + benefits, `/member`), **`media`** (dipakai internal oleh avatar upload; generic `POST /api/media/upload` tetap ada).
+
+### Member profile & avatar
+
+| Method | Path | Peran |
+| --- | --- | --- |
+| `GET` | `/api/member/me` | Profil member + address + photo URL |
+| `PATCH` | `/api/member/me` | Update `fullName`, `birthDate`, `gender`, nested `address` (`villageId`, `postalCodeId`, `street`) — **bukan** email/phone/`profilePhotoId` |
+| `PUT` | `/api/member/me/avatar` | Multipart file → compress WebP → S3 `member/photo/` → set `profilePhotoId` → hapus media lama (DB + object) |
+
+Avatar processing di `media.service.ts`: `folder: 'member/photo'`, `sharp` resize cover 512×512 + WebP quality 80 (`compressToWebp`). `delete()` kirim `DeleteObjectCommand` best-effort lalu hapus row. Tests: `member-profile.test.ts`, `media-helpers.test.ts`.
+
+### Tier levels + benefits
+
+`GET /api/tier/levels` — order `minPoints asc`; tiap level include `benefits` (`isActive: true`, `orderBy: sortOrder asc`) + `conversionRules` (kontrak lama tetap). Visual gradient/icon tetap di client mobile. Tests: `tier-benefits.test.ts`.
+
+### Address cascade
+
+`GET /api/address/cascade-options?level=province|city|subDistrict|village|postalCode&parentId=` — dropdown berjenjang untuk edit profil (selaras Filament).
 
 ### Reward stock visibility (mobile contract)
 

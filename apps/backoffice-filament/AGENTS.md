@@ -207,10 +207,13 @@ Wajib memakai keempat tools berikut di setiap sesi Cursor:
 - Ikuti konvensi `navigationGroup` yang sudah ada:
   - `Manajemen Pengguna` — Member, Staff, Cabang
   - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
-  - `CMS` — Konten, Banner Promosi
+  - `CMS` — Konten, Banner Promosi, FAQ
   - `Katalog Reward` — Kategori Reward, Katalog (Reward)
-  - `Konfigurasi` — Manajemen Tier (+ aturan konversi inline)
+  - `Konfigurasi` — Manajemen Tier (+ aturan konversi + **benefit inline** di form Tier)
   - `Loyalty Point` — Mutasi Poin
+  - `Redeem Poin` — Antrean Kupon (`RedeemToken`), invoice terkait
+  - `Notifikasi` — Kampanye push + inbox page
+- Custom pages (non-CRUD): `MemberLookupPage`, `NotificationInboxPage`, `PromotionBannerPage`, `FaqPage`.
 - Reuse ikon `Heroicon::Outlined*` konsisten dengan resource sejenis.
 
 ## Filament Architecture
@@ -265,6 +268,8 @@ app/Exceptions/                 # domain exception + error code
 | Konten EVENT | `location_address`, `location_url` | ✅ Ada — visible hanya saat type EVENT |
 | Konten NEWS | kategori | Belum ada |
 | Member | `birth_date` | ✅ Ada — DatePicker di form Member |
+| Member | `gender` | ✅ Ada di schema/API mobile — pastikan form Member ikut jika admin perlu edit |
+| Tier benefit | `title`, `description`, `sort_order`, `is_active` | ✅ Repeater di `TierMemberResource` → sync `TierBenefit`; mobile baca `GET /api/tier/levels` |
 
 Setelah migrasi baru: jalankan `php artisan migrate` lalu pastikan API Elysia map field yang sama.
 

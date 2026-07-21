@@ -1,6 +1,7 @@
 import { router, type Href } from "expo-router";
 import {
   BellRing,
+  Coins,
   Crown,
   Gift,
   HelpCircle,
@@ -46,6 +47,7 @@ const profileMenuSections: ProfileMenuSection[] = [
     key: "activity",
     title: "Aktivitas",
     items: [
+      { key: "point-ledger", title: "Riwayat Poin", icon: Coins },
       { key: "redeem-history", title: "Riwayat Redeem", icon: History },
       { key: "reward-catalog", title: "Katalog Reward", icon: Gift },
       { key: "tier-benefit", title: "Tier Benefit", icon: Crown },
@@ -88,6 +90,9 @@ export default function ProfileScreen() {
     switch (item.key) {
       case "logout":
         setLogoutOpen(true);
+        return;
+      case "point-ledger":
+        router.push("/point-ledger" as Href);
         return;
       case "redeem-history":
         router.push("/redeem" as Href);

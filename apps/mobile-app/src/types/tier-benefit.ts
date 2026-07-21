@@ -19,3 +19,23 @@ export type TierBenefitSlide = {
   textClassName: string;
   benefits: TierBenefitRow[];
 };
+
+export type TierBenefitApiItem = {
+  id: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type TierLevelApiItem = {
+  id: number;
+  tierCode: MemberTier;
+  tierName: string;
+  minPoints: number;
+  maxPoints: number;
+  benefits: TierBenefitApiItem[];
+};
+
+export type TierLevelsApiResponse = {
+  levels: TierLevelApiItem[];
+};

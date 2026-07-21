@@ -15,5 +15,7 @@
   "13": "MemberProfileData",
   "14": "reward.service.ts",
   "15": "tier.service.ts",
-  "16": "promotion-banner.service.ts"
+  "16": "promotion-banner.service.ts",
+  "17": "redeem-routes.test.ts",
+  "18": "test-setup.ts"
 }

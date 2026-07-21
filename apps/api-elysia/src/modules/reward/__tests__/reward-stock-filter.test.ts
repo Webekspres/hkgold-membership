@@ -307,6 +307,8 @@ describe('Reward Module - stock filtering', () => {
       }
       await prisma.categoryReward.delete({ where: { id: homeCategory.id } });
     }
+  });
+
   test('getRewards over-fetches past consecutive out-of-stock rows', async () => {
     const overflowCategory = await prisma.categoryReward.create({
       data: {

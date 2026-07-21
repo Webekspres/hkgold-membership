@@ -130,6 +130,7 @@ class ShieldRolesSeeder extends Seeder
     {
         foreach ([
             'Update:PromotionBannerPage',
+            'Update:FaqPage',
             'View:MemberLookupPage',
             'Create:BroadcastNotification',
         ] as $permissionName) {
@@ -415,6 +416,7 @@ class ShieldRolesSeeder extends Seeder
             ->whereIn('name', array_merge(
                 $this->contentReadPermissions(),
                 $this->promotionBannerReadPermissions(),
+                $this->faqReadPermissions(),
             ))
             ->pluck('name');
 
@@ -422,6 +424,7 @@ class ShieldRolesSeeder extends Seeder
             ->whereIn('name', array_merge(
                 $this->contentWritePermissions(),
                 $this->promotionBannerWritePermissions(),
+                $this->faqWritePermissions(),
             ))
             ->pluck('name');
 
@@ -495,6 +498,26 @@ class ShieldRolesSeeder extends Seeder
     {
         return [
             'Update:PromotionBannerPage',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function faqReadPermissions(): array
+    {
+        return [
+            'View:FaqPage',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function faqWritePermissions(): array
+    {
+        return [
+            'Update:FaqPage',
         ];
     }
 

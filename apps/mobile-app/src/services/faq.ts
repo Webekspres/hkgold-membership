@@ -1,5 +1,13 @@
-import { MOCK_FAQ_LIST } from '@/mocks/mock-faq';
+import { apiClient } from '@/lib/api-client';
+import type { ApiEnvelope } from '@/types/auth';
+import type { FaqItem } from '@/types/faq';
 
-export function getFaqList() {
-  return MOCK_FAQ_LIST;
+export async function fetchFaqList(): Promise<FaqItem[]> {
+  const { data } = await apiClient.get<ApiEnvelope<FaqItem[]>>('/api/faq');
+
+  if (!data.success || !data.data) {
+    throw new Error(data.message || 'Gagal mengambil FAQ');
+  }
+
+  return data.data;
 }

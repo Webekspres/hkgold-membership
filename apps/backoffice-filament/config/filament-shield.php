@@ -234,6 +234,7 @@ return [
 
     'custom_permissions' => [
         'Update:PromotionBannerPage' => 'Update Banner Promosi',
+        'Update:FaqPage' => 'Update FAQ',
         'View:MemberLookupPage' => 'Cari Member',
     ],
 

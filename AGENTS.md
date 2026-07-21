@@ -14,6 +14,12 @@ Ikuti ladder YAGNI di bawah (dan `.cursor/rules/ponytail.mdc`).
 ### caveman
 Jawaban agent ringkas (caveman full; Bahasa Indonesia). Code fence, error, path, CLI: byte-exact. Off hanya jika user bilang "stop caveman" / "normal mode".
 
+### Status fitur per app
+Sumber kebenaran status implementasi / roadmap produk:
+- Mobile: [`apps/mobile-app/AGENTS.md`](apps/mobile-app/AGENTS.md) §1
+- API: [`apps/api-elysia/AGENTS.md`](apps/api-elysia/AGENTS.md) §8
+- Backoffice: [`apps/backoffice-filament/AGENTS.md`](apps/backoffice-filament/AGENTS.md)
+
 ---
 
 # Ponytail, lazy senior dev mode

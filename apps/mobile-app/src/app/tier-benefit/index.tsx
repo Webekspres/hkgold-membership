@@ -3,31 +3,35 @@ import { SymbolView } from 'expo-symbols';
 import { cssInterop } from 'nativewind';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TierBenefitCarousel } from '@/components/tier-benefit/tier-benefit-carousel';
 import { TierBenefitTable } from '@/components/tier-benefit/tier-benefit-table';
 import { Text } from '@/components/ui/text';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
-import { MOCK_MEMBER } from '@/mocks/mock-member';
-import { getTierBenefitInitialIndex, getTierBenefitSlides } from '@/services/tier-benefits';
+import { useMyProfile } from '@/hooks/use-my-profile';
+import { useTierBenefits } from '@/hooks/use-tier-benefits';
+import { getTierBenefitInitialIndex } from '@/services/tier-benefits';
+import type { MemberTier, TierBenefitSlide } from '@/types/tier-benefit';
 
 const BACK_ICON = { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } as const;
 
 cssInterop(LinearGradient, { className: 'style' });
-
-const tierBenefitSlides = getTierBenefitSlides();
-const initialTierIndex = getTierBenefitInitialIndex(MOCK_MEMBER.currentTier);
 
 function buildHeroBackgroundColors(colors: readonly string[]): string[] {
   const mid = colors[Math.floor(colors.length / 2)] ?? colors[0];
   return [...colors.slice(0, 3), mid, '#FFFFFF'];
 }
 
-export default function TierBenefitScreen() {
-  const [activeIndex, setActiveIndex] = useState(initialTierIndex);
-  const activeSlide = tierBenefitSlides[activeIndex] ?? tierBenefitSlides[0];
+type TierBenefitContentProps = {
+  slides: TierBenefitSlide[];
+  initialIndex: number;
+};
+
+function TierBenefitContent({ slides, initialIndex }: TierBenefitContentProps) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const activeSlide = slides[activeIndex] ?? slides[0];
 
   const heroBackgroundColors = useMemo(
     () => buildHeroBackgroundColors(activeSlide.backgroundColors),
@@ -75,8 +79,8 @@ export default function TierBenefitScreen() {
           }}
         >
           <TierBenefitCarousel
-            slides={tierBenefitSlides}
-            initialIndex={initialTierIndex}
+            slides={slides}
+            initialIndex={initialIndex}
             onIndexChange={setActiveIndex}
             lightProgressLabels={activeSlide.tier === 'SILVER'}
           />
@@ -96,5 +100,47 @@ export default function TierBenefitScreen() {
         </ScrollView>
       </SafeAreaView>
     </View>
+  );
+}
+
+export default function TierBenefitScreen() {
+  const { card, isLoading: profileLoading } = useMyProfile();
+  const { slides, isLoading: tiersLoading, isError, refetch } = useTierBenefits();
+
+  const isLoading = profileLoading || tiersLoading;
+  const currentTier = (card?.currentTier ?? 'SILVER') as MemberTier;
+  const initialIndex =
+    slides.length > 0 ? getTierBenefitInitialIndex(slides, currentTier) : 0;
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#b45309" />
+      </View>
+    );
+  }
+
+  if (isError || slides.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center gap-3 bg-background px-6">
+        <Text className="text-center text-base font-semibold text-stone-900">
+          Gagal memuat keuntungan tier
+        </Text>
+        <Text variant="muted" className="text-center">
+          Periksa koneksi internet Anda lalu coba lagi.
+        </Text>
+        <Pressable onPress={() => void refetch()} className="active:opacity-70">
+          <Text className="font-semibold text-[#c4841a]">Coba lagi</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <TierBenefitContent
+      key={`${currentTier}-${slides.map((slide) => slide.tier).join('-')}`}
+      slides={slides}
+      initialIndex={initialIndex}
+    />
   );
 }

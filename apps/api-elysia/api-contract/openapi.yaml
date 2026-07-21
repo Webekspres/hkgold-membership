@@ -38,8 +38,14 @@ tags:
     description: Content (news & events)
   - name: Reward
     description: Reward catalog & redemptions
+  - name: Redeem
+    description: Reward redemption management
   - name: Tier
     description: Tier levels & member tier management
+  - name: Device
+    description: Device push token management
+  - name: Internal OTP
+    description: Internal OTP services (requires X-Internal-Secret header)
 
 components:
   securitySchemes:
@@ -48,6 +54,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token dari endpoint login/register
+    InternalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
+      description: Internal service secret untuk komunikasi antar service
 
   schemas:
     ApiResponse:
@@ -800,6 +811,264 @@ components:
           required:
             - currentPoints
             - conversionRules
+
+    # ========== Redeem Schemas ==========
+    RedeemRewardSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440050"
+        sku:
+          type: string
+          example: "EVC-001"
+        name:
+          type: string
+          example: "Voucher Belanja Rp 100.000"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+      required:
+        - id
+        - sku
+        - name
+        - imageUrl
+
+    RedeemBranchSummary:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        name:
+          type: string
+          example: "HK Gold Jakarta Pusat"
+        address:
+          type: string
+          example: "Jl. Sudirman No. 123, Jakarta Pusat"
+      required:
+        - id
+        - name
+        - address
+
+    RedeemTokenData:
+      type: object
+      properties:
+        redeemId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440060"
+        tokenCode:
+          type: string
+          example: "REDEEM-ABC123"
+        heldPoints:
+          type: number
+          example: 2500
+        isUsed:
+          type: boolean
+          example: false
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2026-07-21T10:00:00.000Z"
+        reward:
+          $ref: '#/components/schemas/RedeemRewardSummary'
+        branch:
+          $ref: '#/components/schemas/RedeemBranchSummary'
+      required:
+        - redeemId
+        - tokenCode
+        - heldPoints
+        - isUsed
+        - expiresAt
+        - reward
+        - branch
+
+    RedeemInvoiceData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440070"
+        invoiceNumber:
+          type: string
+          example: "INV-20260721001"
+        pointsRedeemed:
+          type: number
+          example: 2500
+        status:
+          type: string
+          enum: [COMPLETED, REFUNDED]
+          example: "COMPLETED"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-07-21T08:00:00.000Z"
+        reward:
+          $ref: '#/components/schemas/RedeemRewardSummary'
+        branch:
+          $ref: '#/components/schemas/RedeemBranchSummary'
+      required:
+        - id
+        - invoiceNumber
+        - pointsRedeemed
+        - status
+        - createdAt
+        - reward
+        - branch
+
+    RedeemTokenStatusData:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, completed, released, expired]
+          example: "active"
+        invoiceId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "550e8400-e29b-41d4-a716-446655440070"
+      required:
+        - status
+
+    CreateRedeemTokenRequest:
+      type: object
+      properties:
+        rewardId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440050"
+        branchId:
+          type: number
+          example: 1
+      required:
+        - rewardId
+        - branchId
+
+    CancelRedeemRequest:
+      type: object
+      properties:
+        redeemId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440060"
+      required:
+        - redeemId
+
+    RedeemHistoryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RedeemInvoiceData'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # ========== OTP Schemas ==========
+    GenerateOtpRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Nomor HP dalam format Indonesia (08xxx atau +62xxx)
+          example: "081234567890"
+        redeemTokenCode:
+          type: string
+          example: "REDEEM-ABC123"
+      required:
+        - phone
+        - redeemTokenCode
+
+    VerifyOtpRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Nomor HP dalam format Indonesia (08xxx atau +62xxx)
+          example: "081234567890"
+        redeemTokenCode:
+          type: string
+          example: "REDEEM-ABC123"
+        otp:
+          type: string
+          example: "123456"
+      required:
+        - phone
+        - redeemTokenCode
+        - otp
+
+    GenerateOtpResult:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2026-07-21T08:05:00.000Z"
+      required:
+        - expiresAt
+
+    # ========== Device Schemas ==========
+    RegisterPushTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: FCM push token dari device
+          example: "fCMabcdef1234567890ghi"
+        deviceUuid:
+          type: string
+          nullable: true
+          description: UUID unik device (opsional)
+          example: "device-uuid-1234"
+      required:
+        - token
+
+    RevokePushTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: FCM push token yang akan dicabut
+          example: "fCMabcdef1234567890ghi"
+      required:
+        - token
+
+    PushTokenData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440080"
+        platform:
+          type: string
+          example: "android"
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+      required:
+        - id
+        - platform
+        - revokedAt
+
+    # ========== Tier Schemas ==========
+    TierLevelsResponse:
+      type: object
+      properties:
+        levels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TierWithConversionRules'
+      required:
+        - levels
 
 paths:
   /api/health:
@@ -2186,6 +2455,37 @@ paths:
                               type: string
                               format: date-time
 
+  /api/faq:
+    get:
+      tags:
+        - Faq
+      summary: List FAQ items
+      description: |
+        Daftar FAQ untuk mobile, urut `sortOrder` naik.
+      security: []
+      responses:
+        '200':
+          description: Daftar FAQ berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            question:
+                              type: string
+                            answer:
+                              type: string
+
   /api/reward:
     get:
       tags:
@@ -2388,3 +2688,864 @@ paths:
               example:
                 success: false
                 message: "Reward tidak ditemukan"
+
+  # ========== Redeem Endpoints ==========
+  /api/redeem/active:
+    get:
+      tags:
+        - Redeem
+      summary: Get active redeem token
+      description: |
+        Mendapatkan token redeem aktif untuk member yang sedang login.
+
+        Token redeem aktif adalah token yang sudah dibuat tapi belum selesai (belum diklaim di cabang).
+        Member hanya bisa memiliki satu token aktif dalam satu waktu.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Token redeem aktif berhasil diambil (atau null jika tidak ada)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemTokenData'
+                        nullable: true
+              examples:
+                withActiveToken:
+                  summary: Memiliki token aktif
+                  value:
+                    success: true
+                    message: "Token redeem aktif berhasil diambil"
+                    data:
+                      redeemId: "550e8400-e29b-41d4-a716-446655440060"
+                      tokenCode: "REDEEM-ABC123"
+                      heldPoints: 2500
+                      isUsed: false
+                      expiresAt: "2026-07-21T10:00:00.000Z"
+                      reward:
+                        id: "550e8400-e29b-41d4-a716-446655440050"
+                        sku: "EVC-001"
+                        name: "Voucher Belanja Rp 100.000"
+                        imageUrl: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                      branch:
+                        id: 1
+                        name: "HK Gold Jakarta Pusat"
+                        address: "Jl. Sudirman No. 123, Jakarta Pusat"
+                noActiveToken:
+                  summary: Tidak ada token aktif
+                  value:
+                    success: true
+                    message: "Tidak ada token redeem aktif"
+                    data: null
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Unauthorized - Silakan login terlebih dahulu"
+
+  /api/redeem/history:
+    get:
+      tags:
+        - Redeem
+      summary: Get redeem history (invoices)
+      description: |
+        Mendapatkan riwayat redeem (invoice) dengan cursor pagination.
+
+        Riwayat redeem mencakup semua transaksi yang sudah selesai (COMPLETED) atau dikembalikan (REFUNDED).
+        Diurutkan dari yang terbaru.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Jumlah item per halaman (1-50)
+          example: 10
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Base64-encoded cursor untuk halaman berikutnya
+          example: "eyJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDA3MCJ9"
+      responses:
+        '200':
+          description: Riwayat redeem berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemHistoryListResponse'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+              example:
+                success: true
+                message: "Riwayat redeem berhasil diambil"
+                data:
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440070"
+                      invoiceNumber: "INV-20260721001"
+                      pointsRedeemed: 2500
+                      status: "COMPLETED"
+                      createdAt: "2026-07-21T08:00:00.000Z"
+                      reward:
+                        id: "550e8400-e29b-41d4-a716-446655440050"
+                        sku: "EVC-001"
+                        name: "Voucher Belanja Rp 100.000"
+                        imageUrl: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                      branch:
+                        id: 1
+                        name: "HK Gold Jakarta Pusat"
+                        address: "Jl. Sudirman No. 123, Jakarta Pusat"
+                  pagination:
+                    nextCursor: null
+                    hasMore: false
+                    limit: 10
+        '400':
+          description: Bad request (parameter tidak valid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  value:
+                    success: false
+                    message: "Limit harus antara 1-50"
+                invalidCursor:
+                  value:
+                    success: false
+                    message: "Cursor tidak valid"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/redeem/history/{id}:
+    get:
+      tags:
+        - Redeem
+      summary: Get redeem history detail by ID
+      description: Mendapatkan detail riwayat redeem berdasarkan ID invoice.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID invoice redeem
+          example: "550e8400-e29b-41d4-a716-446655440070"
+      responses:
+        '200':
+          description: Detail riwayat redeem berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemInvoiceData'
+              example:
+                success: true
+                message: "Detail riwayat redeem berhasil diambil"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440070"
+                  invoiceNumber: "INV-20260721001"
+                  pointsRedeemed: 2500
+                  status: "COMPLETED"
+                  createdAt: "2026-07-21T08:00:00.000Z"
+                  reward:
+                    id: "550e8400-e29b-41d4-a716-446655440050"
+                    sku: "EVC-001"
+                    name: "Voucher Belanja Rp 100.000"
+                    imageUrl: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                  branch:
+                    id: 1
+                    name: "HK Gold Jakarta Pusat"
+                    address: "Jl. Sudirman No. 123, Jakarta Pusat"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Riwayat redeem tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Riwayat redeem tidak ditemukan"
+                error: "HISTORY_NOT_FOUND"
+
+  /api/redeem/token/{redeemId}/status:
+    get:
+      tags:
+        - Redeem
+      summary: Get redeem token status
+      description: |
+        Mendapatkan status token redeem.
+
+        Status yang mungkin:
+        - `active`: Token masih berlaku dan bisa digunakan
+        - `completed`: Token sudah selesai diklaim di cabang
+        - `released`: Token sudah dibatalkan dan poin dikembalikan
+        - `expired`: Token sudah kadaluarsa
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: redeemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID redeem token
+          example: "550e8400-e29b-41d4-a716-446655440060"
+      responses:
+        '200':
+          description: Status token redeem berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemTokenStatusData'
+              examples:
+                active:
+                  summary: Token aktif
+                  value:
+                    success: true
+                    message: "Status token redeem berhasil diambil"
+                    data:
+                      status: "active"
+                      invoiceId: null
+                completed:
+                  summary: Token sudah selesai
+                  value:
+                    success: true
+                    message: "Status token redeem berhasil diambil"
+                    data:
+                      status: "completed"
+                      invoiceId: "550e8400-e29b-41d4-a716-446655440070"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Token tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Token redeem tidak ditemukan"
+                error: "TOKEN_NOT_FOUND"
+
+  /api/redeem/token:
+    post:
+      tags:
+        - Redeem
+      summary: Create redeem reservation token
+      description: |
+        Membuat token redeem baru untuk mengklaim reward.
+
+        Proses yang terjadi:
+        1. Validasi stok reward di cabang yang dipilih
+        2. Validasi poin member mencukupi
+        3. Membuat token redeem dengan masa berlaku tertentu
+        4. Mengunci (hold) poin member dan stok reward
+
+        Member tidak boleh suspended untuk melakukan redeem.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRedeemTokenRequest'
+            example:
+              rewardId: "550e8400-e29b-41d4-a716-446655440050"
+              branchId: 1
+      responses:
+        '201':
+          description: Token redeem berhasil dibuat
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemTokenData'
+              example:
+                success: true
+                message: "Token redeem berhasil dibuat"
+                data:
+                  redeemId: "550e8400-e29b-41d4-a716-446655440060"
+                  tokenCode: "REDEEM-ABC123"
+                  heldPoints: 2500
+                  isUsed: false
+                  expiresAt: "2026-07-21T10:00:00.000Z"
+                  reward:
+                    id: "550e8400-e29b-41d4-a716-446655440050"
+                    sku: "EVC-001"
+                    name: "Voucher Belanja Rp 100.000"
+                    imageUrl: "http://localhost:9002/mala-emas-media/reward-evc001.jpg"
+                  branch:
+                    id: 1
+                    name: "HK Gold Jakarta Pusat"
+                    address: "Jl. Sudirman No. 123, Jakarta Pusat"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rewardNotFound:
+                  value:
+                    success: false
+                    message: "Reward tidak ditemukan"
+                    error: "REWARD_NOT_FOUND"
+                rewardNotActive:
+                  value:
+                    success: false
+                    message: "Reward tidak aktif"
+                    error: "REWARD_NOT_ACTIVE"
+        '403':
+          description: Forbidden (member suspended)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Akun Anda sedang disuspend"
+                error: "MEMBER_SUSPENDED"
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stockUnavailable:
+                  value:
+                    success: false
+                    message: "Stok reward tidak mencukupi di cabang ini"
+                    error: "STOCK_UNAVAILABLE"
+                insufficientPoints:
+                  value:
+                    success: false
+                    message: "Poin tidak mencukupi"
+                    error: "INSUFFICIENT_POINTS"
+                tokenAlreadyActive:
+                  value:
+                    success: false
+                    message: "Anda sudah memiliki token redeem aktif"
+                    error: "TOKEN_ALREADY_ACTIVE"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/redeem/cancel:
+    post:
+      tags:
+        - Redeem
+      summary: Cancel active redeem reservation
+      description: |
+        Membatalkan token redeem yang aktif.
+
+        Proses yang terjadi:
+        1. Validasi token masih aktif
+        2. Mengembalikan poin yang di-hold ke member
+        3. Mengembalikan stok yang di-hold ke cabang
+        4. Token diubah statusnya menjadi 'released'
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRedeemRequest'
+            example:
+              redeemId: "550e8400-e29b-41d4-a716-446655440060"
+      responses:
+        '200':
+          description: Klaim reward berhasil dibatalkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                message: "Klaim reward berhasil dibatalkan"
+                data: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tokenNotFound:
+                  value:
+                    success: false
+                    message: "Token redeem tidak ditemukan"
+                    error: "TOKEN_NOT_FOUND"
+                tokenAlreadyUsed:
+                  value:
+                    success: false
+                    message: "Token sudah digunakan"
+                    error: "TOKEN_ALREADY_USED"
+                tokenAlreadyReleased:
+                  value:
+                    success: false
+                    message: "Token sudah dibatalkan sebelumnya"
+                    error: "TOKEN_ALREADY_RELEASED"
+                tokenExpired:
+                  value:
+                    success: false
+                    message: "Token sudah kadaluarsa"
+                    error: "TOKEN_EXPIRED"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Internal OTP Endpoints ==========
+  /internal/otp/send:
+    post:
+      tags:
+        - Internal OTP
+      summary: Send redeem OTP via WhatsApp
+      description: |
+        Mengirim OTP untuk validasi redeem melalui WhatsApp (internal service).
+
+        Endpoint ini hanya bisa diakses oleh service internal dengan secret key.
+        OTP dikirim melalui Fonnte WhatsApp API.
+      security:
+        - InternalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateOtpRequest'
+            example:
+              phone: "081234567890"
+              redeemTokenCode: "REDEEM-ABC123"
+      responses:
+        '200':
+          description: OTP berhasil dikirim
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/GenerateOtpResult'
+              example:
+                success: true
+                message: "OTP berhasil dikirim"
+                data:
+                  expiresAt: "2026-07-21T08:08:00.000Z"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPhone:
+                  value:
+                    success: false
+                    message: "Format nomor HP tidak valid"
+                    error: "INVALID_PHONE"
+                invalidTokenCode:
+                  value:
+                    success: false
+                    message: "Token code tidak valid"
+                    error: "INVALID_TOKEN_CODE"
+        '502':
+          description: Bad Gateway (Fonnte failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Gagal mengirim OTP melalui WhatsApp"
+                error: "FONNTE_FAILED"
+        '401':
+          description: Unauthorized (invalid internal secret)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /internal/otp/verify:
+    post:
+      tags:
+        - Internal OTP
+      summary: Verify redeem OTP
+      description: |
+        Memverifikasi OTP untuk validasi redeem (internal service).
+
+        Endpoint ini hanya bisa diakses oleh service internal dengan secret key.
+        OTP valid selama 5 menit sejak dikirim.
+      security:
+        - InternalSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+            example:
+              phone: "081234567890"
+              redeemTokenCode: "REDEEM-ABC123"
+              otp: "123456"
+      responses:
+        '200':
+          description: OTP valid
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          valid:
+                            type: boolean
+                            example: true
+              example:
+                success: true
+                message: "OTP valid"
+                data:
+                  valid: true
+        '400':
+          description: Bad request (OTP invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                otpInvalid:
+                  value:
+                    success: false
+                    message: "Kode OTP tidak valid"
+                    error: "OTP_INVALID"
+                invalidPhone:
+                  value:
+                    success: false
+                    message: "Format nomor HP tidak valid"
+                    error: "INVALID_PHONE"
+        '410':
+          description: Gone (OTP expired)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Kode OTP sudah kadaluarsa"
+                error: "OTP_EXPIRED"
+        '401':
+          description: Unauthorized (invalid internal secret)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Device Endpoints ==========
+  /api/device/push-token:
+    post:
+      tags:
+        - Device
+      summary: Register FCM push token
+      description: |
+        Mendaftarkan token FCM (Firebase Cloud Messaging) untuk push notification.
+
+        Token akan dikaitkan dengan user yang sedang login.
+        Jika token sudah terdaftar, akan diperbarui (upsert).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPushTokenRequest'
+            example:
+              token: "fCMabcdef1234567890ghi"
+              deviceUuid: "device-uuid-1234"
+      responses:
+        '200':
+          description: Token push berhasil terdaftar
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PushTokenData'
+              example:
+                success: true
+                message: "Token push terdaftar"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440080"
+                  platform: "android"
+                  revokedAt: null
+        '400':
+          description: Bad request (token kosong)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Token wajib diisi"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Device
+      summary: Revoke FCM push token
+      description: |
+        Mencabut (revoke) token FCM agar tidak menerima push notification lagi.
+
+        Berguna saat user logout atau uninstall aplikasi.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokePushTokenRequest'
+            example:
+              token: "fCMabcdef1234567890ghi"
+      responses:
+        '200':
+          description: Token push berhasil dicabut
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          revokedAt:
+                            type: string
+                            format: date-time
+              examples:
+                tokenRevoked:
+                  summary: Token berhasil dicabut
+                  value:
+                    success: true
+                    message: "Token push dicabut"
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440080"
+                      revokedAt: "2026-07-21T08:00:00.000Z"
+                tokenNotFound:
+                  summary: Token tidak ditemukan
+                  value:
+                    success: true
+                    message: "Token tidak ditemukan"
+                    data: null
+        '400':
+          description: Bad request (token kosong)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Token wajib diisi"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Tier Endpoints ==========
+  /api/tier/levels:
+    get:
+      tags:
+        - Tier
+      summary: Get all tier levels with conversion rules
+      description: |
+        Mendapatkan semua level tier yang tersedia beserta aturan konversi poin.
+
+        Level tier: SILVER, GOLD, PLATINUM, ELITE
+        Setiap tier memiliki aturan konversi poin yang berbeda untuk setiap jenis transaksi.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Daftar level tier berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TierLevelsResponse'
+              example:
+                success: true
+                message: "Daftar level tier berhasil diambil"
+                data:
+                  levels:
+                    - id: 1
+                      tierCode: "SILVER"
+                      tierName: "Silver"
+                      minPoints: 0
+                      maxPoints: 9999
+                      color: "#C0C0C0"
+                      icon: "silver"
+                      conversionRules:
+                        - id: "550e8400-e29b-41d4-a716-446655440001"
+                          transactionTypeId: 1
+                          transactionTypeKey: "PURCHASE"
+                          transactionTypeName: "Pembelian Emas"
+                          tierMemberId: 1
+                          conversionNominal: 1.0
+                    - id: 2
+                      tierCode: "GOLD"
+                      tierName: "Gold"
+                      minPoints: 10000
+                      maxPoints: 49999
+                      color: "#f5c842"
+                      icon: "gold"
+                      conversionRules:
+                        - id: "550e8400-e29b-41d4-a716-446655440002"
+                          transactionTypeId: 1
+                          transactionTypeKey: "PURCHASE"
+                          transactionTypeName: "Pembelian Emas"
+                          tierMemberId: 2
+                          conversionNominal: 1.25
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tier/member:
+    get:
+      tags:
+        - Tier
+      summary: Get current member tier
+      description: |
+        Mendapatkan tier member yang sedang login beserta aturan konversi poin.
+
+        Tier ditentukan berdasarkan `highestPoint` (poin tertinggi yang pernah dicapai member).
+        Response mencakup currentPoints (poin saat ini) dan conversionRules untuk tier tersebut.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Tier member berhasil diambil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MemberTierData'
+              example:
+                success: true
+                message: "Tier member berhasil diambil"
+                data:
+                  id: 2
+                  tierCode: "GOLD"
+                  tierName: "Gold"
+                  minPoints: 10000
+                  maxPoints: 49999
+                  currentPoints: 15000
+                  conversionRules:
+                    - id: "550e8400-e29b-41d4-a716-446655440002"
+                      transactionTypeId: 1
+                      transactionTypeKey: "PURCHASE"
+                      transactionTypeName: "Pembelian Emas"
+                      tierMemberId: 2
+                      conversionNominal: 1.25
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Tier member tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Tier member tidak ditemukan"

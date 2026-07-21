@@ -614,6 +614,18 @@ model PromotionBanner {
   @@map("promotion_banners")
 }
 
+model FaqItem {
+  id        String   @id @default(uuid()) @db.Char(36)
+  question  String   @map("question") @db.VarChar(255)
+  answer    String   @map("answer") @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([sortOrder])
+  @@map("faq_items")
+}
+
 // =============================================================================
 // KONFIGURASI DINAMIS (TIPE TRANSAKSI, TIER, KONVERSI)
 // =============================================================================

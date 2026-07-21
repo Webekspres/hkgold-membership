@@ -4,6 +4,7 @@ import {
   TierWithConversionRules,
   MemberTierData,
   TierLevelData,
+  TierBenefitData,
   ConversionRuleData
 } from '../types/tier.types';
 
@@ -34,6 +35,15 @@ export class TierService implements ITierService {
     };
   }
 
+  private mapTierBenefit(benefit: any): TierBenefitData {
+    return {
+      id: benefit.id,
+      title: benefit.title,
+      description: benefit.description,
+      sortOrder: benefit.sortOrder
+    };
+  }
+
   private mapConversionRule(rule: any): ConversionRuleData {
     return {
       id: rule.id,
@@ -49,6 +59,10 @@ export class TierService implements ITierService {
     const tiers = await prisma.tierMember.findMany({
       orderBy: { minPoints: 'asc' },
       include: {
+        tierBenefits: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' }
+        },
         conversionRules: {
           include: {
             transactionType: true
@@ -59,6 +73,7 @@ export class TierService implements ITierService {
 
     return tiers.map(tier => ({
       ...this.mapTierLevel(tier),
+      benefits: tier.tierBenefits.map(benefit => this.mapTierBenefit(benefit)),
       conversionRules: tier.conversionRules.map(rule =>
         this.mapConversionRule(rule)
       )

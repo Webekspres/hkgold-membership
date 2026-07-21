@@ -22,6 +22,7 @@ enum ActivityLogAction: string
     case ContentUpdated = 'content_updated';
     case TierConfigUpdated = 'tier_config_updated';
     case PromotionBannerUpdated = 'promotion_banner_updated';
+    case FaqUpdated = 'faq_updated';
     case RedeemConfirmation = 'redeem_confirmation';
     case RedeemTokenExpiredRelease = 'redeem_token_expired_release';
 
@@ -44,6 +45,7 @@ enum ActivityLogAction: string
             self::ContentUpdated => 'Konten Diperbarui',
             self::TierConfigUpdated => 'Konfigurasi Tier Diperbarui',
             self::PromotionBannerUpdated => 'Banner Promosi Diperbarui',
+            self::FaqUpdated => 'FAQ Diperbarui',
             self::RedeemConfirmation => 'Konfirmasi Redeem Poin',
             self::RedeemTokenExpiredRelease => 'Rilis Token Redeem Kedaluwarsa',
         };

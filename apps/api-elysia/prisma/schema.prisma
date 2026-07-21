@@ -572,6 +572,18 @@ model PromotionBanner {
   @@map("promotion_banners")
 }
 
+model FaqItem {
+  id        String   @id @default(uuid()) @db.Char(36)
+  question  String   @map("question") @db.VarChar(255)
+  answer    String   @map("answer") @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([sortOrder])
+  @@map("faq_items")
+}
+
 // =============================================================================
 // KONFIGURASI DINAMIS (TIPE TRANSAKSI, TIER, KONVERSI)
 // =============================================================================
@@ -599,6 +611,7 @@ model TierMember {
   updatedAt DateTime   @updatedAt @map("updated_at")
 
   conversionRules ConversionRule[]
+  tierBenefits    TierBenefit[]
 
   @@map("tier_members")
 }
@@ -617,6 +630,22 @@ model ConversionRule {
   @@unique([transactionTypeId, tierMemberId])
   @@index([tierMemberId])
   @@map("conversion_rules")
+}
+
+model TierBenefit {
+  id           String   @id @default(uuid()) @db.Char(36)
+  tierMemberId Int      @map("tier_member_id")
+  title        String   @db.VarChar(255)
+  description  String   @db.VarChar(255)
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tierMember TierMember @relation(fields: [tierMemberId], references: [id], onDelete: Cascade)
+
+  @@index([tierMemberId, sortOrder])
+  @@map("tier_benefits")
 }
 
 // =============================================================================

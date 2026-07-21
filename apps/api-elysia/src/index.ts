@@ -12,6 +12,8 @@ import { otpRoutes } from "./modules/otp/routes/otp.routes";
 import { deviceRoutes } from "./modules/device/routes/device.routes";
 import { tierRoutes } from "./modules/tier/routes/tier.routes";
 import { promotionBannerRoutes } from "./modules/promotion-banner/routes/promotion-banner.routes";
+import { faqRoutes } from "./modules/faq/routes/faq.routes";
+import { pointLedgerRoutes } from "./modules/point-ledger/routes/point-ledger.routes";
 
 const app = new Elysia()
   .get("/", () => "Hello Elysia")
@@ -28,6 +30,8 @@ const app = new Elysia()
   .use(deviceRoutes)
   .use(tierRoutes)
   .use(promotionBannerRoutes)
+  .use(faqRoutes)
+  .use(pointLedgerRoutes)
   .listen({
     port: 3000,
     hostname: '0.0.0.0'

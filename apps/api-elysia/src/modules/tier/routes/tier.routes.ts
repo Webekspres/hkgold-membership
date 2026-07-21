@@ -6,7 +6,7 @@ export const tierRoutes = new Elysia({ prefix: '/api/tier' })
   /**
    * GET /api/tier/levels
    * Auth required - all tier endpoints need auth
-   * Returns all tier levels with conversion rules
+   * Returns all tier levels with benefits and conversion rules
    */
   .use(requireActiveUser)
   .get('/levels', async ({ memberId }) => {
@@ -29,7 +29,7 @@ export const tierRoutes = new Elysia({ prefix: '/api/tier' })
     }
   }, {
     detail: {
-      summary: 'Get all tier levels with conversion rules',
+      summary: 'Get all tier levels with benefits and conversion rules',
       tags: ['Tier']
     }
   })

@@ -1,5 +1,12 @@
 import type { MemberTier } from '../../../generated/prisma/enums';
 
+export interface TierBenefitData {
+  id: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+}
+
 export interface TierLevelData {
   id: number;
   tierCode: MemberTier;
@@ -20,6 +27,7 @@ export interface ConversionRuleData {
 }
 
 export interface TierWithConversionRules extends TierLevelData {
+  benefits: TierBenefitData[];
   conversionRules: ConversionRuleData[];
 }
 
