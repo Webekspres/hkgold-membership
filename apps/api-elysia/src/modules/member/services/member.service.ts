@@ -1,16 +1,51 @@
 import { prisma } from '../../../db';
 import { IMemberService } from '../interfaces/member.interface';
-import { MemberProfileData, UpdateMemberProfileRequest } from '../types/member.types';
+import {
+  MemberGender,
+  MemberProfileData,
+  UpdateMemberProfileRequest
+} from '../types/member.types';
 import { authService } from '../../auth/services/auth.service';
 import { addressService } from '../../address/services/address.service';
+import { mediaService } from '../../media/services/media.service';
+
+const GENDERS: MemberGender[] = ['MALE', 'FEMALE'];
+
+function parseBirthDate(value: string | null): Date | null {
+  if (value === null) return null;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error('Format birthDate tidak valid (gunakan YYYY-MM-DD)');
+  }
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error('Format birthDate tidak valid (gunakan YYYY-MM-DD)');
+  }
+
+  const today = new Date();
+  const todayUtc = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  );
+  if (parsed.getTime() > todayUtc.getTime()) {
+    throw new Error('Tanggal lahir tidak boleh di masa depan');
+  }
+
+  return parsed;
+}
+
+function parseGender(value: MemberGender | null): MemberGender | null {
+  if (value === null) return null;
+  if (!GENDERS.includes(value)) {
+    throw new Error('Gender tidak valid (MALE atau FEMALE)');
+  }
+  return value;
+}
 
 export class MemberService implements IMemberService {
   async getProfileByUserId(userId: string): Promise<MemberProfileData | null> {
     if (!userId) return null;
 
-    // Baca data member + user + foto profil dalam satu query.
-    // Catatan: address DIBACA lewat addressService (bukan join langsung) agar
-    // transformasi region wilayah konsisten dengan modul Address.
     const member = await prisma.member.findUnique({
       where: { userId },
       select: {
@@ -19,6 +54,7 @@ export class MemberService implements IMemberService {
         memberNumber: true,
         phoneNumber: true,
         birthDate: true,
+        gender: true,
         currentTier: true,
         pointBalance: true,
         highestPoint: true,
@@ -35,17 +71,16 @@ export class MemberService implements IMemberService {
             profilePhoto: {
               select: {
                 id: true,
-                fileUrl: true,
-              },
-            },
-          },
-        },
-      },
+                fileUrl: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!member || !member.user) return null;
 
-    // Ambil address lewat service publik modul Address (jika ada)
     const address = member.addressId
       ? await addressService.getById(member.addressId)
       : null;
@@ -55,6 +90,7 @@ export class MemberService implements IMemberService {
       memberNumber: member.memberNumber,
       phoneNumber: member.phoneNumber,
       birthDate: member.birthDate,
+      gender: (member.gender as MemberGender | null) ?? null,
       currentTier: member.currentTier,
       pointBalance: member.pointBalance,
       highestPoint: member.highestPoint,
@@ -82,101 +118,95 @@ export class MemberService implements IMemberService {
     userId: string,
     data: UpdateMemberProfileRequest
   ): Promise<MemberProfileData> {
-    const { fullName, email, phoneNumber, birthDate, profilePhotoId, address } = data;
+    const { fullName, birthDate, gender, address } = data;
 
-    const hasUserUpdate = fullName !== undefined || email !== undefined || profilePhotoId !== undefined;
-    const hasMemberUpdate = phoneNumber !== undefined || birthDate !== undefined;
+    const hasUserUpdate = fullName !== undefined;
+    const hasMemberUpdate = birthDate !== undefined || gender !== undefined;
     const hasAddressUpdate = address !== undefined;
 
     if (!hasUserUpdate && !hasMemberUpdate && !hasAddressUpdate) {
       throw new Error('Tidak ada data yang diubah');
     }
 
-    // Pastikan member ada sebelum memutasi apa pun
     const member = await prisma.member.findUnique({
       where: { userId },
-      select: { id: true, addressId: true, phoneNumber: true }
+      select: { id: true, addressId: true }
     });
     if (!member) {
       throw new Error('Member tidak ditemukan');
     }
 
-    // 1. Validasi email unique jika diubah
-    if (email !== undefined) {
-      const existingEmail = await prisma.user.findFirst({
-        where: {
-          email,
-          id: { not: userId }
-        }
-      });
-      if (existingEmail) {
-        throw new Error('Email sudah digunakan oleh user lain');
+    let trimmedName: string | undefined;
+    if (fullName !== undefined) {
+      trimmedName = fullName.trim();
+      if (trimmedName.length === 0) {
+        throw new Error('Nama lengkap tidak boleh kosong');
+      }
+      if (trimmedName.length > 150) {
+        throw new Error('Nama lengkap maksimal 150 karakter');
       }
     }
 
-    // 2. Validasi & normalisasi phone jika diubah
-    let normalizedPhone: string | undefined;
-    if (phoneNumber !== undefined) {
-      // Reuse normalizePhoneNumber dari auth.service (import di atas atau inline)
-      normalizedPhone = this.normalizePhoneNumber(phoneNumber);
+    const parsedBirthDate =
+      birthDate !== undefined ? parseBirthDate(birthDate) : undefined;
+    const parsedGender = gender !== undefined ? parseGender(gender) : undefined;
 
-      const existingPhone = await prisma.member.findFirst({
-        where: {
-          phoneNumber: normalizedPhone,
-          id: { not: member.id }
-        }
-      });
-      if (existingPhone) {
-        throw new Error('Nomor HP sudah digunakan oleh member lain');
+    if (address !== undefined) {
+      const street = address.street?.trim() ?? '';
+      if (!address.villageId || !address.postalCodeId) {
+        throw new Error('villageId dan postalCodeId wajib diisi');
       }
+      if (!street) {
+        throw new Error('Alamat jalan (street) wajib diisi');
+      }
+      await addressService.assertRegionPair(address.villageId, address.postalCodeId);
     }
 
-    // 3. Parse birthDate jika ada
-    let parsedBirthDate: Date | null | undefined;
-    if (birthDate !== undefined) {
-      if (birthDate === null) {
-        parsedBirthDate = null;
-      } else {
-        parsedBirthDate = new Date(birthDate);
-        if (isNaN(parsedBirthDate.getTime())) {
-          throw new Error('Format birthDate tidak valid (gunakan ISO 8601)');
-        }
-      }
-    }
-
-    // 4. Update field User (fullName, email, foto profil) via service auth
-    if (hasUserUpdate) {
-      await authService.updateUserProfile(userId, { fullName, profilePhotoId });
-
-      // Email update langsung (authService.updateUserProfile belum support email)
-      if (email !== undefined) {
-        await prisma.user.update({
+    await prisma.$transaction(async (tx) => {
+      if (trimmedName !== undefined) {
+        await tx.user.update({
           where: { id: userId },
-          data: { email }
+          data: { fullName: trimmedName }
         });
       }
-    }
 
-    // 5. Update field Member (phoneNumber, birthDate)
-    if (hasMemberUpdate) {
-      await prisma.member.update({
-        where: { id: member.id },
-        data: {
-          ...(normalizedPhone !== undefined ? { phoneNumber: normalizedPhone } : {}),
-          ...(parsedBirthDate !== undefined ? { birthDate: parsedBirthDate } : {})
-        }
-      });
-    }
-
-    // 6. Update alamat via service Address
-    if (hasAddressUpdate) {
-      if (!member.addressId) {
-        throw new Error('Member belum memiliki alamat untuk diperbarui');
+      if (parsedBirthDate !== undefined || parsedGender !== undefined) {
+        await tx.member.update({
+          where: { id: member.id },
+          data: {
+            ...(parsedBirthDate !== undefined ? { birthDate: parsedBirthDate } : {}),
+            ...(parsedGender !== undefined ? { gender: parsedGender } : {})
+          }
+        });
       }
-      await addressService.update(member.addressId, address);
-    }
 
-    // Kembalikan profil terbaru hasil agregasi
+      if (address !== undefined) {
+        const street = address.street.trim();
+        if (member.addressId) {
+          await tx.address.update({
+            where: { id: member.addressId },
+            data: {
+              villageId: address.villageId,
+              postalCodeId: address.postalCodeId,
+              street
+            }
+          });
+        } else {
+          const created = await tx.address.create({
+            data: {
+              villageId: address.villageId,
+              postalCodeId: address.postalCodeId,
+              street
+            }
+          });
+          await tx.member.update({
+            where: { id: member.id },
+            data: { addressId: created.id }
+          });
+        }
+      }
+    });
+
     const updated = await this.getProfileByUserId(userId);
     if (!updated) {
       throw new Error('Gagal mengambil profil setelah update');
@@ -184,23 +214,54 @@ export class MemberService implements IMemberService {
     return updated;
   }
 
-  // Helper: normalize phone number (reuse dari auth.service pattern)
-  private normalizePhoneNumber(phone: string): string {
-    let cleaned = phone.replace(/\D/g, '');
-
-    if (cleaned.startsWith('08')) {
-      cleaned = '62' + cleaned.slice(1);
+  async updateAvatarByUserId(userId: string, file: File): Promise<MemberProfileData> {
+    const member = await prisma.member.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        user: { select: { profilePhotoId: true } }
+      }
+    });
+    if (!member) {
+      throw new Error('Member tidak ditemukan');
     }
 
-    if (!cleaned.startsWith('62')) {
-      throw new Error('Nomor HP harus format Indonesia (+62 atau 08)');
+    const previousPhotoId = member.user?.profilePhotoId ?? null;
+    let uploadedMediaId: string | null = null;
+
+    try {
+      const media = await mediaService.upload({
+        file,
+        folder: 'member/photo',
+        image: { maxSize: 512, quality: 80 }
+      });
+      uploadedMediaId = media.id;
+
+      await authService.updateUserProfile(userId, { profilePhotoId: media.id });
+
+      if (previousPhotoId && previousPhotoId !== media.id) {
+        try {
+          await mediaService.delete(previousPhotoId);
+        } catch {
+          // ponytail: orphan media cleanup best-effort; cron/S3 GC later
+        }
+      }
+    } catch (error) {
+      if (uploadedMediaId) {
+        try {
+          await mediaService.delete(uploadedMediaId);
+        } catch {
+          // ignore rollback failure
+        }
+      }
+      throw error;
     }
 
-    if (cleaned.length < 11 || cleaned.length > 14) {
-      throw new Error('Nomor HP tidak valid');
+    const updated = await this.getProfileByUserId(userId);
+    if (!updated) {
+      throw new Error('Gagal mengambil profil setelah upload avatar');
     }
-
-    return '+' + cleaned;
+    return updated;
   }
 }
 

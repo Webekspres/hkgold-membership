@@ -89,6 +89,9 @@ export default function RootLayout() {
               <Stack.Screen name="tier-benefit" />
               <Stack.Screen name="redeem" />
               <Stack.Screen name="reward/[sku]" />
+              <Stack.Screen name="change-password" />
+              <Stack.Screen name="profile/detail" />
+              <Stack.Screen name="profile/edit" />
             </Stack>
           </AuthGate>
           <PortalHost />

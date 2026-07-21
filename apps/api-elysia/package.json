@@ -15,7 +15,8 @@
     "elysia": "latest",
     "ioredis": "^5.11.1",
     "mysql2": "^3.22.6",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",

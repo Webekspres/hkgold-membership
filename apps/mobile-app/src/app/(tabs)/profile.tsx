@@ -9,7 +9,7 @@ import {
   LogOut,
   MapPin,
   Newspaper,
-  Settings,
+  UserRound,
 } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { ScrollView, View } from "react-native";
@@ -66,7 +66,7 @@ const profileMenuSections: ProfileMenuSection[] = [
     title: "Akun",
     items: [
       { key: "change-password", title: "Ganti Password", icon: Key },
-      { key: "account-settings", title: "Pengaturan Akun", icon: Settings },
+      { key: "account-settings", title: "Profil Saya", icon: UserRound },
       { key: "logout", title: "Logout", icon: LogOut, destructive: true },
     ],
   },
@@ -113,6 +113,9 @@ export default function ProfileScreen() {
       case "change-password":
         router.push("/change-password");
         return;
+      case "account-settings":
+        router.push("/profile/detail" as Href);
+        return;
       default:
         router.push("/cms");
     }
@@ -150,8 +153,6 @@ export default function ProfileScreen() {
                 fullName={card.fullName}
                 memberCode={card.memberNumber}
                 currentTier={card.currentTier}
-                points={card.pointBalance}
-                tierName={card.tierLabel}
                 avatarUri={card.avatarUri}
                 avatarFallback={card.avatarFallback}
                 onPressMemberCode={() => void copyMemberCode(card.memberNumber)}

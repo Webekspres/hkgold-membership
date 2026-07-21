@@ -13,14 +13,10 @@ import { SilverGradientText } from "@/components/shared/silver-gradient-text";
 import { Text } from "@/components/ui/text";
 
 import {
-  GOLD_CARD_GRADIENT_END,
-  GOLD_CARD_GRADIENT_START,
-  GOLD_CARD_VIGNETTE,
   GOLD_GRADIENT_END,
   GOLD_GRADIENT_START,
-  GOLD_MEMBER_PILL_COLORS,
   SILVER_GRADIENT_COLORS,
-  TIER_GRADIENTS,
+  TIER_CARD_BACKGROUND_IMAGES,
 } from "@/config/brand";
 
 import { cn } from "@/lib/utils";
@@ -30,31 +26,6 @@ import type { MemberTier } from "@/types/auth";
 cssInterop(LinearGradient, { className: "style" });
 
 cssInterop(Image, { className: "style" });
-
-const SWOOSH_ELITE = require("@/assets/media/tier/elite-swoosh.webp");
-const SWOOSH_GOLD = require("@/assets/media/tier/gold-swoosh.webp");
-
-function swooshAssetForTier(tier: MemberTier) {
-  return tier === "ELITE" ? SWOOSH_ELITE : SWOOSH_GOLD;
-}
-
-/** Tinggi dekorasi swoosh di bawah kartu. */
-
-const SWOOSH_H = 56;
-
-const SWOOSH_SHADOW = Platform.select({
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  android: {
-    elevation: 3,
-    backgroundColor: "transparent",
-  },
-  default: {},
-});
 
 export type { MemberTier };
 
@@ -80,62 +51,32 @@ const TIER_STYLES: Record<
     label: string;
 
     textClassName: string;
-
-    backgroundColors: any;
-
-    dividerColors: any;
   }
 > = {
   SILVER: {
     label: "Silver",
 
-    textClassName: "text-stone-200",
-
-    backgroundColors: TIER_GRADIENTS.SILVER.colors,
-
-    dividerColors: TIER_GRADIENTS.SILVER.divider,
+    textClassName: "text-stone-700",
   },
 
   GOLD: {
     label: "Gold",
 
     textClassName: "text-[#3D2608]",
-
-    backgroundColors: TIER_GRADIENTS.GOLD.colors,
-
-    dividerColors: TIER_GRADIENTS.GOLD.divider,
   },
 
   PLATINUM: {
     label: "Platinum",
 
-    textClassName: "text-slate-200",
-
-    backgroundColors: TIER_GRADIENTS.PLATINUM.colors,
-
-    dividerColors: TIER_GRADIENTS.PLATINUM.divider,
+    textClassName: "text-slate-800",
   },
 
   ELITE: {
     label: "Elite",
 
     textClassName: "text-indigo-950",
-
-    backgroundColors: TIER_GRADIENTS.ELITE.colors,
-
-    dividerColors: TIER_GRADIENTS.ELITE.divider,
   },
 };
-
-/** Pattern fade gelap agar teks tetap terbaca di kartu hitam. */
-
-const PATTERN_FADE = [
-  "rgba(10,10,10,0.75)",
-
-  "rgba(10,10,10,0.45)",
-
-  "rgba(10,10,10,0.75)",
-] as const;
 
 function formatPointBalance(points: number) {
   return (points ?? 0).toLocaleString("id-ID");
@@ -177,17 +118,12 @@ function MemberNumber({
   memberNumber,
   onPressMemberNumber,
   textClassName,
-  currentTier,
 }: {
   memberNumber: string;
   onPressMemberNumber?: () => void;
   textClassName: string;
-  currentTier: MemberTier;
 }) {
-  const pillColors =
-    currentTier === "GOLD"
-      ? GOLD_MEMBER_PILL_COLORS
-      : SILVER_GRADIENT_COLORS;
+  const pillColors = SILVER_GRADIENT_COLORS;
 
   const pill = (
     <View className="self-start overflow-hidden rounded-full px-3 py-1">
@@ -197,7 +133,7 @@ function MemberNumber({
         end={GOLD_GRADIENT_END}
         className="absolute inset-0"
       />
-      <Text className={cn("text-xs font-medium", textClassName)}>
+      <Text className={cn("text-xs font-semibold", textClassName)}>
         {memberNumber}
       </Text>
     </View>
@@ -222,34 +158,6 @@ function MemberNumber({
   return pill;
 }
 
-/** Swoosh bawah kartu — asset full-bleed. */
-
-function CardBottomSwoosh({ currentTier }: { currentTier: MemberTier }) {
-  return (
-    <View
-      pointerEvents="none"
-
-      className="absolute bottom-0 left-0 right-0"
-
-      style={{ height: SWOOSH_H }}
-    >
-      <View className="size-full" style={SWOOSH_SHADOW}>
-        <Image
-          source={swooshAssetForTier(currentTier)}
-
-          className="size-full"
-
-          contentFit="fill"
-
-          accessibilityElementsHidden
-
-          importantForAccessibility="no-hide-descendants"
-        />
-      </View>
-    </View>
-  );
-}
-
 export function MemberWalletCard({
   fullName,
 
@@ -266,10 +174,7 @@ export function MemberWalletCard({
   onPressMemberNumber,
 }: MemberWalletCardProps) {
   const tier = TIER_STYLES[currentTier];
-  const gradientStart =
-    currentTier === "GOLD" ? GOLD_CARD_GRADIENT_START : GOLD_GRADIENT_START;
-  const gradientEnd =
-    currentTier === "GOLD" ? GOLD_CARD_GRADIENT_END : GOLD_GRADIENT_END;
+  const isSilver = currentTier === "SILVER";
 
   return (
     <CardWrapper pressable={pressable} className={className}>
@@ -280,92 +185,65 @@ export function MemberWalletCard({
             "border border-amber-200/15 shadow-xl shadow-amber-950/45",
         )}
       >
-        {/* Tier-specific background gradient */}
-
-        <LinearGradient
-          colors={tier.backgroundColors as any}
-
-          start={gradientStart}
-
-          end={gradientEnd}
-
-          className="absolute inset-0"
+        {/* Tier-specific static card background image */}
+        <Image
+          source={TIER_CARD_BACKGROUND_IMAGES[currentTier]}
+          className="absolute"
+          style={{
+            top: -40,
+            bottom: 0,
+            left: -10,
+            right: -10,
+          }}
+          contentFit="cover"
+          pointerEvents="none"
         />
-
-        {currentTier === "GOLD" ? (
-          <View className="absolute inset-0" pointerEvents="none">
-            <Image
-              source={require("@/assets/media/pattern-horizontal.webp")}
-              className="absolute inset-0 size-full scale-150 opacity-25"
-              contentFit="cover"
-            />
-            <LinearGradient
-              colors={[...GOLD_CARD_VIGNETTE]}
-              start={GOLD_CARD_GRADIENT_START}
-              end={GOLD_CARD_GRADIENT_END}
-              className="absolute inset-0"
-            />
-          </View>
-        ) : (
-          <View className="absolute inset-0" pointerEvents="none">
-            <Image
-              source={require("@/assets/media/pattern-horizontal.webp")}
-
-              className="absolute inset-0 size-full opacity-90 scale-150"
-
-              contentFit="cover"
-            />
-
-            <LinearGradient
-              colors={[...PATTERN_FADE]}
-
-              start={GOLD_GRADIENT_START}
-
-              end={GOLD_GRADIENT_END}
-
-              className="absolute inset-0"
-            />
-          </View>
-        )}
-
-        <CardBottomSwoosh currentTier={currentTier} />
 
         <View className="relative z-10 pb-2">
           <SilverGradientText
             className="mb-2 text-xl"
             fontWeight="bold"
             fontFamily="serif"
+            solidWhite={isSilver}
           >
             {fullName}
           </SilverGradientText>
 
           <View className="flex-row items-stretch justify-between">
             {/* Bottom row: tier label left, points right */}
-
             <View className="flex-col justify-between self-stretch">
               <MemberNumber
                 memberNumber={memberNumber}
                 onPressMemberNumber={onPressMemberNumber}
                 textClassName={tier.textClassName}
-                currentTier={currentTier}
               />
+              <View>
+                <LinearGradient
+                  colors={[
+                    "rgba(110,110,110,0.75)",
+                    "rgba(255,255,255,0.95)",
+                    "rgba(110,110,110,0.65)",
+                    "rgba(110,110,110,0)",
+                  ]}
+                  locations={[0, 0.3, 0.65, 1]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  className="mb-2 h-0.5 w-32"
+                />
 
-              <SilverGradientText
-                className="text-2xl"
-                fontFamily="serif"
-                fontWeight="bold"
-              >
-                {tier.label}
-              </SilverGradientText>
+                <SilverGradientText
+                  className="text-2xl"
+                  fontFamily="serif"
+                  fontWeight="bold"
+                  solidWhite={isSilver}
+                >
+                  {tier.label}
+                </SilverGradientText>
+              </View>
             </View>
 
-            <View className="items-end mt-4">
-              <Text
-                className={cn(
-                  "mb-2 text-base leading-none",
-                  currentTier === "GOLD" ? "text-amber-100/55" : "text-white/55",
-                )}
-              >
+            <View className="items-start mt-6">
+              <Text className={cn("mb-2 text-base leading-none text-white")}>
                 Point :
               </Text>
 
@@ -373,6 +251,7 @@ export function MemberWalletCard({
                 fontFamily="serif"
                 fontWeight="bold"
                 className="font-libre-baskerville-bold text-6xl leading-none"
+                solidWhite={isSilver}
               >
                 {formatPointBalance(pointBalance)}
               </SilverGradientText>

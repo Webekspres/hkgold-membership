@@ -43,7 +43,7 @@ class AppPanelProvider extends PanelProvider
             //     Css::make('custom')->relativePublicPath('css/filament-custom.css'),
             // ])
             ->colors([
-                'primary' => '#e8a020',
+                'primary' => '#ebca86',
                 'emerald' => Color::Emerald,
                 'sky' => Color::Sky,
                 'rose' => Color::Rose,

@@ -8,8 +8,13 @@ export type TierBenefitRow = {
 export type TierBenefitSlide = {
   tier: MemberTier;
   title: string;
+  /** Syarat poin untuk tier ini, ditampilkan di hero. */
+  pointRange: string;
   subtitle: string;
-  accentColors: [string, string];
+  /** Palet gradient background hero — multi-stop dari brand config. */
+  backgroundColors: readonly string[];
+  gradientStart: { x: number; y: number };
+  gradientEnd: { x: number; y: number };
   iconClassName: string;
   textClassName: string;
   benefits: TierBenefitRow[];

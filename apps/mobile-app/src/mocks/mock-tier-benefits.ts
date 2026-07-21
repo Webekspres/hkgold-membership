@@ -1,14 +1,17 @@
-import { GOLD_GRADIENT_COLORS } from '@/config/brand';
+import { TIER_GRADIENTS } from '@/config/brand';
 import type { TierBenefitSlide } from '@/types/tier-benefit';
 
 export const MOCK_TIER_BENEFIT_SLIDES: TierBenefitSlide[] = [
   {
     tier: 'SILVER',
     title: 'Silver',
-    subtitle: 'Tier awal keanggotaan HK GOLD VIP',
-    accentColors: ['#e7e5e4', '#a8a29e'],
+    pointRange: '0 - 999',
+    subtitle: 'Kumpulkan 0 - 999 Poin setiap bulan untuk tier ini',
+    backgroundColors: TIER_GRADIENTS.SILVER.colors,
+    gradientStart: TIER_GRADIENTS.SILVER.start,
+    gradientEnd: TIER_GRADIENTS.SILVER.end,
     iconClassName: 'text-stone-500',
-    textClassName: 'text-stone-700',
+    textClassName: 'text-stone-800',
     benefits: [
       { label: 'Multiplier poin', value: '1x dari setiap transaksi' },
       { label: 'Katalog reward', value: 'Akses reward dasar' },
@@ -19,10 +22,13 @@ export const MOCK_TIER_BENEFIT_SLIDES: TierBenefitSlide[] = [
   {
     tier: 'GOLD',
     title: 'Gold',
-    subtitle: 'Tier loyalitas premium untuk member aktif',
-    accentColors: [...GOLD_GRADIENT_COLORS],
+    pointRange: '1000 - 2999',
+    subtitle: 'Kumpulkan 1000 - 2999 Poin setiap bulan untuk naik tier',
+    backgroundColors: TIER_GRADIENTS.GOLD.colors,
+    gradientStart: TIER_GRADIENTS.GOLD.start,
+    gradientEnd: TIER_GRADIENTS.GOLD.end,
     iconClassName: 'text-amber-600',
-    textClassName: 'text-[#b45309]',
+    textClassName: 'text-white',
     benefits: [
       { label: 'Multiplier poin', value: '1,25x dari setiap transaksi' },
       { label: 'Katalog reward', value: 'Akses reward menengah & premium' },
@@ -34,10 +40,13 @@ export const MOCK_TIER_BENEFIT_SLIDES: TierBenefitSlide[] = [
   {
     tier: 'PLATINUM',
     title: 'Platinum',
-    subtitle: 'Tier elit dengan benefit lebih lengkap',
-    accentColors: ['#cbd5e1', '#64748b'],
-    iconClassName: 'text-slate-500',
-    textClassName: 'text-slate-700',
+    pointRange: '3000 - 4999',
+    subtitle: 'Kumpulkan 3000 - 4999 Poin setiap bulan untuk naik tier',
+    backgroundColors: TIER_GRADIENTS.PLATINUM.colors,
+    gradientStart: TIER_GRADIENTS.PLATINUM.start,
+    gradientEnd: TIER_GRADIENTS.PLATINUM.end,
+    iconClassName: 'text-slate-300',
+    textClassName: 'text-white',
     benefits: [
       { label: 'Multiplier poin', value: '1,5x dari setiap transaksi' },
       { label: 'Katalog reward', value: 'Akses reward premium & terbatas' },
@@ -49,8 +58,11 @@ export const MOCK_TIER_BENEFIT_SLIDES: TierBenefitSlide[] = [
   {
     tier: 'ELITE',
     title: 'Elite',
-    subtitle: 'Tier tertinggi dengan benefit eksklusif',
-    accentColors: ['#a5b4fc', '#4338ca'],
+    pointRange: '5000+',
+    subtitle: 'Kumpulkan 5000+ Poin setiap bulan untuk tier tertinggi',
+    backgroundColors: TIER_GRADIENTS.ELITE.colors,
+    gradientStart: TIER_GRADIENTS.ELITE.start,
+    gradientEnd: TIER_GRADIENTS.ELITE.end,
     iconClassName: 'text-indigo-200',
     textClassName: 'text-white',
     benefits: [

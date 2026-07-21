@@ -1,22 +1,11 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { ChevronRight } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
-import { cssInterop } from "nativewind";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { GoldCircleIcon } from "@/components/shared/gold-circle-icon";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import {
-  GOLD_GRADIENT_COLORS,
-  GOLD_GRADIENT_SHORTCUT_END,
-  GOLD_GRADIENT_SHORTCUT_START,
-} from "@/config/brand";
 import { cn } from "@/lib/utils";
-
-cssInterop(LinearGradient, { className: "style" });
-
-const MENU_ICON_SIZE = 36;
-const MENU_ICON_INNER = 16;
 
 export type ProfileMenuItem = {
   key: string;
@@ -37,43 +26,6 @@ type ProfileMenuListProps = {
   onPressItem: (item: ProfileMenuItem) => void;
 };
 
-function MenuIconBadge({
-  icon,
-  destructive,
-}: {
-  icon: LucideIcon;
-  destructive?: boolean;
-}) {
-  if (destructive) {
-    return (
-      <View className="size-9 items-center justify-center rounded-full bg-red-100">
-        <Icon as={icon} size={MENU_ICON_INNER} className="text-red-600" />
-      </View>
-    );
-  }
-
-  return (
-    <View
-      className="rounded-full shadow-sm shadow-amber-700/30"
-      style={Platform.OS === "android" ? { elevation: 4 } : undefined}
-    >
-      <LinearGradient
-        colors={[...GOLD_GRADIENT_COLORS]}
-        start={GOLD_GRADIENT_SHORTCUT_START}
-        end={GOLD_GRADIENT_SHORTCUT_END}
-        className="items-center justify-center rounded-full"
-        style={{
-          height: MENU_ICON_SIZE,
-          width: MENU_ICON_SIZE,
-          borderRadius: MENU_ICON_SIZE / 2,
-        }}
-      >
-        <Icon as={icon} size={MENU_ICON_INNER} className="text-white" />
-      </LinearGradient>
-    </View>
-  );
-}
-
 export function ProfileMenuList({ sections, onPressItem }: ProfileMenuListProps) {
   return (
     <View className="gap-5">
@@ -89,7 +41,12 @@ export function ProfileMenuList({ sections, onPressItem }: ProfileMenuListProps)
                 accessibilityRole="button"
                 accessibilityLabel={item.title}
               >
-                <MenuIconBadge icon={item.icon} destructive={item.destructive} />
+                <GoldCircleIcon
+                  icon={item.icon}
+                  destructive={item.destructive}
+                  circleClassName="size-9"
+                  iconClassName="size-4 text-white"
+                />
                 <Text
                   className={cn(
                     "flex-1 text-sm font-medium",

@@ -1,4 +1,4 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { addressService } from '../services/address.service';
 import { requireActiveUser } from '../../../middleware/auth.middleware';
 import { CreateAddressRequest, UpdateAddressRequest } from '../types/address.types';
@@ -11,6 +11,69 @@ const statusFromMessage = (message: string): number => {
 
 export const addressRoutes = new Elysia({ prefix: '/api/address' })
   .use(requireActiveUser)
+  .get('/options', async ({ query, set }) => {
+    try {
+      const q = typeof query.q === 'string' ? query.q : '';
+      const limit = query.limit ? Number(query.limit) : 20;
+      const data = await addressService.searchOptions(q, Number.isFinite(limit) ? limit : 20);
+
+      return {
+        success: true,
+        message: 'Opsi alamat berhasil diambil',
+        data
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal mencari alamat';
+      set.status = statusFromMessage(message);
+      return {
+        success: false,
+        message
+      };
+    }
+  }, {
+    query: t.Object({
+      q: t.Optional(t.String()),
+      limit: t.Optional(t.String())
+    }),
+    detail: {
+      summary: 'Cari opsi wilayah/kode pos',
+      tags: ['Address']
+    }
+  })
+  .get('/cascade-options', async ({ query, set }) => {
+    try {
+      const parentId = query.parentId ? Number(query.parentId) : undefined;
+      const data = await addressService.listCascadeOptions(query.level, parentId);
+
+      return {
+        success: true,
+        message: 'Opsi wilayah berhasil diambil',
+        data
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal mengambil opsi wilayah';
+      set.status = statusFromMessage(message);
+      return {
+        success: false,
+        message
+      };
+    }
+  }, {
+    query: t.Object({
+      level: t.Union([
+        t.Literal('province'),
+        t.Literal('city'),
+        t.Literal('subDistrict'),
+        t.Literal('village'),
+        t.Literal('postalCode')
+      ]),
+      parentId: t.Optional(t.String())
+    }),
+    detail: {
+      summary: 'Ambil opsi alamat bertingkat',
+      tags: ['Address']
+    }
+  })
   .get('/:id', async ({ params, set }) => {
     const address = await addressService.getById(params.id);
 

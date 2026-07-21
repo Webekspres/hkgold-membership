@@ -43,7 +43,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Izinkan aplikasi mengakses galeri untuk foto profil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

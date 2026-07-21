@@ -59,8 +59,9 @@ export function HomeHeroHeader({ firstName }: HomeHeroHeaderProps) {
         </View>
 
         <Image
-          source={LOGO_ASSETS.icon}
-          className="h-14 w-14"
+          source={LOGO_ASSETS.horizontal}
+
+          className="h-12 w-28 "
           contentFit="contain"
           accessibilityLabel="HK Gold VIP"
         />
