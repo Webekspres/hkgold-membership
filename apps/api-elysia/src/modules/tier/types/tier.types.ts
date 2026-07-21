@@ -1,4 +1,4 @@
-import { MemberTier } from '@prisma/client';
+import type { MemberTier } from '../../../generated/prisma/enums';
 
 export interface TierLevelData {
   id: number;
