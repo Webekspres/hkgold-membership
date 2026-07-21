@@ -1,39 +1,45 @@
-import type { SymbolViewProps } from 'expo-symbols';
+import {
+  Gift,
+  MapPin,
+  Newspaper,
+  CalendarDays,
+  type LucideIcon,
+} from "lucide-react-native";
 
-export type HomeShortcutHref = '/cms' | '/events' | '/berita' | '/cabang' | '/reward';
+export type HomeShortcutHref = "/cms" | "/events" | "/berita" | "/cabang" | "/reward";
 
 export type HomeShortcut = {
   id: string;
   label: string;
-  icon: SymbolViewProps['name'];
+  icon: LucideIcon;
   href: HomeShortcutHref;
 };
 
 export const HOME_SHORTCUTS: HomeShortcut[] = [
   {
-    id: 'event',
-    label: 'Event',
-    icon: { ios: 'calendar.fill', android: 'event', web: 'event' },
-    href: '/events',
+    id: "event",
+    label: "Event",
+    icon: CalendarDays,
+    href: "/events",
   },
   {
-    id: 'berita',
-    label: 'Berita',
-    icon: { ios: 'newspaper.fill', android: 'article', web: 'article' },
-    href: '/berita',
+    id: "berita",
+    label: "Berita",
+    icon: Newspaper,
+    href: "/berita",
   },
   {
-    id: 'cabang',
-    label: 'Cabang',
-    icon: { ios: 'mappin.circle.fill', android: 'location_on', web: 'location_on' },
-    href: '/cabang',
+    id: "cabang",
+    label: "Cabang",
+    icon: MapPin,
+    href: "/cabang",
   },
   {
-    id: 'reward',
-    label: 'Reward',
-    icon: { ios: 'gift.fill', android: 'redeem', web: 'redeem' },
-    href: '/reward',
+    id: "reward",
+    label: "Reward",
+    icon: Gift,
+    href: "/reward",
   },
 ];
 
-export const CMS_HUB_ROUTE = '/cms' as const;
+export const CMS_HUB_ROUTE = "/cms" as const;

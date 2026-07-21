@@ -6,6 +6,7 @@ describe('Reward Module - getHomePreview', () => {
   const testSuffix = Date.now().toString().slice(-6);
   const categoryIds: number[] = [];
   const rewardIds: string[] = [];
+  let branchId: number;
 
   const now = new Date();
   const startAt = new Date(now.getTime() - 7 * 86400000);
@@ -18,6 +19,16 @@ describe('Reward Module - getHomePreview', () => {
   }
 
   beforeAll(async () => {
+    const branch = await prisma.branch.create({
+      data: {
+        branchCode: `HP${testSuffix}`,
+        name: `Home Preview Branch ${testSuffix}`,
+        address: 'Jl. Home Preview Test',
+        isOnlineWarehouse: false,
+      },
+    });
+    branchId = branch.id;
+
     // 4 categories — only top 3 by max reward.updatedAt should appear
     for (let i = 1; i <= 4; i++) {
       const cat = await prisma.categoryReward.create({
@@ -60,6 +71,14 @@ describe('Reward Module - getHomePreview', () => {
       });
       rewardIds.push(reward.id);
       await setUpdatedAt(reward.id, new Date(base + spec.ageHours * 3600000));
+      await prisma.rewardBranchStock.create({
+        data: {
+          rewardId: reward.id,
+          branchId,
+          actualStock: 3,
+          heldStock: 0,
+        },
+      });
     }
 
     // Inactive reward in cat1 — must not affect ranking / listing
@@ -81,10 +100,14 @@ describe('Reward Module - getHomePreview', () => {
 
   afterAll(async () => {
     if (rewardIds.length > 0) {
+      await prisma.rewardBranchStock.deleteMany({ where: { rewardId: { in: rewardIds } } });
       await prisma.reward.deleteMany({ where: { id: { in: rewardIds } } });
     }
     if (categoryIds.length > 0) {
       await prisma.categoryReward.deleteMany({ where: { id: { in: categoryIds } } });
+    }
+    if (branchId) {
+      await prisma.branch.delete({ where: { id: branchId } });
     }
   });
 

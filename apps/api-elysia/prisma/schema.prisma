@@ -29,7 +29,7 @@ enum MemberTier {
   SILVER
   GOLD
   PLATINUM
-  SAPPHIRE
+  ELITE
 }
 
 enum InjectionStatus {
@@ -334,7 +334,8 @@ model Member {
   highestPoint         Int        @default(0) @map("highest_point")
   lastActivityAt       DateTime   @default(now()) @map("last_activity_at")
   isSuspended          Boolean    @default(false) @map("is_suspended")
-  birthDate            DateTime?  @map("birth_date")
+  birthDate            DateTime?  @map("birth_date") @db.Date
+  gender               String?    @map("gender") @db.VarChar(20)
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
   deletedAt            DateTime?  @map("deleted_at")
@@ -741,9 +742,10 @@ model RedeemToken {
   releasedAt DateTime? @map("released_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
-  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  branch Branch @relation(fields: [branchId], references: [id])
+  member  Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  reward  Reward         @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  branch  Branch         @relation(fields: [branchId], references: [id])
+  invoice RedeemInvoice?
 
   @@index([memberId])
   @@index([rewardId])
@@ -759,15 +761,17 @@ model RedeemInvoice {
   staffId        Int          @map("staff_id")
   branchId       Int          @map("branch_id")
   rewardId       String       @map("reward_id") @db.Char(36)
+  redeemTokenId  String?      @unique @map("redeem_token_id") @db.Char(36)
   pointsRedeemed Int          @map("points_redeemed")
   status         RedeemStatus @default(COMPLETED) @map("status")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  staff  Staff   @relation(fields: [staffId], references: [id])
-  branch Branch  @relation(fields: [branchId], references: [id])
-  reward Reward  @relation(fields: [rewardId], references: [id])
+  member      Member?      @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  staff       Staff        @relation(fields: [staffId], references: [id])
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  reward      Reward       @relation(fields: [rewardId], references: [id])
+  redeemToken RedeemToken? @relation(fields: [redeemTokenId], references: [id], onDelete: SetNull)
 
   @@index([memberId])
   @@index([staffId])

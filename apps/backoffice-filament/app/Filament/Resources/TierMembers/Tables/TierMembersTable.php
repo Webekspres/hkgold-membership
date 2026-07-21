@@ -33,7 +33,7 @@ class TierMembersTable
                         return $rule ? (string) $rule->conversion_nominal : null;
                     })
                     ->formatStateUsing(fn (?string $state): string => $state !== null
-                        ? 'Rp ' . number_format((float) $state, 0, '.', ',')
+                        ? 'Rp '.number_format((float) $state, 0, '.', ',')
                         : ''
                     )
                     ->badge()

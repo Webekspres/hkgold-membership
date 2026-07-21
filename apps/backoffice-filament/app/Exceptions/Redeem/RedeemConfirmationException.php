@@ -46,6 +46,11 @@ class RedeemConfirmationException extends RuntimeException
         return new self('TOKEN_EXPIRED', 'Token redeem sudah kedaluwarsa.');
     }
 
+    public static function tokenReleased(): self
+    {
+        return new self('TOKEN_RELEASED', 'Token redeem sudah dibatalkan.');
+    }
+
     public static function branchMismatch(): self
     {
         return new self('BRANCH_MISMATCH', 'Token redeem tidak untuk cabang Anda.');

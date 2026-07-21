@@ -9,5 +9,5 @@ enum TierStatus: string
     case Silver = 'SILVER';
     case Gold = 'GOLD';
     case Platinum = 'PLATINUM';
-    case Sapphire = 'SAPPHIRE';
+    case Elite = 'ELITE';
 }

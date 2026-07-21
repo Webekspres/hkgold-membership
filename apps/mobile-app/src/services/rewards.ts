@@ -102,9 +102,4 @@ export async function fetchRewardBySku(sku: string): Promise<RewardDetail> {
   };
 }
 
-export function getAvailableBranchStock(stock: {
-  actualStock: number;
-  heldStock: number;
-}) {
-  return Math.max(stock.actualStock - stock.heldStock, 0);
-}
+export { getAvailableBranchStock } from '@/lib/reward/reward-stock';

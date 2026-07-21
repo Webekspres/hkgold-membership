@@ -1,5 +1,7 @@
 import { ApiResponse } from '../../../shared/types/response.types';
-import { AddressDetailData, UpdateAddressRequest } from '../../address/types/address.types';
+import { AddressDetailData, CreateAddressRequest } from '../../address/types/address.types';
+
+export type MemberGender = 'MALE' | 'FEMALE';
 
 // Bagian user (dari tabel users) di dalam payload member
 export interface MemberUserData {
@@ -20,6 +22,7 @@ export interface MemberProfileData {
   memberNumber: string;
   phoneNumber: string;
   birthDate: Date | null;
+  gender: MemberGender | null;
   currentTier: string;
   pointBalance: number;
   highestPoint: number;
@@ -30,16 +33,12 @@ export interface MemberProfileData {
   updatedAt: Date;
 }
 
-// Payload edit profil dari member. Menggabungkan field milik User (fullName,
-// profilePhotoId, email) dan field Member (phoneNumber, birthDate) dan field alamat.
-// Semua opsional (partial update).
+/** Payload edit profil. Email/HP/memberNumber/profilePhotoId tidak diterima. */
 export interface UpdateMemberProfileRequest {
   fullName?: string;
-  email?: string;
-  phoneNumber?: string;
-  birthDate?: string | null; // ISO 8601 string dari client
-  profilePhotoId?: string | null;
-  address?: UpdateAddressRequest;
+  birthDate?: string | null; // YYYY-MM-DD
+  gender?: MemberGender | null;
+  address?: CreateAddressRequest;
 }
 
 export type MemberProfileResponse = ApiResponse<MemberProfileData>;

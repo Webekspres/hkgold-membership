@@ -25,6 +25,7 @@ class RedeemInvoice extends Model
         'staff_id',
         'branch_id',
         'reward_id',
+        'redeem_token_id',
         'points_redeemed',
         'status',
     ];
@@ -55,5 +56,10 @@ class RedeemInvoice extends Model
     public function staff(): BelongsTo
     {
         return $this->belongsTo(Staff::class);
+    }
+
+    public function redeemToken(): BelongsTo
+    {
+        return $this->belongsTo(RedeemToken::class, 'redeem_token_id');
     }
 }

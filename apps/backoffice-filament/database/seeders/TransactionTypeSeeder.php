@@ -25,8 +25,8 @@ class TransactionTypeSeeder extends Seeder
                 ['type_key' => $typeKey],
                 [
                     'display_name' => $displayName,
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ],
             );
         }

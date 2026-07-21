@@ -28,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
         Action::macro('goldStyle', function () {
             return $this
                 ->extraAttributes([
-                    'style' => 'background: linear-gradient(135deg, #f5c842, #e8a020); border: none; font-weight: 600; color: #111827;',
-                    'class' => 'text-gray-900 hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-300',
+                    'style' => 'background: linear-gradient(135deg, #D1A13B, #ebca86, #9A6B1F); border: none; border-radius: 6px; box-shadow: 0 2px 6px rgb(154 107 31 / 0.25); font-weight: 600; color: #292524;',
+                    'class' => 'hover:brightness-110 hover:scale-105 active:brightness-95 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 transition-all duration-300',
                 ]);
         });
     }

@@ -281,6 +281,21 @@ Setelah migrasi baru: jalankan `php artisan migrate` lalu pastikan API Elysia ma
   - Nomor struk (`reference_id`) unik global per `transaction_type_id`; boleh kosong (null).
   - `PointMutation`: `member_id` wajib, `branch_id` nullable.
 - Detail implementasi: lihat `app/Services/Loyalty/` dan `tests/Feature/Loyalty/`.
+- **Redeem kasir — wizard scan + OTP (`RedeemTokenResource` / Antrean Kupon):**
+  - Header action `VerifyRedeemTokenAction` — wizard 3 langkah (Token → Kirim OTP → Konfirmasi).
+  - Langkah **Token**: Filament `Tabs` — **Scan QR** (default) | **Ketik Manual**.
+  - Scan QR: `html5-qrcode` + Alpine `redeemTokenQrScanner` (`resources/js/components/redeem-token-qr-scanner.js`).
+  - Entry Vite terpisah: `resources/js/redeem-token-scanner.js` — di-load global via renderHook `filament.partials.redeem-token-scanner-assets` di `AppPanelProvider` (jangan andalkan `app.js`; Filament panel tidak memuatnya).
+  - Blade scanner: `resources/views/filament/resources/redeem-tokens/partials/token-qr-scanner.blade.php`.
+  - Normalisasi kode token (ketik / hasil scan): `VerifyRedeemTokenFormSupport::normalizeTokenCode()` — 10 karakter alfanumerik uppercase; QR mobile berisi plain `tokenCode`.
+  - Kamera browser butuh **HTTPS** atau `localhost`; dukung laptop (webcam) dan tablet/HP (kamera belakang).
+  - Setelah ubah JS: `npm run build` atau `composer dev` (vite) + hard refresh browser.
+- **Redeem post-confirm (Fase 8):**
+  - Setelah OTP sukses di `VerifyRedeemTokenAction`: **redirect** ke view `RedeemInvoiceResource` (bukan stay di Antrean Kupon).
+  - Push FCM ke member: panggil pipeline notifikasi existing (`NotificationService` → `MobileAppPush` → `FcmPushDriver`) dari `RedeemConfirmationService` **setelah** commit invoice — **fail-soft** (gagal FCM tidak rollback redeem).
+  - Payload data: `type=redeem_invoice`, `invoiceId` → deep link mobile `/redeem/[id]`.
+  - Token perangkat disimpan lewat api-elysia (`device_push_tokens`); jangan invent sender FCM baru.
+  - Spesifikasi: `memory/dev_phase_redeem.md` (Fase 8).
 
 ## Data Normalization
 
@@ -331,5 +346,6 @@ Salin pola dari resource berikut saat membangun fitur baru:
 | List + chart widgets | `Members/` widgets |
 | List read-only + filter + stat cards | `PointMutations/PointMutationResource` |
 | Aksi non-CRUD (wizard modal) | `PointMutations/Actions/InjectManualPointAction` |
+| Wizard redeem + scan QR (Alpine + Vite) | `RedeemTokens/Actions/VerifyRedeemTokenAction` |
 | Konfigurasi tier + konversi inline | `TierMembers/TierMemberResource` |
 

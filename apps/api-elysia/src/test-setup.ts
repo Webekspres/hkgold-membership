@@ -48,12 +48,14 @@ const CORE_TABLES = [
 async function assertDatabaseReady(): Promise<void> {
   try {
     const rows = await prisma.$queryRawUnsafe<Array<{ table_name: string }>>(
-      `SELECT table_name FROM information_schema.tables
+      `SELECT table_name AS table_name FROM information_schema.tables
        WHERE table_schema = DATABASE()
          AND table_name IN (${CORE_TABLES.map((t) => `'${t}'`).join(',')})`,
     );
 
-    const present = new Set(rows.map((r) => r.table_name));
+    const present = new Set(
+      rows.map((r) => String((r as any).table_name ?? (r as any).TABLE_NAME ?? '')),
+    );
     const missing = CORE_TABLES.filter((t) => !present.has(t));
 
     if (missing.length > 0) {

@@ -2,8 +2,10 @@ import { ChevronRight } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 
+import { GoldCircleIcon } from "@/components/shared/gold-circle-icon";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { cn } from "@/lib/utils";
 
 export type ProfileMenuItem = {
   key: string;
@@ -13,49 +15,55 @@ export type ProfileMenuItem = {
   destructive?: boolean;
 };
 
-type ProfileMenuListProps = {
-  title?: string;
+export type ProfileMenuSection = {
+  key: string;
+  title: string;
   items: ProfileMenuItem[];
+};
+
+type ProfileMenuListProps = {
+  sections: ProfileMenuSection[];
   onPressItem: (item: ProfileMenuItem) => void;
 };
 
-export function ProfileMenuList({ title = "Menu", items, onPressItem }: ProfileMenuListProps) {
+export function ProfileMenuList({ sections, onPressItem }: ProfileMenuListProps) {
   return (
-    <View className="gap-2">
-      <Text className="text-base font-semibold text-stone-900">{title}</Text>
-      <View className="overflow-hidden rounded-2xl border border-stone-100 bg-white">
-        {items.map((item, index) => (
-          <Pressable
-            key={item.key}
-            className="flex-row items-center gap-3 px-4 py-3 active:opacity-80"
-            onPress={() => onPressItem(item)}>
-            <View
-              className={
-                item.destructive
-                  ? "size-8 items-center justify-center rounded-full bg-red-100"
-                  : "size-8 items-center justify-center rounded-full bg-amber-100"
-              }>
-              <Icon
-                as={item.icon}
-                size={16}
-                className={item.destructive ? "text-red-600" : "text-amber-700"}
-              />
-            </View>
-            <Text
-              className={
-                item.destructive
-                  ? "flex-1 text-sm text-red-600"
-                  : "flex-1 text-sm text-stone-800"
-              }>
-              {item.title}
-            </Text>
-            <Icon as={ChevronRight} size={14} className="text-stone-400" />
-            {index < items.length - 1 ? (
-              <View className="absolute bottom-0 left-14 right-4 h-px bg-stone-100" />
-            ) : null}
-          </Pressable>
-        ))}
-      </View>
+    <View className="gap-5">
+      {sections.map((section) => (
+        <View key={section.key} className="gap-2">
+          <Text className="text-base font-bold text-stone-900">{section.title}</Text>
+          <View>
+            {section.items.map((item, index) => (
+              <Pressable
+                key={item.key}
+                className="flex-row items-center gap-3 rounded-xl py-2.5 active:opacity-70"
+                onPress={() => onPressItem(item)}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
+              >
+                <GoldCircleIcon
+                  icon={item.icon}
+                  destructive={item.destructive}
+                  circleClassName="size-9"
+                  iconClassName="size-4 text-white"
+                />
+                <Text
+                  className={cn(
+                    "flex-1 text-sm font-medium",
+                    item.destructive ? "text-red-600" : "text-stone-800",
+                  )}
+                >
+                  {item.title}
+                </Text>
+                <Icon as={ChevronRight} size={14} className="text-stone-400" />
+                {index < section.items.length - 1 ? (
+                  <View className="absolute bottom-0 left-12 right-0 h-px bg-stone-100" />
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ))}
     </View>
   );
 }

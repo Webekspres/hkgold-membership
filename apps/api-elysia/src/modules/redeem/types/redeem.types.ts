@@ -37,6 +37,17 @@ export interface RedeemInvoiceData {
   branch: RedeemBranchSummary;
 }
 
+export type RedeemTokenStatusKind =
+  | 'active'
+  | 'completed'
+  | 'released'
+  | 'expired';
+
+export interface RedeemTokenStatusData {
+  status: RedeemTokenStatusKind;
+  invoiceId?: string;
+}
+
 export type RedeemErrorCode =
   | 'REWARD_NOT_FOUND'
   | 'REWARD_NOT_ACTIVE'
@@ -45,6 +56,10 @@ export type RedeemErrorCode =
   | 'MEMBER_SUSPENDED'
   | 'INSUFFICIENT_POINTS'
   | 'TOKEN_NOT_FOUND'
+  | 'TOKEN_ALREADY_USED'
+  | 'TOKEN_ALREADY_RELEASED'
+  | 'TOKEN_ALREADY_ACTIVE'
+  | 'TOKEN_EXPIRED'
   | 'HISTORY_NOT_FOUND';
 
 export class RedeemError extends Error {

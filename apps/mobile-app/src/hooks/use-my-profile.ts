@@ -7,6 +7,7 @@ import {
   mapSessionToCardView,
   type MemberCardView,
 } from '@/services/member';
+import type { MemberProfile } from '@/types/member';
 
 export const MEMBER_ME_QUERY_KEY = ['member', 'me'] as const;
 
@@ -26,11 +27,14 @@ export function useMyProfile() {
     retry: 1,
   });
 
+  const profile: MemberProfile | null = query.data ?? null;
+
   const card: MemberCardView | null = query.data
     ? mapProfileToCardView(query.data)
     : sessionView;
 
   return {
+    profile,
     card,
     isLoading: authLoading || (query.isLoading && !card),
     isRefreshing: query.isFetching && !!card,

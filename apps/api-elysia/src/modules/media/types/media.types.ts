@@ -16,6 +16,8 @@ export interface MediaData {
 export interface UploadMediaRequest {
   file: File; // File object dari Elysia
   caption?: string;
+  folder?: string; // e.g. "member/photo"
+  image?: { maxSize: number; quality: number }; // when set -> resize+webp
 }
 
 // Response upload media

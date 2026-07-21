@@ -17,6 +17,10 @@ function statusForRedeemError(code: RedeemErrorCode): number {
       return 403;
     case 'STOCK_UNAVAILABLE':
     case 'INSUFFICIENT_POINTS':
+    case 'TOKEN_ALREADY_USED':
+    case 'TOKEN_ALREADY_RELEASED':
+    case 'TOKEN_ALREADY_ACTIVE':
+    case 'TOKEN_EXPIRED':
       return 409;
     case 'REWARD_NOT_ACTIVE':
     default:
@@ -167,6 +171,98 @@ export const redeemRoutes = new Elysia({ prefix: '/api/redeem' })
     {
       detail: {
         summary: 'Get redeem history detail by id',
+        tags: ['Redeem'],
+      },
+    },
+  )
+  .get(
+    '/token/:redeemId/status',
+    async ({ auth, params, set }) => {
+      if (!auth?.memberId) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Unauthorized - Silakan login terlebih dahulu',
+        };
+      }
+
+      try {
+        const data = await redeemService.getRedeemTokenStatus(
+          auth.memberId,
+          params.redeemId,
+        );
+
+        return {
+          success: true,
+          message: 'Status token redeem berhasil diambil',
+          data,
+        };
+      } catch (error) {
+        if (error instanceof RedeemError) {
+          set.status = statusForRedeemError(error.code);
+          return {
+            success: false,
+            message: error.message,
+            error: error.code,
+          };
+        }
+
+        set.status = 500;
+        return {
+          success: false,
+          message: 'Gagal mengambil status token redeem',
+        };
+      }
+    },
+    {
+      detail: {
+        summary: 'Get redeem token status (active/completed/released/expired)',
+        tags: ['Redeem'],
+      },
+    },
+  )
+  .post(
+    '/cancel',
+    async ({ auth, body, set }) => {
+      if (!auth?.memberId) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Unauthorized - Silakan login terlebih dahulu',
+        };
+      }
+
+      try {
+        await redeemService.cancelRedeemToken(auth.memberId, body.redeemId);
+
+        return {
+          success: true,
+          message: 'Klaim reward berhasil dibatalkan',
+          data: null,
+        };
+      } catch (error) {
+        if (error instanceof RedeemError) {
+          set.status = statusForRedeemError(error.code);
+          return {
+            success: false,
+            message: error.message,
+            error: error.code,
+          };
+        }
+
+        set.status = 500;
+        return {
+          success: false,
+          message: 'Gagal membatalkan klaim reward',
+        };
+      }
+    },
+    {
+      body: t.Object({
+        redeemId: t.String(),
+      }),
+      detail: {
+        summary: 'Cancel active redeem reservation (refund points + held stock)',
         tags: ['Redeem'],
       },
     },

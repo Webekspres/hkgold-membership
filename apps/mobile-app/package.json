@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/libre-baskerville": "^0.4.3",
+    "@expo-google-fonts/rubik": "^0.4.2",
     "@expo/ui": "~56.0.18",
     "@react-native-community/slider": "^5.2.0",
     "@react-native-masked-view/masked-view": "0.3.2",
@@ -24,6 +26,7 @@
     "expo-font": "~56.0.7",
     "expo-glass-effect": "~56.0.4",
     "expo-image": "~56.0.11",
+    "expo-image-picker": "~56.0.21",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.14",
     "expo-notifications": "~56.0.20",

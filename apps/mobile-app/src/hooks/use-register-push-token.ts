@@ -16,8 +16,8 @@ function navigateFromNotificationData(
     return;
   }
 
-  void queryClient.invalidateQueries({ queryKey: ['active-redeem'] });
-  void queryClient.invalidateQueries({ queryKey: ['redeem-history'] });
+  void queryClient.invalidateQueries({ queryKey: ['redeem', 'active'] });
+  void queryClient.invalidateQueries({ queryKey: ['redeem', 'history'] });
   router.replace(route);
 }
 

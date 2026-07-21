@@ -1,4 +1,5 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 import { prisma } from '../../../db';
 import { IMediaService } from '../interfaces/media.interface';
 import {
@@ -75,11 +76,39 @@ const getS3Client = (): S3Client => {
 };
 
 // Helper untuk generate unique filename
-const generateFileName = (originalName: string): string => {
+const generateFileName = (originalName: string, forceExt?: string): string => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 10);
-  const extension = originalName.split('.').pop() || '';
+  const extension = forceExt ?? originalName.split('.').pop() ?? '';
   return `${timestamp}_${random}.${extension}`;
+};
+
+/** Strip public URL prefix to recover the S3 object key. */
+export const keyFromUrl = (fileUrl: string, publicUrl: string): string => {
+  const prefix = publicUrl.endsWith('/') ? publicUrl : `${publicUrl}/`;
+  if (fileUrl.startsWith(prefix)) {
+    return fileUrl.slice(prefix.length);
+  }
+  // Fallback: last path segment(s) after stripping known public base
+  try {
+    const url = new URL(fileUrl);
+    return url.pathname.replace(/^\//, '');
+  } catch {
+    return fileUrl;
+  }
+};
+
+/** Resize cover + WebP encode. Exported for unit check. */
+export const compressToWebp = async (
+  buffer: Buffer,
+  maxSize: number,
+  quality: number
+): Promise<Buffer> => {
+  return sharp(buffer)
+    .rotate()
+    .resize(maxSize, maxSize, { fit: 'cover' })
+    .webp({ quality })
+    .toBuffer();
 };
 
 // Prisma data to MediaData
@@ -99,22 +128,34 @@ export class MediaService implements IMediaService {
     // 1. Parse & validate file
     const file = await parseFileFromRequest(data);
 
-    // 2. Generate unique filename
-    const fileName = generateFileName(file.name);
+    // 2. Convert File to Buffer (Bun runtime)
+    let buffer = Buffer.from(await file.arrayBuffer());
+    let contentType = file.type;
+    let fileSize = file.size;
+    let fileName = generateFileName(file.name);
 
-    // 3. Convert File to Buffer (Bun runtime)
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // 3. Optional compress + WebP
+    if (data.image) {
+      buffer = await compressToWebp(buffer, data.image.maxSize, data.image.quality);
+      contentType = 'image/webp';
+      fileSize = buffer.length;
+      fileName = generateFileName(file.name, 'webp');
+    }
 
-    // 4. Upload to S3/MinIO
+    // 4. Folder prefix for object key
+    const folder = data.folder?.replace(/^\/+|\/+$/g, '');
+    const key = folder ? `${folder}/${fileName}` : fileName;
+
+    // 5. Upload to S3/MinIO
     const config = getS3Config();
     const client = getS3Client();
 
     const uploadCommand = new PutObjectCommand({
       Bucket: config.bucket,
-      Key: fileName,
+      Key: key,
       Body: buffer,
-      ContentType: file.type,
-      ContentLength: file.size
+      ContentType: contentType,
+      ContentLength: fileSize
     });
 
     try {
@@ -123,17 +164,17 @@ export class MediaService implements IMediaService {
       throw new Error(`Gagal upload ke S3: ${error.message}`);
     }
 
-    // 5. Construct public URL
-    const fileUrl = `${config.publicUrl}/${fileName}`;
+    // 6. Construct public URL
+    const fileUrl = `${config.publicUrl}/${key}`;
 
-    // 6. Save metadata to database
+    // 7. Save metadata to database (fileName stores full key for consistency)
     const media = await prisma.media.create({
       data: {
         caption: data.caption || null,
-        fileName,
-        fileType: file.type,
+        fileName: key,
+        fileType: contentType,
         fileUrl,
-        fileSize: file.size
+        fileSize
       }
     });
 
@@ -165,12 +206,24 @@ export class MediaService implements IMediaService {
       throw new Error('Media tidak ditemukan');
     }
 
-    // Delete from database (S3 cleanup opsional, bisa pakai cron job)
+    // Best-effort S3 object cleanup before DB row removal
+    const config = getS3Config();
+    const key = keyFromUrl(media.fileUrl, config.publicUrl);
+    try {
+      const client = getS3Client();
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: config.bucket,
+          Key: key
+        })
+      );
+    } catch (error: any) {
+      console.warn(`[media] S3 delete gagal untuk key=${key}: ${error?.message ?? error}`);
+    }
+
     await prisma.media.delete({
       where: { id }
     });
-
-    // ponytail: S3 file deletion skipped. Add S3 DeleteObjectCommand when needed for cleanup.
   }
 }
 

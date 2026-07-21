@@ -33,6 +33,7 @@ class Member extends Model
         'last_activity_at',
         'is_suspended',
         'birth_date',
+        'gender',
     ];
 
     protected function casts(): array

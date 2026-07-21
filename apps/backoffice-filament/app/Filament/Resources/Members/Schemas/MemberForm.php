@@ -266,7 +266,7 @@ class MemberForm
             TierStatus::Silver->value => 'Silver',
             TierStatus::Gold->value => 'Gold',
             TierStatus::Platinum->value => 'Platinum',
-            TierStatus::Sapphire->value => 'Sapphire',
+            TierStatus::Elite->value => 'Elite',
         ];
     }
 }

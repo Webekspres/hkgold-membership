@@ -12,10 +12,10 @@ class TierSupport
     private static function meta(TierStatus $tier): array
     {
         return match ($tier) {
-            TierStatus::Silver   => ['label' => 'Silver',   'color' => 'gray',    'order' => 1],
-            TierStatus::Gold     => ['label' => 'Gold',     'color' => 'warning', 'order' => 2],
+            TierStatus::Silver => ['label' => 'Silver',   'color' => 'gray',    'order' => 1],
+            TierStatus::Gold => ['label' => 'Gold',     'color' => 'warning', 'order' => 2],
             TierStatus::Platinum => ['label' => 'Platinum', 'color' => 'info',    'order' => 3],
-            TierStatus::Sapphire => ['label' => 'Sapphire', 'color' => 'sky',     'order' => 4],
+            TierStatus::Elite => ['label' => 'Elite', 'color' => 'sky',     'order' => 4],
         };
     }
 
@@ -51,7 +51,7 @@ class TierSupport
                 ->when($record !== null, fn ($q) => $q->where('id', '!=', $record->id))
                 ->where(function ($q) use ($minPoints, $maxPoints): void {
                     $q->where('min_points', '<=', $maxPoints)
-                      ->where('max_points', '>=', $minPoints);
+                        ->where('max_points', '>=', $minPoints);
                 })
                 ->exists();
 

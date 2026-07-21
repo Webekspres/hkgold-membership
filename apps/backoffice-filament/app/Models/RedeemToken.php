@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RedeemToken extends Model
 {
@@ -50,7 +51,8 @@ class RedeemToken extends Model
     {
         return $query
             ->where('is_used', false)
-            ->where('expired_at', '>', now());
+            ->where('expired_at', '>', now())
+            ->whereNull('released_at');
     }
 
     /**
@@ -78,5 +80,10 @@ class RedeemToken extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(RedeemInvoice::class, 'redeem_token_id');
     }
 }

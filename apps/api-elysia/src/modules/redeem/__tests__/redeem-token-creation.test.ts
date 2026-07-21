@@ -205,7 +205,7 @@ describe('Redeem Module - createRedeemToken', () => {
       const member = await prisma.member.create({
         data: {
           userId: user.id,
-          memberNumber: `${ymPrefix}-${seq}${suffix.slice(0, 3)}`,
+          memberNumber: `RD-${suffix}-${seq}`,
           phoneNumber: `0811${suffix}${seq}`,
           currentTier: 'SILVER',
           pointBalance: balance,
@@ -615,5 +615,375 @@ describe('Redeem Module - createRedeemToken', () => {
       expect(error).toBeInstanceOf(RedeemError);
       expect((error as RedeemError).code).toBe('HISTORY_NOT_FOUND');
     }
+  });
+
+  test('cancelRedeemToken refunds points and held stock', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const created = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(created.redeemId);
+
+    const beforeCancel = await prisma.member.findUniqueOrThrow({
+      where: { id: memberId },
+    });
+    expect(beforeCancel.pointBalance).toBe(5000 - POINTS_REQUIRED);
+
+    const stockBefore = await prisma.rewardBranchStock.findUniqueOrThrow({
+      where: { id: stockId },
+    });
+    expect(stockBefore.heldStock).toBe(1);
+
+    await redeemService.cancelRedeemToken(memberId, created.redeemId);
+
+    const afterMember = await prisma.member.findUniqueOrThrow({
+      where: { id: memberId },
+    });
+    expect(afterMember.pointBalance).toBe(5000);
+
+    const stockAfter = await prisma.rewardBranchStock.findUniqueOrThrow({
+      where: { id: stockId },
+    });
+    expect(stockAfter.heldStock).toBe(0);
+
+    const token = await prisma.redeemToken.findUniqueOrThrow({
+      where: { id: created.redeemId },
+    });
+    expect(token.releasedAt).not.toBeNull();
+    expect(token.isUsed).toBe(false);
+
+    const active = await redeemService.getActiveRedeemToken(memberId);
+    expect(active).toBeNull();
+
+    const status = await redeemService.getRedeemTokenStatus(
+      memberId,
+      created.redeemId,
+    );
+    expect(status.status).toBe('released');
+  });
+
+  test('cancelRedeemToken other member → TOKEN_NOT_FOUND', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const created = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(created.redeemId);
+
+    try {
+      await redeemService.cancelRedeemToken(raceMemberAId, created.redeemId);
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RedeemError);
+      expect((error as RedeemError).code).toBe('TOKEN_NOT_FOUND');
+    }
+
+    await redeemService.cancelRedeemToken(memberId, created.redeemId);
+  });
+
+  test('cancelRedeemToken used / released / expired → error codes', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const used = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(used.redeemId);
+    await prisma.redeemToken.update({
+      where: { id: used.redeemId },
+      data: { isUsed: true },
+    });
+    // used path holds stock without release — reset held so next creates work
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    try {
+      await redeemService.cancelRedeemToken(memberId, used.redeemId);
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RedeemError);
+      expect((error as RedeemError).code).toBe('TOKEN_ALREADY_USED');
+    }
+
+    const released = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(released.redeemId);
+    await redeemService.cancelRedeemToken(memberId, released.redeemId);
+    try {
+      await redeemService.cancelRedeemToken(memberId, released.redeemId);
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RedeemError);
+      expect((error as RedeemError).code).toBe('TOKEN_ALREADY_RELEASED');
+    }
+
+    const expired = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(expired.redeemId);
+    await prisma.redeemToken.update({
+      where: { id: expired.redeemId },
+      data: { expiredAt: new Date(Date.now() - 60_000) },
+    });
+    try {
+      await redeemService.cancelRedeemToken(memberId, expired.redeemId);
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RedeemError);
+      expect((error as RedeemError).code).toBe('TOKEN_EXPIRED');
+    }
+
+    const statusExpired = await redeemService.getRedeemTokenStatus(
+      memberId,
+      expired.redeemId,
+    );
+    expect(statusExpired.status).toBe('expired');
+
+    const statusUsed = await redeemService.getRedeemTokenStatus(
+      memberId,
+      used.redeemId,
+    );
+    expect(statusUsed.status).toBe('completed');
+  });
+
+  test('second create while active → TOKEN_ALREADY_ACTIVE; after cancel → OK', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const first = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(first.redeemId);
+
+    try {
+      await redeemService.createRedeemToken(memberId, {
+        rewardId,
+        branchId,
+      });
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(RedeemError);
+      expect((error as RedeemError).code).toBe('TOKEN_ALREADY_ACTIVE');
+    }
+
+    await redeemService.cancelRedeemToken(memberId, first.redeemId);
+
+    const second = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(second.redeemId);
+    expect(second.redeemId).not.toBe(first.redeemId);
+  });
+
+  test('concurrent createRedeemToken same member → one success, one TOKEN_ALREADY_ACTIVE', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const results = await Promise.allSettled([
+      redeemService.createRedeemToken(memberId, { rewardId, branchId }),
+      redeemService.createRedeemToken(memberId, { rewardId, branchId }),
+    ]);
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
+    expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(RedeemError);
+    expect((rejected[0] as PromiseRejectedResult).reason.code).toBe('TOKEN_ALREADY_ACTIVE');
+
+    tokenIds.push((fulfilled[0] as PromiseFulfilledResult<{ redeemId: string }>).value.redeemId);
+
+    await redeemService.cancelRedeemToken(
+      memberId,
+      (fulfilled[0] as PromiseFulfilledResult<{ redeemId: string }>).value.redeemId,
+    );
+  });
+
+  test('concurrent cancelRedeemToken same id → exactly one success', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const created = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(created.redeemId);
+
+    const beforeMember = await prisma.member.findUniqueOrThrow({
+      where: { id: memberId },
+    });
+    const beforeStock = await prisma.rewardBranchStock.findUniqueOrThrow({
+      where: { id: stockId },
+    });
+
+    const results = await Promise.allSettled([
+      redeemService.cancelRedeemToken(memberId, created.redeemId),
+      redeemService.cancelRedeemToken(memberId, created.redeemId),
+    ]);
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
+    expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(RedeemError);
+    expect((rejected[0] as PromiseRejectedResult).reason.code).toBe('TOKEN_ALREADY_RELEASED');
+
+    const afterMember = await prisma.member.findUniqueOrThrow({
+      where: { id: memberId },
+    });
+    const afterStock = await prisma.rewardBranchStock.findUniqueOrThrow({
+      where: { id: stockId },
+    });
+
+    expect(afterMember.pointBalance).toBe(beforeMember.pointBalance + POINTS_REQUIRED);
+    expect(afterStock.heldStock).toBe(beforeStock.heldStock - 1);
+  });
+
+  test('getRedeemTokenStatus used + invoice FK → completed with invoiceId', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const created = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(created.redeemId);
+
+    await prisma.redeemToken.update({
+      where: { id: created.redeemId },
+      data: { isUsed: true },
+    });
+
+    const staffUser = await prisma.user.create({
+      data: {
+        email: `redeem-svc-staff-${suffix}@example.com`,
+        password: 'hashed',
+        fullName: 'Redeem Svc Staff',
+        role: 'ADMINISTRATOR',
+        isActive: true,
+      },
+    });
+    const staff = await prisma.staff.create({
+      data: {
+        userId: staffUser.id,
+        branchId,
+        employeeCode: `RDSV${suffix}`,
+      },
+    });
+
+    const invoice = await prisma.redeemInvoice.create({
+      data: {
+        invoiceNumber: `RD-SVC-${suffix}`,
+        memberId,
+        staffId: staff.id,
+        branchId,
+        rewardId,
+        redeemTokenId: created.redeemId,
+        pointsRedeemed: POINTS_REQUIRED,
+        status: 'COMPLETED',
+      },
+    });
+
+    const status = await redeemService.getRedeemTokenStatus(memberId, created.redeemId);
+    expect(status.status).toBe('completed');
+    expect(status.invoiceId).toBe(invoice.id);
+
+    await prisma.redeemInvoice.delete({ where: { id: invoice.id } });
+    await prisma.staff.delete({ where: { id: staff.id } });
+    await prisma.user.delete({ where: { id: staffUser.id } });
+  });
+
+  test('getRedeemTokenStatus used without invoice FK → completed without invoiceId', async () => {
+    await prisma.redeemToken.deleteMany({ where: { memberId } });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+    await prisma.member.update({
+      where: { id: memberId },
+      data: { pointBalance: 5000 },
+    });
+
+    const created = await redeemService.createRedeemToken(memberId, {
+      rewardId,
+      branchId,
+    });
+    tokenIds.push(created.redeemId);
+
+    await prisma.redeemToken.update({
+      where: { id: created.redeemId },
+      data: { isUsed: true },
+    });
+    await prisma.rewardBranchStock.update({
+      where: { id: stockId },
+      data: { heldStock: 0 },
+    });
+
+    const status = await redeemService.getRedeemTokenStatus(memberId, created.redeemId);
+    expect(status.status).toBe('completed');
+    expect(status.invoiceId).toBeUndefined();
   });
 });

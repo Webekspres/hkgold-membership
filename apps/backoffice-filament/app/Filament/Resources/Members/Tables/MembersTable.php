@@ -70,7 +70,7 @@ class MembersTable
                         TierStatus::Silver => 'Silver',
                         TierStatus::Gold => 'Gold',
                         TierStatus::Platinum => 'Platinum',
-                        TierStatus::Sapphire => 'Sapphire',
+                        TierStatus::Elite => 'Elite',
                     })
                     ->sortable()
                     ->toggleable(),

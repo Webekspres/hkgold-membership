@@ -39,7 +39,7 @@ class ContentSeeder extends Seeder
                 'HK GOLD VIP Solo, Jl. Slamet Riyadi No. 250, Surakarta',
                 'https://maps.google.com/?q=Slamet+Riyadi+Surakarta',
             ],
-            [ContentType::News, 'Program Loyalitas Sapphire Resmi Diluncurkan', null, null],
+            [ContentType::News, 'Program Loyalitas Elite Resmi Diluncurkan', null, null],
             [
                 ContentType::Event,
                 'Charity Gold Run HK GOLD VIP',

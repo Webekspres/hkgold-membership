@@ -68,7 +68,7 @@ class PeriodTierDistributionChartWidget extends ChartWidget
             TierStatus::Silver->value => ['#94a3b8', 'Silver'],
             TierStatus::Gold->value => ['#eab308', 'Gold'],
             TierStatus::Platinum->value => ['#64748b', 'Platinum'],
-            TierStatus::Sapphire->value => ['#3b82f6', 'Sapphire'],
+            TierStatus::Elite->value => ['#3b82f6', 'Elite'],
         ];
 
         foreach (TierStatus::cases() as $tier) {

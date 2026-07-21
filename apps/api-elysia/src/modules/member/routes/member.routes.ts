@@ -63,19 +63,67 @@ export const memberRoutes = new Elysia({ prefix: '/api/member' })
     }
   }, {
     body: t.Object({
-      fullName: t.Optional(t.String()),
-      email: t.Optional(t.String({ format: 'email' })),
-      phoneNumber: t.Optional(t.String()),
+      fullName: t.Optional(t.String({ minLength: 1, maxLength: 150 })),
       birthDate: t.Optional(t.Union([t.String(), t.Null()])),
-      profilePhotoId: t.Optional(t.Union([t.String(), t.Null()])),
-      address: t.Optional(t.Object({
-        villageId: t.Optional(t.Number()),
-        postalCodeId: t.Optional(t.Number()),
-        street: t.Optional(t.String())
-      }))
+      gender: t.Optional(
+        t.Union([t.Literal('MALE'), t.Literal('FEMALE'), t.Null()])
+      ),
+      address: t.Optional(
+        t.Object({
+          villageId: t.Number(),
+          postalCodeId: t.Number(),
+          street: t.String({ minLength: 1 })
+        })
+      )
     }),
     detail: {
       summary: 'Update profil member',
       tags: ['Member']
     }
-  });
+  })
+  .put(
+    '/me/avatar',
+    async ({ auth, body, set }) => {
+      try {
+        if (!auth?.userId) {
+          set.status = 401;
+          return {
+            success: false,
+            message: 'Unauthorized - Silakan login terlebih dahulu'
+          };
+        }
+
+        if (!body.file) {
+          set.status = 400;
+          return {
+            success: false,
+            message: 'File wajib diisi'
+          };
+        }
+
+        const result = await memberService.updateAvatarByUserId(auth.userId, body.file);
+
+        return {
+          success: true,
+          message: 'Foto profil berhasil diperbarui',
+          data: result
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Gagal mengunggah foto profil';
+        set.status = statusFromMessage(message);
+        return {
+          success: false,
+          message
+        };
+      }
+    },
+    {
+      body: t.Object({
+        file: t.File()
+      }),
+      detail: {
+        summary: 'Upload/ganti foto profil member',
+        tags: ['Member']
+      }
+    }
+  );

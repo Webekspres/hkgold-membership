@@ -23,9 +23,9 @@ class ConversionRule extends Model
     protected function casts(): array
     {
         return [
-            'conversion_nominal'  => 'decimal:2',
+            'conversion_nominal' => 'decimal:2',
             'transaction_type_id' => 'integer',
-            'tier_member_id'      => 'integer',
+            'tier_member_id' => 'integer',
         ];
     }
 

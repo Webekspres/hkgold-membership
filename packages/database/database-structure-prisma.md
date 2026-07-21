@@ -27,7 +27,7 @@ enum MemberTier {
   SILVER
   GOLD
   PLATINUM
-  SAPPHIRE
+  ELITE
 }
 
 enum InjectionStatus {

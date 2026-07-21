@@ -2,12 +2,14 @@ import { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api-client';
 import { mapRedeemApiStatus } from '@/lib/format/format-redeem-status';
+import { resolveRedeemErrorMessage } from '@/lib/redeem/redeem-error-messages';
 import type { ActiveRedeemItem } from '@/types/active-redeem';
 import type { ApiEnvelope } from '@/types/auth';
 import type {
   RedeemApiStatus,
   RedeemErrorCode,
   RedeemHistoryItem,
+  RedeemTokenStatus,
 } from '@/types/redeem';
 
 type RedeemTokenApi = {
@@ -30,15 +32,9 @@ type RedeemInvoiceApi = {
   branch: RedeemHistoryItem['branch'];
 };
 
-const REDEEM_ERROR_MESSAGES: Partial<Record<RedeemErrorCode, string>> = {
-  REWARD_NOT_FOUND: 'Reward tidak ditemukan',
-  REWARD_NOT_ACTIVE: 'Reward tidak aktif',
-  STOCK_NOT_FOUND: 'Stok di cabang tidak ditemukan',
-  STOCK_UNAVAILABLE: 'Stok reward di cabang tidak tersedia',
-  MEMBER_SUSPENDED: 'Akun member sedang ditangguhkan',
-  INSUFFICIENT_POINTS: 'Poin tidak mencukupi',
-  TOKEN_NOT_FOUND: 'Token redeem tidak ditemukan',
-  HISTORY_NOT_FOUND: 'Riwayat redeem tidak ditemukan',
+type RedeemTokenStatusApi = {
+  status: RedeemTokenStatus['status'];
+  invoiceId?: string;
 };
 
 function mapInvoice(invoice: RedeemInvoiceApi): RedeemHistoryItem {
@@ -57,8 +53,9 @@ function messageFromRedeemError(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
     const payload = error.response?.data as ApiEnvelope<unknown> | undefined;
     const code = payload?.error as RedeemErrorCode | undefined;
-    if (code && REDEEM_ERROR_MESSAGES[code]) {
-      return REDEEM_ERROR_MESSAGES[code]!;
+    const mapped = resolveRedeemErrorMessage(code, fallback);
+    if (code && mapped !== fallback) {
+      return mapped;
     }
     if (payload?.message) {
       const msg = payload.message;
@@ -148,5 +145,38 @@ export async function fetchRedeemHistoryById(id: string): Promise<RedeemHistoryI
     return mapInvoice(data.data);
   } catch (error) {
     throw new Error(messageFromRedeemError(error, 'Riwayat redeem tidak ditemukan'));
+  }
+}
+
+export async function cancelRedeemToken(redeemId: string): Promise<void> {
+  try {
+    const { data } = await apiClient.post<ApiEnvelope<null>>('/api/redeem/cancel', {
+      redeemId,
+    });
+
+    if (!data.success) {
+      throw new Error(data.message || 'Gagal membatalkan klaim reward');
+    }
+  } catch (error) {
+    throw new Error(messageFromRedeemError(error, 'Gagal membatalkan klaim reward'));
+  }
+}
+
+export async function fetchRedeemTokenStatus(redeemId: string): Promise<RedeemTokenStatus> {
+  try {
+    const { data } = await apiClient.get<ApiEnvelope<RedeemTokenStatusApi>>(
+      `/api/redeem/token/${encodeURIComponent(redeemId)}/status`,
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || 'Gagal mengambil status token redeem');
+    }
+
+    return {
+      status: data.data.status,
+      invoiceId: data.data.invoiceId,
+    };
+  } catch (error) {
+    throw new Error(messageFromRedeemError(error, 'Gagal mengambil status token redeem'));
   }
 }

@@ -3,6 +3,7 @@ import {
   PaginationResponse,
   RedeemInvoiceData,
   RedeemTokenData,
+  RedeemTokenStatusData,
 } from '../types/redeem.types';
 
 export interface IRedeemService {
@@ -12,6 +13,13 @@ export interface IRedeemService {
   ): Promise<RedeemTokenData>;
 
   getActiveRedeemToken(memberId: string): Promise<RedeemTokenData | null>;
+
+  cancelRedeemToken(memberId: string, redeemId: string): Promise<void>;
+
+  getRedeemTokenStatus(
+    memberId: string,
+    redeemId: string,
+  ): Promise<RedeemTokenStatusData>;
 
   getRedeemHistory(
     memberId: string,

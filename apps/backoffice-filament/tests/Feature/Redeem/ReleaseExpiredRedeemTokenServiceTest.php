@@ -11,6 +11,7 @@ use App\Models\RedeemToken;
 use App\Models\Reward;
 use App\Services\Redeem\ReleaseExpiredRedeemTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 
@@ -32,7 +33,7 @@ beforeEach(function (): void {
 function createReleaseFixtures(
     bool $expired = true,
     bool $used = false,
-    ?\Illuminate\Support\Carbon $releasedAt = null,
+    ?Carbon $releasedAt = null,
 ): array {
     $branch = Branch::factory()->create(['address_id' => null]);
     $reward = Reward::factory()->create(['points_required' => 1000]);

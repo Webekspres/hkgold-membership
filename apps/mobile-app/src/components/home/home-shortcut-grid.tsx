@@ -1,25 +1,11 @@
-import { LinearGradient } from "expo-linear-gradient";
-import { SymbolView } from "expo-symbols";
 import { router } from "expo-router";
-import { cssInterop } from "nativewind";
 import { Fragment } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { GoldCircleIcon } from "@/components/shared/gold-circle-icon";
 import { Text } from "@/components/ui/text";
 import { HOME_SHORTCUTS } from "@/config/home-shortcuts";
 import { cn } from "@/lib/utils";
-
-cssInterop(LinearGradient, { className: "style" });
-
-const ICON_COLOR = "#ffffff";
-const SHORTCUT_SIZE = 44;
-const SHORTCUT_ICON = 16;
-/** Referensi mockup: kuning terang → amber dalam. */
-export const SHORTCUT_GRADIENT = ["#D1A13B", "#ebca86", "#9A6B1F"] as [
-  string,
-  string,
-  string,
-];
 
 type HomeShortcutGridProps = {
   className?: string;
@@ -43,33 +29,12 @@ export function HomeShortcutGrid({ className }: HomeShortcutGridProps) {
               accessibilityRole="button"
               accessibilityLabel={shortcut.label}
             >
-              {/* Shadow di wrapper — LinearGradient sering drop shadow di Android */}
-              <View
-                className="rounded-full shadow-md shadow-amber-700/40"
-                style={
-                  Platform.OS === "android"
-                    ? { elevation: 6, backgroundColor: "transparent" }
-                    : undefined
-                }
-              >
-                <LinearGradient
-                  colors={SHORTCUT_GRADIENT}
-                  start={{ x: 0.15, y: 0 }}
-                  end={{ x: 0.85, y: 1 }}
-                  className="items-center justify-center rounded-full"
-                  style={{
-                    height: SHORTCUT_SIZE,
-                    width: SHORTCUT_SIZE,
-                    borderRadius: SHORTCUT_SIZE / 2,
-                  }}
-                >
-                  <SymbolView
-                    name={shortcut.icon}
-                    size={SHORTCUT_ICON}
-                    tintColor={ICON_COLOR}
-                  />
-                </LinearGradient>
-              </View>
+              <GoldCircleIcon
+                icon={shortcut.icon}
+                circleClassName="size-11"
+                iconClassName="size-5 text-white"
+                shadowClassName="shadow-md shadow-amber-700/40"
+              />
               <Text
                 variant="small"
                 className="text-center text-[13px] font-medium text-stone-900"
