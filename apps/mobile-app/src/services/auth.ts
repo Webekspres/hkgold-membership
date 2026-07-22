@@ -155,6 +155,90 @@ export async function changePassword(
   }
 }
 
+export type ForgotPasswordOtpResult = {
+  expiresAt: string;
+  resendAvailableAt: string;
+  maskedPhone: string;
+};
+
+export class AuthApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'AuthApiError';
+  }
+}
+
+function codeFromError(error: unknown): string | undefined {
+  if (error instanceof AxiosError) {
+    const payload = error.response?.data as
+      | (ApiEnvelope<unknown> & { code?: string })
+      | undefined;
+    return payload?.code;
+  }
+  return undefined;
+}
+
+export async function sendForgotPasswordOtp(
+  identifier?: string,
+): Promise<ForgotPasswordOtpResult> {
+  try {
+    const { data } = await apiClient.post<
+      ApiEnvelope<ForgotPasswordOtpResult> & { code?: string }
+    >('/api/auth/forgot-password/send-otp', {
+      ...(identifier !== undefined ? { identifier } : {}),
+    });
+
+    if (!data.success || !data.data) {
+      throw new AuthApiError(
+        data.message || 'Gagal mengirim OTP',
+        data.code,
+      );
+    }
+
+    return data.data;
+  } catch (error) {
+    if (error instanceof AuthApiError) throw error;
+    throw new AuthApiError(
+      messageFromError(error, 'Gagal mengirim OTP'),
+      codeFromError(error),
+    );
+  }
+}
+
+export async function resetPasswordWithOtp(input: {
+  identifier?: string;
+  otp: string;
+  newPassword: string;
+}): Promise<void> {
+  try {
+    const { data } = await apiClient.post<
+      ApiEnvelope<void> & { code?: string }
+    >('/api/auth/forgot-password/reset', {
+      ...(input.identifier !== undefined
+        ? { identifier: input.identifier }
+        : {}),
+      otp: input.otp,
+      newPassword: input.newPassword,
+    });
+
+    if (!data.success) {
+      throw new AuthApiError(
+        data.message || 'Gagal mengubah password',
+        data.code,
+      );
+    }
+  } catch (error) {
+    if (error instanceof AuthApiError) throw error;
+    throw new AuthApiError(
+      messageFromError(error, 'Gagal mengubah password'),
+      codeFromError(error),
+    );
+  }
+}
+
 export async function logout(): Promise<void> {
   try {
     const { unregisterPushToken } = await import('@/services/device-push');

@@ -217,6 +217,18 @@ export class RedeemService implements IRedeemService {
           'Akun Anda sedang disuspend. Hubungi admin untuk informasi lebih lanjut.',
         );
       }
+
+      const pendingPhone = await tx.changePhoneApproval.findFirst({
+        where: { memberId, status: 'PENDING' },
+        select: { id: true },
+      });
+      if (pendingPhone) {
+        throw new RedeemError(
+          'PENDING_PHONE_CHANGE',
+          'Tidak bisa tukar poin saat ada permintaan ganti nomor yang menunggu.',
+        );
+      }
+
       if (memberRow.point_balance < reward.pointsRequired) {
         throw new RedeemError(
           'INSUFFICIENT_POINTS',

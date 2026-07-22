@@ -34,6 +34,21 @@ export const authMiddleware = new Elysia({ name: 'auth' })
         return { auth: null };
       }
 
+      // Invalidate JWT issued before phone change (force re-login)
+      if (payload.memberId && payload.iat != null) {
+        const member = await prisma.member.findUnique({
+          where: { id: payload.memberId },
+          select: { phoneChangedAt: true },
+        });
+        if (
+          member?.phoneChangedAt &&
+          payload.iat * 1000 < member.phoneChangedAt.getTime()
+        ) {
+          set.status = 401;
+          return { auth: null };
+        }
+      }
+
       return {
         auth: {
           userId: payload.userId,

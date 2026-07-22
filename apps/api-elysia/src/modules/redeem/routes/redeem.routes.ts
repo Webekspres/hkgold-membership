@@ -15,6 +15,8 @@ function statusForRedeemError(code: RedeemErrorCode): number {
       return 404;
     case 'MEMBER_SUSPENDED':
       return 403;
+    case 'PENDING_PHONE_CHANGE':
+      return 403;
     case 'STOCK_UNAVAILABLE':
     case 'INSUFFICIENT_POINTS':
     case 'TOKEN_ALREADY_USED':

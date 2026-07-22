@@ -51,7 +51,8 @@ class MemberFactory extends Factory
             'registered_at_branch_id' => null,
             'address_id' => null,
             'member_number' => now()->format('ym').'-'.fake()->unique()->numerify('####'),
-            'phone_number' => '08'.fake()->unique()->numerify('##########'),
+            // Format Filament: 62… (tanpa +). Unique — jangan hardcode nomor produksi di sini.
+            'phone_number' => '628'.fake()->unique()->numerify('##########'),
             'current_tier' => $tier,
             'point_balance' => $pointBalance,
             'highest_point' => $highestPoint,

@@ -53,7 +53,7 @@ Gerbang login aplikasi mobile React Native melayani pelanggan (Member) menggunak
 Sistem ini menganut prinsip *Single Currency, Multi-Path* (1 Saldo Wallet Terpusat, namun nominal pembagi perolehannya dibedakan dinamis via tabel `transaction_types`).
 * **Mekanisme Pembacaan:** API ElysiaJS untuk penayangan riwayat mutasi poin (`PointMutation`) wajib **membaca langsung secara real-time** melalui Prisma Client Query menuju tabel master `transaction_types` dan `conversion_rules`.
 * **Dilarang Melakukan Caching Redis** untuk alur ini guna menjamin konsistensi angka pembukuan pusat (ledger) dan transparansi mutasi saldo di gawai smartphone pelanggan secara mutlak.
-* **Status implementasi:** prinsip di atas adalah kontrak. **Modul/route mobile untuk list `PointMutation` belum ada** di `src/modules/` — jangan asumsikan endpoint ledger sudah live.
+* **Status implementasi:** modul `src/modules/point-ledger/` — `GET /api/point-ledger` (cursor pagination, `dateFrom`/`dateTo`, `limit` 1–50). Real-time Prisma query ke `PointMutation` + join `transaction_types` / `conversion_rules`; **tanpa Redis cache**.
 
 ---
 
@@ -125,7 +125,40 @@ Prisma / `packages/database` bisa lebih maju dari MySQL lokal. Sebelum SELECT ko
 | `Member` | `gender` | ✅ Ada | `MALE` \| `FEMALE` \| null; migrasi Filament + Prisma |
 | `TierBenefit` | `title`, `description`, `sortOrder`, `isActive` | ✅ Ada | Exposed via `GET /api/tier/levels` |
 
-Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, **`faq`** (`GET /api/faq` — list terurut `sortOrder`), `redeem`, `device` (push-token), **`member`** (GET/PATCH `/me`, PUT `/me/avatar`), **`address`** (`/options`, `/cascade-options`), **`tier`** (`/levels` + benefits, `/member`), **`media`** (dipakai internal oleh avatar upload; generic `POST /api/media/upload` tetap ada).
+Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, **`faq`** (`GET /api/faq` — list terurut `sortOrder`), `redeem`, `device` (push-token), **`member`** (GET/PATCH `/me`, PUT `/me/avatar` + **change-phone**), **`address`** (`/options`, `/cascade-options`), **`tier`** (`/levels` + benefits, `/member`), **`point-ledger`** (`GET /api/point-ledger`), **`media`** (dipakai internal oleh avatar upload; generic `POST /api/media/upload` tetap ada), **`auth`** (login/register/change-password + **forgot-password OTP WA**).
+
+### Member — ganti nomor HP (dual path)
+
+| Method | Path | Auth | Peran |
+| --- | --- | --- | --- |
+| `GET` | `/api/member/change-phone/status` | JWT | Status PENDING / terakhir |
+| `POST` | `/api/member/change-phone/send-otp-old` | JWT | OTP ke nomor lama (SELF_SERVICE) |
+| `POST` | `/api/member/change-phone/verify-otp-old` | JWT | Challenge token Redis |
+| `POST` | `/api/member/change-phone/send-otp-new` | JWT | OTP ke nomor baru (self-service, `challenge` wajib) |
+| `POST` | `/api/member/change-phone/request-admin` | JWT | Admin-assisted: nomor baru + alasan → PENDING (tanpa OTP) |
+| `POST` | `/api/member/change-phone/confirm` | JWT | Self-service: verifikasi OTP baru → update phone |
+| `POST` | `/api/member/change-phone/cancel` | JWT | PENDING → CANCELLED |
+| `POST` | `/internal/change-phone/approve` | Internal secret | Filament approve + WA |
+| `POST` | `/internal/change-phone/reject` | Internal secret | Filament reject + WA |
+
+Saat PENDING: blok redeem + change-password + forgot-password. Setelah ganti sukses: `Member.phoneChangedAt` invalidate JWT (`iat`). Tests: `change-phone-guard.test.ts`.
+
+### Point ledger (riwayat mutasi poin)
+
+| Method | Path | Auth | Peran |
+| --- | --- | --- | --- |
+| `GET` | `/api/point-ledger` | JWT | List mutasi poin member (cursor, `limit` 1–50, `dateFrom`/`dateTo` YYYY-MM-DD) |
+
+Real-time Prisma — **dilarang Redis cache** (§4). Mobile: `/point-ledger` + filter tanggal.
+
+### Auth — lupa password (OTP WhatsApp)
+
+| Method | Path | Auth | Peran |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/forgot-password/send-otp` | Opsional Bearer | Kirim OTP WA (`OtpType.PASSWORD_RESET`); body `{ identifier? }` — email/HP (bukan member number); JWT → nomor terdaftar |
+| `POST` | `/api/auth/forgot-password/reset` | Opsional Bearer | Verifikasi OTP + set password baru; body `{ identifier?, otp, newPassword }` |
+
+OTP TTL 5 menit; cooldown resend 60 detik. Tanpa nomor WA valid → `code: WA_NOT_SET`. Tests: `forgot-password.test.ts`.
 
 ### Member profile & avatar
 

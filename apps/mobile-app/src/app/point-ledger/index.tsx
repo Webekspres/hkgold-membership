@@ -37,7 +37,7 @@ export default function PointLedgerScreen() {
 
   const { dateFrom, dateTo } = dateRangeToApiParams(appliedRange);
   const {
-    items,
+    data,
     isLoading,
     isError,
     refetch,
@@ -48,6 +48,8 @@ export default function PointLedgerScreen() {
     dateFrom,
     dateTo,
   });
+
+  const items = data?.items ?? [];
 
   const hasActiveFilter = hasActiveDateRange(appliedRange);
 

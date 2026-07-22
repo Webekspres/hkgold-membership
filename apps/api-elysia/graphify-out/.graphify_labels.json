@@ -17,5 +17,8 @@
   "15": "tier.service.ts",
   "16": "promotion-banner.service.ts",
   "17": "redeem-routes.test.ts",
-  "18": "test-setup.ts"
+  "18": "test-setup.ts",
+  "19": "promotion-banner.service.ts",
+  "20": "CLAUDE.md",
+  "21": "change-phone.service.ts"
 }

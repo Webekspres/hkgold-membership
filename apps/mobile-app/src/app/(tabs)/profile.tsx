@@ -10,6 +10,7 @@ import {
   LogOut,
   MapPin,
   Newspaper,
+  Smartphone,
   UserRound,
 } from "lucide-react-native";
 import { useCallback, useState } from "react";
@@ -25,6 +26,7 @@ import {
   type ProfileMenuSection,
 } from "@/components/profile/profile-menu-list";
 import { createPullToRefreshControl } from "@/components/shared/pull-to-refresh";
+import { SuspendedNotice } from "@/components/shared/suspended-notice";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMemberSuspended } from "@/hooks/use-is-member-suspended";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { useProfileRedeemHighlight } from "@/hooks/use-profile-redeem-highlight";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
@@ -68,6 +71,7 @@ const profileMenuSections: ProfileMenuSection[] = [
     title: "Akun",
     items: [
       { key: "change-password", title: "Ganti Password", icon: Key },
+      { key: "change-phone", title: "Ganti Nomor HP", icon: Smartphone },
       { key: "account-settings", title: "Profil Saya", icon: UserRound },
       { key: "logout", title: "Logout", icon: LogOut, destructive: true },
     ],
@@ -77,6 +81,7 @@ const profileMenuSections: ProfileMenuSection[] = [
 export default function ProfileScreen() {
   const { logout } = useAuth();
   const { card, refetch: refetchProfile } = useMyProfile();
+  const isSuspended = useIsMemberSuspended();
   const { highlight, refetch: refetchRedeemHighlight } = useProfileRedeemHighlight();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -117,6 +122,9 @@ export default function ProfileScreen() {
         return;
       case "change-password":
         router.push("/change-password");
+        return;
+      case "change-phone":
+        router.push("/change-phone" as Href);
         return;
       case "account-settings":
         router.push("/profile/detail" as Href);
@@ -164,6 +172,8 @@ export default function ProfileScreen() {
               />
             </>
           ) : null}
+
+          {isSuspended ? <SuspendedNotice /> : null}
 
           {highlight.kind === "pending" ? (
             <ProfileLastRewardCard

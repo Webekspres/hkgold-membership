@@ -69,7 +69,6 @@ test('syncItems reorders items based on array position', function (): void {
     $a = FaqItem::query()->create(['question' => 'A', 'answer' => 'A', 'sort_order' => 0]);
     $b = FaqItem::query()->create(['question' => 'B', 'answer' => 'B', 'sort_order' => 1]);
 
-    // Swap order
     FaqSupport::syncItems([
         ['id' => $b->id, 'question' => 'B', 'answer' => 'B'],
         ['id' => $a->id, 'question' => 'A', 'answer' => 'A'],
@@ -78,3 +77,36 @@ test('syncItems reorders items based on array position', function (): void {
     expect($b->fresh()->sort_order)->toBe(0)
         ->and($a->fresh()->sort_order)->toBe(1);
 });
+
+test('syncItems trims whitespace around question and answer', function (): void {
+    FaqSupport::syncItems([
+        ['id' => null, 'question' => '  Apa itu poin?  ', 'answer' => "  Poin loyalty.  \n"],
+    ]);
+
+    $item = FaqItem::query()->first();
+
+    expect($item)->not->toBeNull()
+        ->and($item->question)->toBe('Apa itu poin?')
+        ->and($item->answer)->toBe('Poin loyalty.');
+});
+
+test('syncItems skips blank or whitespace-only rows', function (): void {
+    FaqSupport::syncItems([
+        ['id' => null, 'question' => '   ', 'answer' => 'Ada jawaban'],
+        ['id' => null, 'question' => 'Ada pertanyaan', 'answer' => '   '],
+        ['id' => null, 'question' => 'Valid', 'answer' => 'Valid juga'],
+    ]);
+
+    $items = FaqItem::query()->orderBy('sort_order')->get();
+
+    expect($items)->toHaveCount(1)
+        ->and($items[0]->question)->toBe('Valid')
+        ->and($items[0]->answer)->toBe('Valid juga')
+        ->and($items[0]->sort_order)->toBe(0);
+});
+
+test('syncItems rejects question longer than 255 characters', function (): void {
+    FaqSupport::syncItems([
+        ['id' => null, 'question' => str_repeat('a', 256), 'answer' => 'Jawaban'],
+    ]);
+})->throws(\InvalidArgumentException::class, 'Pertanyaan FAQ maksimal 255 karakter.');

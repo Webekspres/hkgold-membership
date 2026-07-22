@@ -43,6 +43,9 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | Struktur `src/` | ✅ | Lihat §3 |
 | Auth login/register | ✅ API | JWT + secure store; gate di `_layout.tsx` |
 | Ganti password | ✅ API | `/change-password` → `POST /api/auth/change-password` |
+| Ganti nomor HP | ✅ API | `/change-phone` — path 1: OTP lama → nomor baru → OTP baru → logout; path 2: `request-admin` (nomor baru + alasan, tanpa OTP) → PENDING + WA admin |
+| Riwayat poin | ✅ API | `/point-ledger` — filter tanggal + infinite scroll → `GET /api/point-ledger` |
+| Lupa password (OTP WA) | ✅ API | Login `/forgot-password` + mode lupa di `/change-password` → `POST /api/auth/forgot-password/send-otp` + `/reset` |
 | Profile (read) | ✅ API | `useMyProfile` / `services/member.ts` → `GET /api/member/me` |
 | Profile detail / edit | ✅ API | `/profile/detail`, `/profile/edit` — `PATCH /api/member/me` + alamat cascade + gender |
 | Avatar upload | ✅ API | `PUT /api/member/me/avatar` (server compress WebP, folder `member/photo`) |
@@ -57,6 +60,7 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | List Cabang | ✅ API | `q` + filter kota; infinite scroll |
 | List + detail Reward | ✅ API | search + filter + sort; list/catalog/home dari API **tanpa** reward stok 0; detail tampil cabang available > 0 saja (deep link stok habis → info reward + pesan stok habis) |
 | Redeem (reserve / active / history / detail / cancel) | ✅ API | `/redeem`, `/redeem/[id]`; QR redeem di `/card/redeem-qr` (plain `tokenCode` untuk scan kasir Filament); cancel + pull-refresh; profil highlight pending/selesai |
+| Suspended UX | ✅ UI | `isSuspended` → banner profil/card + kunci tombol Tukarkan di reward detail (`SuspendedNotice`, `useIsMemberSuspended`) |
 | Push FCM (post-confirm invoice) | ✅ wire | Register token + deep link; **bukan** Expo Go — lihat §5 |
 | Tab Card | ✅ API | `(tabs)/card` — kartu member + QR; `/card/redeem-qr` saat ada reservasi aktif |
 | FAQ | ✅ API | `/faq` — `useFaq` → `GET /api/faq` |
@@ -76,18 +80,15 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | Alamat cascade | ✅ `GET /api/address/cascade-options` | Provinsi → kota → kecamatan → kelurahan → kode pos |
 | Tier benefits CMS | ✅ `TierBenefit` + `GET /api/tier/levels` | Gradient/icon tetap di client (`TIER_GRADIENTS`) |
 | FAQ konten | ✅ `FaqItem` + `GET /api/faq` | Screen `/faq` wired ke API |
-| Ledger mutasi poin | Schema + Filament ada; **API mobile belum** | Tidak ada screen ledger di app |
-
 ### Langkah berikutnya (prioritas wajar)
 
 1. Wire home nearest branch (butuh lat/lng cabang + endpoint nearest).
-2. Proteksi suspended di UI (API redeem sudah block; tombol/pesan mobile belum).
-3. CMS hub; QA FCM di **development build** (bukan Expo Go) dengan `google-services.json` / `GoogleService-Info.plist` lokal.
-4. (Opsional) ledger mutasi poin di app; in-app notification center.
+2. CMS hub; QA FCM di **development build** (bukan Expo Go) dengan `google-services.json` / `GoogleService-Info.plist` lokal.
+3. (Opsional) in-app notification center; hapus file mati `components/dev/dev-tier-switcher.tsx` (sudah tidak dipakai di home).
 
 ### Target jangka panjang (belum / parsial)
 
-Proteksi suspended di UI, demo mode tamu, in-app notification center, ganti nomor HP (schema approval ada). Rute baru ikut pola grup Expo Router tanpa ubah fondasi stack §2.
+Demo mode tamu, in-app notification center. Rute baru ikut pola grup Expo Router tanpa ubah fondasi stack §2.
 
 ### Fondasi teknis (ringkas)
 
@@ -159,7 +160,8 @@ apps/mobile-app/
     │   ├── (auth)/
     │   │   ├── _layout.tsx      # Stack auth (login, register)
     │   │   ├── login.tsx
-    │   │   └── register.tsx
+    │   │   ├── register.tsx
+    │   │   └── forgot-password.tsx
     │   ├── (tabs)/
     │   │   ├── _layout.tsx      # Native tabs wrapper
     │   │   ├── index.tsx        # Home / dasbor member
@@ -189,6 +191,9 @@ apps/mobile-app/
     │   ├── faq/
     │   │   └── index.tsx        # FAQ — useFaq → GET /api/faq
     │   ├── change-password.tsx
+    │   ├── change-phone.tsx
+    │   ├── point-ledger/
+    │   │   └── index.tsx        # Riwayat mutasi poin + filter tanggal
     │   └── cms.tsx
     ├── components/
     │   ├── ui/                  # Komponen RNR (button, text, card, input, …)
@@ -198,6 +203,7 @@ apps/mobile-app/
     │   ├── profile/             # Profile card, menu list, points/tier card
     │   ├── tier-benefit/        # Carousel, slide card, benefit table
     │   ├── faq/
+    │   ├── point-ledger/        # point-mutation-list, point-mutation-card
     │   ├── event/
     │   ├── berita/
     │   ├── reward/
@@ -232,7 +238,7 @@ assets/                            # Di root proyek (bukan di src/)
 
 | Lapisan | Import dari | Catatan |
 | --- | --- | --- |
-| **Screen** (`src/app/`) | `@/hooks/*` dan/atau `@/services/*` | Jangan import `@/mocks/*` di route kecuali sisa mock (home nearest / FAQ) |
+| **Screen** (`src/app/`) | `@/hooks/*` dan/atau `@/services/*` | Jangan import `@/mocks/*` di route kecuali sisa mock (home nearest) |
 | **Komponen** | props dari parent | Import `@/types/*` untuk tipe props; jangan panggil service di komponen presentasional |
 | **Hooks** | `@/services/*` | React Query (`useQuery` / `useInfiniteQuery`); `staleTime` sesuai domain |
 | **Services** | `apiClient` atau `@/mocks/*` | Facade HTTP; mock hanya untuk yang belum API |
@@ -245,7 +251,8 @@ assets/                            # Di root proyek (bukan di src/)
 
 | File | Fungsi utama |
 | --- | --- |
-| `auth.ts` | login/register/logout + token storage + change-password |
+| `auth.ts` | login/register/logout + token storage + change-password + forgot-password OTP |
+| `change-phone.ts` | status / OTP old+new / confirm / cancel ganti nomor |
 | `member.ts` | `GET/PATCH /api/member/me`, avatar upload, address cascade helpers |
 | `member-profile-utils.ts` | Pure helpers format/parse profil (tanpa HTTP) |
 | `tier-benefits.ts` | `GET /api/tier/levels` → map ke `TierBenefitSlide[]` |
@@ -257,10 +264,11 @@ assets/                            # Di root proyek (bukan di src/)
 | `rewards.ts` | catalog page (sort/filter), categories, detail by sku, home catalog API |
 | `redeem.ts` | reserve / active / history / cancel / status |
 | `device-push.ts` | register / revoke FCM token |
+| `point-ledger.ts` | `GET /api/point-ledger` (cursor, dateFrom/dateTo) |
 
 ### Types (`src/types/`)
 
-`event.ts`, `news.ts`, `branch.ts`, `reward.ts`, `banner.ts`, `member.ts`, `auth.ts`, `tier-benefit.ts`, `redeem.ts`, `faq.ts`, `filter.ts` (`DateRange`, `RewardFilterState` + `sortBy`/`sortOrder`, dll.).
+`event.ts`, `news.ts`, `branch.ts`, `reward.ts`, `banner.ts`, `member.ts`, `auth.ts`, `tier-benefit.ts`, `redeem.ts`, `faq.ts`, `point-ledger.ts`, `filter.ts` (`DateRange`, `RewardFilterState` + `sortBy`/`sortOrder`, dll.).
 
 ### Mocks (`src/mocks/`)
 
@@ -268,7 +276,7 @@ Sisa aktif di runtime: nearest branch. `mock-tier-benefits.ts` = fixture legacy 
 
 ### Root Stack (`src/app/_layout.tsx`)
 
-Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, `reward`, `redeem`, `faq`, `tier-benefit`, `change-password`, `profile/detail`, `profile/edit`. Splash animasi: `AnimatedSplashOverlay` dari `@/components/shared/animated-icon`.
+Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, `reward`, `redeem`, `faq`, `tier-benefit`, `change-password`, `change-phone`, `point-ledger`, `profile/detail`, `profile/edit`. Splash animasi: `AnimatedSplashOverlay` dari `@/components/shared/animated-icon`.
 
 ### Pola UI yang dipakai ulang
 
@@ -292,7 +300,10 @@ Screen yang terdaftar: `(tabs)`, `(auth)`, `cms`, `events`, `berita`, `cabang`, 
 | `/profile/edit` | `profile/edit` | Edit profil + avatar + alamat |
 | `/tier-benefit` | `tier-benefit/index` | Keuntungan tier (API) |
 | `/faq` | `faq/index` | FAQ — `useFaq` |
-| `/change-password` | `change-password` | Ganti password |
+| `/change-password` | `change-password` | Ganti password (+ mode lupa OTP) |
+| `/change-phone` | `change-phone` | Ganti nomor HP (self-service OTP / admin-assisted PENDING) |
+| `/point-ledger` | `point-ledger/index` | Riwayat mutasi poin + filter tanggal |
+| `/forgot-password` | `(auth)/forgot-password` | Lupa password dari login (email/HP → OTP WA) |
 | `/login`, `/register` | `(auth)/login`, `(auth)/register` | Route group — URL tanpa `(auth)` |
 | `/events` | `events/index` | List event |
 | `/events/[id]` | `events/[id]` | Detail event (UUID; **bukan** `/event/...`) |
@@ -389,9 +400,10 @@ Sumber: Doppler project `hkgoldvip`, config `dev_mobile` (`doppler.yaml`). Scrip
 ```env
 # .env.example (template saja — secret di Doppler)
 EXPO_PUBLIC_API_URL=http://192.168.0.193:3000
+EXPO_PUBLIC_ADMIN_WHATSAPP=6282258119788
 ```
 
-Akses di kode: `process.env.EXPO_PUBLIC_API_URL`
+Akses di kode: `process.env.EXPO_PUBLIC_*`. `EXPO_PUBLIC_ADMIN_WHATSAPP` dipakai tombol hubungi admin saat ganti nomor HP path admin-assisted (`@/lib/admin-whatsapp.ts`).
 
 ### Integrasi API (cara migrasi)
 
@@ -407,7 +419,9 @@ Jangan ubah import di screen saat API siap — **ganti implementasi di `src/serv
 
 | Domain | Endpoint |
 | --- | --- |
-| Auth | `POST /api/auth/login`, register, `POST /api/auth/change-password` |
+| Auth | `POST /api/auth/login`, register, `POST /api/auth/change-password`, `POST /api/auth/forgot-password/send-otp`, `POST /api/auth/forgot-password/reset` |
+| Change phone | `GET /api/member/change-phone/status`; self-service: `send-otp-old`, `verify-otp-old`, `send-otp-new`, `confirm`; admin-assisted: `request-admin`; `cancel` |
+| Point ledger | `GET /api/point-ledger` (`cursor`, `limit`, `dateFrom`, `dateTo`) |
 | Profile | `GET /api/member/me`, `PATCH /api/member/me`, `PUT /api/member/me/avatar` |
 | Alamat | `GET /api/address/options`, `GET /api/address/cascade-options` |
 | Tier | `GET /api/tier/levels` (benefits aktif + rules), opsional `GET /api/tier/member` |

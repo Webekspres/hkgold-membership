@@ -30,7 +30,7 @@ class MemberSeeder extends Seeder
         $addressIds = Address::query()->pluck('id')->all();
         $branchIds = Branch::query()->pluck('id')->all();
 
-        $seedMemberNumber = now()->format('ym').'-0001';
+        $seedMemberNumber = now()->format('ym') . '-0001';
 
         if (! Member::query()->where('member_number', $seedMemberNumber)->exists()) {
             Member::factory()->create([
@@ -71,7 +71,7 @@ class MemberSeeder extends Seeder
         if ($remaining > 0) {
             Member::factory()
                 ->count($remaining)
-                ->create(fn (): array => [
+                ->create(fn(): array => [
                     'address_id' => fake()->randomElement($addressIds),
                     'registered_at_branch_id' => fake()->randomElement($branchIds),
                 ]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ApprovalStatus;
+use App\Enums\ChangePhoneSource;
 use Database\Factories\PhoneApprovalFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,7 @@ class PhoneApproval extends Model
         'approved_by_id',
         'old_phone_number',
         'new_phone_number',
+        'source',
         'status',
         'reason',
         'action_notes',
@@ -33,6 +35,7 @@ class PhoneApproval extends Model
     protected function casts(): array
     {
         return [
+            'source' => ChangePhoneSource::class,
             'status' => ApprovalStatus::class,
             'processed_at' => 'datetime',
         ];

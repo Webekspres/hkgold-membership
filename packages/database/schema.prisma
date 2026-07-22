@@ -4,11 +4,12 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../../apps/api-elysia/node_modules/.prisma/client"
+  output   = "../../apps/api-elysia/src/generated/prisma"
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 // =============================================================================
@@ -47,11 +48,20 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
+}
+
+enum ChangePhoneSource {
+  SELF_SERVICE
+  ADMIN_ASSISTED
 }
 
 enum OtpType {
   STAFF_DEVICE_REGISTRATION // OTP untuk lock device 42 staf internal
   REDEEM_VALIDATION         // OTP WhatsApp saat Store Manager klik "Konfirmasi Tukarkan"
+  PASSWORD_RESET            // OTP WhatsApp lupa password member app
+  CHANGE_PHONE_OLD          // OTP ke nomor lama (path self-service)
+  CHANGE_PHONE_NEW          // OTP ke nomor baru (kedua path)
 }
 
 enum NotificationPlatform {
@@ -348,6 +358,7 @@ model Member {
   isSuspended          Boolean    @default(false) @map("is_suspended")
   birthDate            DateTime?  @map("birth_date") @db.Date
   gender               String?    @map("gender") @db.VarChar(20)
+  phoneChangedAt       DateTime?  @map("phone_changed_at")
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
   deletedAt            DateTime?  @map("deleted_at")
@@ -385,26 +396,29 @@ model TrustedDevice {
 }
 
 model ChangePhoneApproval {
-  id             String         @id @default(uuid()) @db.Char(36)
-  memberId       String?        @map("member_id") @db.Char(36)
-  requestedById  Int            @map("requested_by_id")
-  approvedById   Int?           @map("approved_by_id")
-  oldPhoneNumber String         @map("old_phone_number") @db.VarChar(20)
-  newPhoneNumber String         @unique @map("new_phone_number") @db.VarChar(20)
-  status         ApprovalStatus @default(PENDING) @map("status")
-  reason         String?        @map("reason") @db.Text
-  actionNotes    String?        @map("action_notes") @db.Text
-  processedAt    DateTime?      @map("processed_at")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
+  id             String            @id @default(uuid()) @db.Char(36)
+  memberId       String?           @map("member_id") @db.Char(36)
+  requestedById  Int?              @map("requested_by_id")
+  approvedById   Int?              @map("approved_by_id")
+  oldPhoneNumber String            @map("old_phone_number") @db.VarChar(20)
+  newPhoneNumber String            @map("new_phone_number") @db.VarChar(20)
+  source         ChangePhoneSource @map("source")
+  status         ApprovalStatus    @default(PENDING) @map("status")
+  reason         String?           @map("reason") @db.Text
+  actionNotes    String?           @map("action_notes") @db.Text
+  processedAt    DateTime?         @map("processed_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
 
   member      Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  requestedBy Staff   @relation("RequestChangePhone", fields: [requestedById], references: [id])
+  requestedBy Staff?  @relation("RequestChangePhone", fields: [requestedById], references: [id])
   approvedBy  Staff?  @relation("ApproveChangePhone", fields: [approvedById], references: [id])
 
   @@index([memberId])
   @@index([requestedById])
   @@index([approvedById])
+  @@index([status])
+  @@index([newPhoneNumber])
   @@map("change_phone_approvals")
 }
 

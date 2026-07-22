@@ -34,6 +34,7 @@ class Member extends Model
         'is_suspended',
         'birth_date',
         'gender',
+        'phone_changed_at',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ class Member extends Model
             'last_activity_at' => 'datetime',
             'is_suspended' => 'boolean',
             'birth_date' => 'date',
+            'phone_changed_at' => 'datetime',
         ];
     }
 

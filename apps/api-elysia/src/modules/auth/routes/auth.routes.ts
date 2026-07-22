@@ -4,8 +4,42 @@ import { jwtService } from '../services/jwt.service';
 import {
   RegisterRequest,
   LoginRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  ForgotPasswordSendOtpRequest,
+  ForgotPasswordResetRequest,
 } from '../types/auth.types';
+import { AuthError } from '../errors/auth.error';
+
+async function optionalUserId(headers: Record<string, string | undefined>): Promise<string | undefined> {
+  const authHeader = headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return undefined;
+  }
+  try {
+    const payload = await jwtService.verifyAccessToken(authHeader.slice(7));
+    return payload.userId;
+  } catch {
+    return undefined;
+  }
+}
+
+function statusForAuthError(error: AuthError): number {
+  switch (error.code) {
+    case 'NOT_FOUND':
+      return 404;
+    case 'WA_NOT_SET':
+    case 'VALIDATION':
+    case 'OTP_INVALID':
+    case 'OTP_EXPIRED':
+    case 'RESEND_COOLDOWN':
+    case 'FONNTE_FAILED':
+    case 'INVALID_PHONE':
+    case 'PENDING_PHONE_CHANGE':
+      return 400;
+    default:
+      return 400;
+  }
+}
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .post('/register', async ({ body, set }) => {
@@ -55,7 +89,6 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   })
   .post('/change-password', async ({ body, headers, set }) => {
     try {
-      // Extract JWT token from Authorization header
       const authHeader = headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         set.status = 401;
@@ -92,6 +125,59 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       };
     }
   })
+  .post('/forgot-password/send-otp', async ({ body, headers, set }) => {
+    try {
+      const userId = await optionalUserId(headers);
+      const data = body as ForgotPasswordSendOtpRequest;
+      const result = await authService.sendForgotPasswordOtp(data, userId);
+
+      return {
+        success: true,
+        message: 'OTP berhasil dikirim',
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof AuthError) {
+        set.status = statusForAuthError(error);
+        return {
+          success: false,
+          message: error.message,
+          code: error.code,
+        };
+      }
+      set.status = 400;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Gagal mengirim OTP',
+      };
+    }
+  })
+  .post('/forgot-password/reset', async ({ body, headers, set }) => {
+    try {
+      const userId = await optionalUserId(headers);
+      const data = body as ForgotPasswordResetRequest;
+      const result = await authService.resetPasswordWithOtp(data, userId);
+
+      return {
+        success: true,
+        message: result.message,
+      };
+    } catch (error) {
+      if (error instanceof AuthError) {
+        set.status = statusForAuthError(error);
+        return {
+          success: false,
+          message: error.message,
+          code: error.code,
+        };
+      }
+      set.status = 400;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Gagal mengubah password',
+      };
+    }
+  })
   .post('/refresh', async ({ body, set }) => {
     try {
       const { refreshToken } = body as { refreshToken: string };
@@ -106,7 +192,6 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
 
       const payload = await jwtService.verifyRefreshToken(refreshToken);
 
-      // Generate new token pair
       const tokens = await jwtService.generateTokenPair({
         userId: payload.userId,
         memberId: payload.memberId,

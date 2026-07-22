@@ -8,7 +8,9 @@ export function useFaq() {
   const query = useQuery({
     queryKey: FAQ_LIST_QUERY_KEY,
     queryFn: fetchFaqList,
-    staleTime: 5 * 60_000,
+    // FAQ sering berubah dari CMS — jangan tahan cache kosong lama.
+    staleTime: 60_000,
+    refetchOnMount: 'always',
     retry: 1,
   });
 

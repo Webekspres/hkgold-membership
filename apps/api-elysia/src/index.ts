@@ -5,6 +5,8 @@ import { branchRoutes } from "./modules/branch/routes/branch.routes";
 import { contentRoutes } from "./modules/content/routes/content.routes";
 import { addressRoutes } from "./modules/address/routes/address.routes";
 import { memberRoutes } from "./modules/member/routes/member.routes";
+import { changePhoneRoutes } from "./modules/change-phone/routes/change-phone.routes";
+import { changePhoneInternalRoutes } from "./modules/change-phone/routes/change-phone-internal.routes";
 import { mediaRoutes } from "./modules/media/routes/media.routes";
 import { rewardRoutes } from "./modules/reward/routes/reward.routes";
 import { redeemRoutes } from "./modules/redeem/routes/redeem.routes";
@@ -23,6 +25,8 @@ const app = new Elysia()
   .use(contentRoutes)
   .use(addressRoutes)
   .use(memberRoutes)
+  .use(changePhoneRoutes)
+  .use(changePhoneInternalRoutes)
   .use(mediaRoutes)
   .use(rewardRoutes)
   .use(redeemRoutes)

@@ -7,15 +7,18 @@ import { ActiveRedeemCountdown } from '@/components/card/active-redeem-countdown
 import { MemberQrCard } from '@/components/card/member-qr-card';
 import { MemberWalletCard } from '@/components/home/member-wallet-card';
 import { ProfileLastRewardCard } from '@/components/profile/profile-last-reward-card';
+import { SuspendedNotice } from '@/components/shared/suspended-notice';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/config/theme';
 import { useActiveRedeem } from '@/hooks/use-active-redeem';
+import { useIsMemberSuspended } from '@/hooks/use-is-member-suspended';
 import { useMyProfile } from '@/hooks/use-my-profile';
 import { mapActiveRedeemToReward } from '@/lib/active-redeem/map-active-redeem-reward';
 import { copyMemberCode } from '@/lib/clipboard/copy-member-code';
 
 export default function MemberCardScreen() {
   const { card } = useMyProfile();
+  const isSuspended = useIsMemberSuspended();
   const { activeRedeem } = useActiveRedeem();
   const activeRedeemReward = activeRedeem ? mapActiveRedeemToReward(activeRedeem) : null;
 
@@ -43,6 +46,8 @@ export default function MemberCardScreen() {
             </Text>
             <Text variant="muted">Tunjukkan QR ke kasir</Text>
           </View>
+
+          {isSuspended ? <SuspendedNotice /> : null}
 
           <MemberQrCard
             memberNumber={card.memberNumber}

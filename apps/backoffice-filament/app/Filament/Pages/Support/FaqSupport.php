@@ -6,9 +6,12 @@ namespace App\Filament\Pages\Support;
 
 use App\Models\FaqItem;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class FaqSupport
 {
+    private const QUESTION_MAX_LENGTH = 255;
+
     /**
      * @param  array<int, array<string, mixed>>  $items
      */
@@ -17,14 +20,20 @@ class FaqSupport
         DB::transaction(function () use ($items): void {
             $existingIds = FaqItem::query()->pluck('id')->all();
             $submittedIds = [];
+            $sortOrder = 0;
 
-            foreach (array_values($items) as $sortOrder => $item) {
+            foreach (array_values($items) as $item) {
                 if (! is_array($item)) {
                     continue;
                 }
 
-                $question = isset($item['question']) && filled($item['question']) ? (string) $item['question'] : '';
-                $answer = isset($item['answer']) && filled($item['answer']) ? (string) $item['answer'] : '';
+                $question = self::normalizeQuestion($item['question'] ?? null);
+                $answer = self::normalizeAnswer($item['answer'] ?? null);
+
+                // Form already requires both fields; skip blank rows if called outside Filament.
+                if ($question === null || $answer === null) {
+                    continue;
+                }
 
                 $faqId = $item['id'] ?? null;
 
@@ -42,6 +51,7 @@ class FaqSupport
                     ]);
 
                     $submittedIds[] = $faq->id;
+                    $sortOrder++;
 
                     continue;
                 }
@@ -53,6 +63,7 @@ class FaqSupport
                 ]);
 
                 $submittedIds[] = $faq->id;
+                $sortOrder++;
             }
 
             $orphanedIds = array_diff($existingIds, $submittedIds);
@@ -61,5 +72,37 @@ class FaqSupport
                 FaqItem::query()->whereIn('id', $orphanedIds)->delete();
             }
         });
+    }
+
+    private static function normalizeQuestion(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $question = trim((string) $value);
+
+        if ($question === '') {
+            return null;
+        }
+
+        if (mb_strlen($question) > self::QUESTION_MAX_LENGTH) {
+            throw new InvalidArgumentException(
+                'Pertanyaan FAQ maksimal '.self::QUESTION_MAX_LENGTH.' karakter.',
+            );
+        }
+
+        return $question;
+    }
+
+    private static function normalizeAnswer(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $answer = trim((string) $value);
+
+        return $answer === '' ? null : $answer;
     }
 }

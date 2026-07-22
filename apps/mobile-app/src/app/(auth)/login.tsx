@@ -118,6 +118,11 @@ export default function LoginScreen() {
         />
 
         <AuthFooterLink
+          linkText="Lupa password?"
+          onPress={() => router.push("/forgot-password")}
+        />
+
+        <AuthFooterLink
           prompt="Belum punya akun?"
           linkText="Daftar sekarang"
           onPress={() => router.push("/register")}

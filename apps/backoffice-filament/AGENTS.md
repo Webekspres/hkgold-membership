@@ -205,7 +205,7 @@ Wajib memakai keempat tools berikut di setiap sesi Cursor:
 
 - Semua label Filament dalam **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, heading section, notifikasi, empty state.
 - Ikuti konvensi `navigationGroup` yang sudah ada:
-  - `Manajemen Pengguna` — Member, Staff, Cabang
+  - `Manajemen Pengguna` — Member, Staff, Cabang, Persetujuan Ganti Nomor
   - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
   - `CMS` — Konten, Banner Promosi, FAQ
   - `Katalog Reward` — Kategori Reward, Katalog (Reward)
@@ -302,6 +302,18 @@ Setelah migrasi baru: jalankan `php artisan migrate` lalu pastikan API Elysia ma
   - Token perangkat disimpan lewat api-elysia (`device_push_tokens`); jangan invent sender FCM baru.
   - Spesifikasi: `memory/dev_phase_redeem.md` (Fase 8).
 
+### Persetujuan ganti nomor HP (`PhoneApprovalResource`)
+
+- **Nav:** `Manajemen Pengguna` → Persetujuan Ganti Nomor — akses **Administrator / SuperAdmin** saja.
+- **Model:** `ChangePhoneApproval` (`phone_approvals`) — `source` (`SELF_SERVICE` \| `ADMIN_ASSISTED`), status `PENDING` \| `APPROVED` \| `REJECTED` \| `CANCELLED`.
+- **Path admin-assisted:** member submit nomor baru + alasan via mobile (`POST /api/member/change-phone/request-admin`) → langsung PENDING **tanpa OTP**; admin review di Filament.
+- **Aksi approve/reject:** `ApprovePhoneChangeAction` / `RejectPhoneChangeAction` → `ChangePhoneApiClient` → `POST /internal/change-phone/approve|reject` (api-elysia) + notifikasi WA.
+- **Referensi:** `app/Filament/Resources/PhoneApprovals/`, `app/Services/ChangePhone/ChangePhoneApiClient.php`.
+
+### FAQ CMS
+
+- Custom page `FaqPage` + model `FaqItem` — sync ke mobile via `GET /api/faq` (api-elysia). Test: `tests/Feature/Cms/FaqSyncTest.php`.
+
 ## Data Normalization
 
 ### Phone numbers
@@ -353,4 +365,5 @@ Salin pola dari resource berikut saat membangun fitur baru:
 | Aksi non-CRUD (wizard modal) | `PointMutations/Actions/InjectManualPointAction` |
 | Wizard redeem + scan QR (Alpine + Vite) | `RedeemTokens/Actions/VerifyRedeemTokenAction` |
 | Konfigurasi tier + konversi inline | `TierMembers/TierMemberResource` |
+| List read-only + approve/reject (internal API) | `PhoneApprovals/PhoneApprovalResource` |
 

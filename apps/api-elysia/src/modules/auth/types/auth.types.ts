@@ -17,6 +17,22 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface ForgotPasswordSendOtpRequest {
+  identifier?: string;
+}
+
+export interface ForgotPasswordResetRequest {
+  identifier?: string;
+  otp: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordSendOtpResult {
+  expiresAt: string;
+  resendAvailableAt: string;
+  maskedPhone: string;
+}
+
 // Field profil pada tabel User yang boleh diubah pemiliknya sendiri.
 // profilePhotoId di-set null untuk menghapus foto profil.
 export interface UpdateUserProfileRequest {

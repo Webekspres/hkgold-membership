@@ -10,13 +10,13 @@
     "semantic_hash": ""
   },
   "src/index.ts": {
-    "mtime": 1784103764.7167792,
-    "ast_hash": "d7f91e7c9f70bfbc479a14fee984f1cc",
+    "mtime": 1784693162.6572182,
+    "ast_hash": "e99838515d77cab167fbdd84035fb441",
     "semantic_hash": ""
   },
   "src/middleware/auth.middleware.ts": {
-    "mtime": 1783991597.5955927,
-    "ast_hash": "3b8bd065db758399b5cbebac075de6af",
+    "mtime": 1784693002.3528519,
+    "ast_hash": "573b82676158726e85764c2cf9481bfa",
     "semantic_hash": ""
   },
   "src/modules/auth/__tests__/change-password.test.ts": {
@@ -35,18 +35,18 @@
     "semantic_hash": ""
   },
   "src/modules/auth/interfaces/auth.interface.ts": {
-    "mtime": 1783909952.6186166,
-    "ast_hash": "fe79dcae684f05b116f24fbd89e4676e",
+    "mtime": 1784685758.32999,
+    "ast_hash": "eb66d3a039ffeb671d6d82361f97f13e",
     "semantic_hash": ""
   },
   "src/modules/auth/routes/auth.routes.ts": {
-    "mtime": 1783909952.6186166,
-    "ast_hash": "2ffd6125c3e5e9e42e4b248a4129a283",
+    "mtime": 1784693270.8838584,
+    "ast_hash": "ad62c62c3a586fa21f4da5b843743ff4",
     "semantic_hash": ""
   },
   "src/modules/auth/services/auth.service.ts": {
-    "mtime": 1784081224.880926,
-    "ast_hash": "a5200f3e05f5f9fc3e6420bc3884efc6",
+    "mtime": 1784693268.715102,
+    "ast_hash": "6a3e407f745686a5cb4e20e33deb1cff",
     "semantic_hash": ""
   },
   "src/modules/auth/services/jwt.service.ts": {
@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/modules/auth/types/auth.types.ts": {
-    "mtime": 1783912895.563212,
-    "ast_hash": "08fbc0f9948002796e188289b085a880",
+    "mtime": 1784685757.9375913,
+    "ast_hash": "0a9166a2878245fc28eb490053aba29c",
     "semantic_hash": ""
   },
   "src/modules/auth/types/jwt.types.ts": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1784622204.8352034,
-    "ast_hash": "f072f73256a409e8aa84c60f443608b7",
+    "mtime": 1784693676.3231409,
+    "ast_hash": "ee390a1018c714fdb47d99aeffcad040",
     "semantic_hash": ""
   },
   "README.md": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "src/lib/redis.ts": {
-    "mtime": 1784083254.6417873,
-    "ast_hash": "300c6686378acee80a000b990e3a66a4",
+    "mtime": 1784687402.2627347,
+    "ast_hash": "79c5dc931dd90d57a5fa56baa2f6ef88",
     "semantic_hash": ""
   },
   "src/middleware/__tests__/internal-auth.test.ts": {
@@ -295,8 +295,8 @@
     "semantic_hash": ""
   },
   "src/modules/otp/types/otp.types.ts": {
-    "mtime": 1784083128.6103537,
-    "ast_hash": "1e4211ca574ba2d2e05ab0aeb4d3d1f8",
+    "mtime": 1784693002.324856,
+    "ast_hash": "3a812299a6a5a7cf1453be99da536200",
     "semantic_hash": ""
   },
   "src/modules/promotion-banner/__tests__/promotion-banner-list.test.ts": {
@@ -335,18 +335,18 @@
     "semantic_hash": ""
   },
   "src/modules/redeem/routes/redeem.routes.ts": {
-    "mtime": 1784527591.148477,
-    "ast_hash": "d93a09c38449fbe69b754581a43ecc23",
+    "mtime": 1784693215.324581,
+    "ast_hash": "b2429ab5e73c5602afbe428bde4b04e6",
     "semantic_hash": ""
   },
   "src/modules/redeem/services/redeem.service.ts": {
-    "mtime": 1784622134.7642832,
-    "ast_hash": "75b365b010168c696ee0997b6e15b917",
+    "mtime": 1784693198.5041113,
+    "ast_hash": "dbc36f990eba36fe0d2b2c883c013bdb",
     "semantic_hash": ""
   },
   "src/modules/redeem/types/redeem.types.ts": {
-    "mtime": 1784527591.1509852,
-    "ast_hash": "abfcbc507c2455ba077bb9c5b5ebc1e8",
+    "mtime": 1784693180.1770608,
+    "ast_hash": "9033f6aa2933c4d6defc3f8e2a2dcfff",
     "semantic_hash": ""
   },
   "src/modules/reward/__tests__/reward-home-preview.test.ts": {
@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "api-contract/openapi.yaml": {
-    "mtime": 1784622204.837221,
-    "ast_hash": "fe8be8f3fae2b9dfabb5fcacfca25274",
+    "mtime": 1784627367.5504727,
+    "ast_hash": "8482d4c19bd14fcf866c283758e42615",
     "semantic_hash": ""
   },
   "doppler.yaml": {
@@ -452,6 +452,91 @@
   "src/modules/tier/__tests__/tier-benefits.test.ts": {
     "mtime": 1784623323.849314,
     "ast_hash": "352829a273ff304b2684530c3a8fedf8",
+    "semantic_hash": ""
+  },
+  "src/modules/auth/__tests__/forgot-password.test.ts": {
+    "mtime": 1784685822.429321,
+    "ast_hash": "8f6f29553256e8000b8a22c31883ae0a",
+    "semantic_hash": ""
+  },
+  "src/modules/auth/errors/auth.error.ts": {
+    "mtime": 1784685753.0088322,
+    "ast_hash": "8debdb43daa9060d0743e4a807fb8d78",
+    "semantic_hash": ""
+  },
+  "src/modules/change-phone/__tests__/change-phone-guard.test.ts": {
+    "mtime": 1784693292.4367259,
+    "ast_hash": "ed48171c2cccd815d54c61c078ad8e18",
+    "semantic_hash": ""
+  },
+  "src/modules/change-phone/routes/change-phone-internal.routes.ts": {
+    "mtime": 1784693128.0371227,
+    "ast_hash": "1043072050f5db03da6e418c42c2ca90",
+    "semantic_hash": ""
+  },
+  "src/modules/change-phone/routes/change-phone.routes.ts": {
+    "mtime": 1784693123.3395002,
+    "ast_hash": "ccb7854081909af5ef63b45484076572",
+    "semantic_hash": ""
+  },
+  "src/modules/change-phone/services/change-phone.service.ts": {
+    "mtime": 1784693069.414144,
+    "ast_hash": "112b9dc3125760d41d7626e2bc1d0fdc",
+    "semantic_hash": ""
+  },
+  "src/modules/change-phone/types/change-phone.types.ts": {
+    "mtime": 1784693069.414144,
+    "ast_hash": "24eb68b0e624c652f5a5da22c6118fdd",
+    "semantic_hash": ""
+  },
+  "src/modules/faq/__tests__/faq-list.test.ts": {
+    "mtime": 1784682940.6346486,
+    "ast_hash": "c7200cf150386a32b6c325fc0ec99dfb",
+    "semantic_hash": ""
+  },
+  "src/modules/faq/interfaces/faq.interface.ts": {
+    "mtime": 1784626701.0663652,
+    "ast_hash": "7d3c07f68652223ddddfe3e4608ab389",
+    "semantic_hash": ""
+  },
+  "src/modules/faq/routes/faq.routes.ts": {
+    "mtime": 1784626701.0972545,
+    "ast_hash": "876cd85aab79f0788327d86aaa491813",
+    "semantic_hash": ""
+  },
+  "src/modules/faq/services/faq.service.ts": {
+    "mtime": 1784626701.0943084,
+    "ast_hash": "1913ead8d6faeb6864983f7897bd4883",
+    "semantic_hash": ""
+  },
+  "src/modules/faq/types/faq.types.ts": {
+    "mtime": 1784626701.0643575,
+    "ast_hash": "c12dec079d78d40976b0281361ff8b2d",
+    "semantic_hash": ""
+  },
+  "src/modules/otp/services/password-reset-otp.service.ts": {
+    "mtime": 1784685712.8050163,
+    "ast_hash": "12dab5f74dcc4725f38b316d8d784471",
+    "semantic_hash": ""
+  },
+  "src/modules/point-ledger/routes/point-ledger.routes.ts": {
+    "mtime": 1784626613.7712574,
+    "ast_hash": "58666e30256d8ba104d1ce4fd64b4a24",
+    "semantic_hash": ""
+  },
+  "src/modules/point-ledger/services/point-ledger.service.ts": {
+    "mtime": 1784626582.581161,
+    "ast_hash": "42aceb6cdcc0aed4eeb0a3b231a2a59d",
+    "semantic_hash": ""
+  },
+  "src/modules/point-ledger/types/point-ledger.types.ts": {
+    "mtime": 1784626505.156991,
+    "ast_hash": "0ed768fbb698815058eeca37624c2012",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1784624482.6301875,
+    "ast_hash": "771faa62feb60b7de901a397aebb29b0",
     "semantic_hash": ""
   }
 }

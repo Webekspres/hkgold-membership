@@ -161,14 +161,16 @@ class FaqPage extends Page
                     ->schema([
                         Hidden::make('id'),
                         TextInput::make('question')
-                            ->label('Question')
+                            ->label('Pertanyaan')
                             ->required()
+                            ->trim()
                             ->maxLength(255)
                             ->disabled(! $canManage)
                             ->columnSpanFull(),
                         Textarea::make('answer')
-                            ->label('Answer')
+                            ->label('Jawaban')
                             ->required()
+                            ->trim()
                             ->rows(3)
                             ->disabled(! $canManage)
                             ->columnSpanFull(),

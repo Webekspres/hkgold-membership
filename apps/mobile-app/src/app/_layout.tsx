@@ -91,6 +91,7 @@ export default function RootLayout() {
               <Stack.Screen name="point-ledger" />
               <Stack.Screen name="reward/[sku]" />
               <Stack.Screen name="change-password" />
+              <Stack.Screen name="change-phone" />
               <Stack.Screen name="profile/detail" />
               <Stack.Screen name="profile/edit" />
             </Stack>

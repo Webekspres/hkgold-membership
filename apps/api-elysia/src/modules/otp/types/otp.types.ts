@@ -1,4 +1,9 @@
-export type OtpTypeValue = 'REDEEM_VALIDATION' | 'STAFF_DEVICE_REGISTRATION';
+export type OtpTypeValue =
+  | 'REDEEM_VALIDATION'
+  | 'STAFF_DEVICE_REGISTRATION'
+  | 'PASSWORD_RESET'
+  | 'CHANGE_PHONE_OLD'
+  | 'CHANGE_PHONE_NEW';
 
 export interface GenerateOtpRequest {
   phone: string;
@@ -20,7 +25,9 @@ export type OtpErrorCode =
   | 'OTP_EXPIRED'
   | 'INVALID_PHONE'
   | 'INVALID_TOKEN_CODE'
-  | 'FONNTE_FAILED';
+  | 'FONNTE_FAILED'
+  | 'WA_NOT_SET'
+  | 'RESEND_COOLDOWN';
 
 export class OtpError extends Error {
   constructor(

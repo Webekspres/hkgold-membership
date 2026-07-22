@@ -18,9 +18,14 @@ const MAP_ICON = {
 type RewardBranchStockCardProps = {
   stock: RewardBranchStockItem;
   onRedeem: (stock: RewardBranchStockItem) => void;
+  disabled?: boolean;
 };
 
-export function RewardBranchStockCard({ stock, onRedeem }: RewardBranchStockCardProps) {
+export function RewardBranchStockCard({
+  stock,
+  onRedeem,
+  disabled = false,
+}: RewardBranchStockCardProps) {
   const availableStock = getAvailableBranchStock(stock);
 
   return (
@@ -51,8 +56,12 @@ export function RewardBranchStockCard({ stock, onRedeem }: RewardBranchStockCard
       <GoldButton
         variant="outline"
         width="full"
-        label="Tukarkan pada cabang ini"
-        onPress={() => onRedeem(stock)}
+        label={disabled ? 'Penukaran tidak tersedia' : 'Tukarkan pada cabang ini'}
+        className={disabled ? 'opacity-50' : undefined}
+        onPress={() => {
+          if (disabled) return;
+          onRedeem(stock);
+        }}
       />
     </View>
   );

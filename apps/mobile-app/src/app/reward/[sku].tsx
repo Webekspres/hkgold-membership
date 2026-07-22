@@ -5,15 +5,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContentDetailScreen } from '@/components/shared/content-detail-screen';
 import { createPullToRefreshControl } from '@/components/shared/pull-to-refresh';
+import { SuspendedNotice } from '@/components/shared/suspended-notice';
 import { RewardBranchStockCard } from '@/components/reward/reward-branch-stock-card';
 import { RewardRedeemDialog } from '@/components/reward/reward-redeem-dialog';
 import { Text } from '@/components/ui/text';
 import { useCreateRedeemToken } from '@/hooks/use-create-redeem-token';
+import { useIsMemberSuspended } from '@/hooks/use-is-member-suspended';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useRewardDetail } from '@/hooks/use-reward-detail';
 import { filterAvailableBranchStocks } from '@/lib/reward/filter-available-branch-stocks';
 import { toast } from '@/lib/sonner';
 import type { RewardBranchStockItem } from '@/types/reward';
+
+const SUSPENDED_TOAST =
+  'Akun Anda ditangguhkan. Penukaran hadiah tidak tersedia. Hubungi admin.';
 
 export default function RewardDetailScreen() {
   const { sku } = useLocalSearchParams<{ sku: string }>();
@@ -25,17 +30,27 @@ export default function RewardDetailScreen() {
     typeof sku === 'string' ? sku : undefined,
   );
   const createRedeem = useCreateRedeemToken();
+  const isSuspended = useIsMemberSuspended();
 
   const refresh = useCallback(() => refetch(), [refetch]);
   const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
   const openRedeemDialog = (stock: RewardBranchStockItem) => {
+    if (isSuspended) {
+      toast.error(SUSPENDED_TOAST, { duration: 4000 });
+      return;
+    }
     setSelectedBranchStock(stock);
     setRedeemDialogOpen(true);
   };
 
   const handleConfirmRedeem = () => {
     if (!reward || !selectedBranchStock) return;
+    if (isSuspended) {
+      setRedeemDialogOpen(false);
+      toast.error(SUSPENDED_TOAST, { duration: 4000 });
+      return;
+    }
 
     createRedeem.mutate(
       { rewardId: reward.id, branchId: selectedBranchStock.branchId },
@@ -117,6 +132,7 @@ export default function RewardDetailScreen() {
 
         <View className="gap-3">
           <Text className="text-base font-semibold text-stone-900">Stok per Cabang</Text>
+          {isSuspended ? <SuspendedNotice compact /> : null}
           {availableBranchStocks.length === 0 ? (
             <Text variant="muted">Stok habis di semua cabang.</Text>
           ) : (
@@ -124,6 +140,7 @@ export default function RewardDetailScreen() {
               <RewardBranchStockCard
                 key={stock.branchId}
                 stock={stock}
+                disabled={isSuspended}
                 onRedeem={openRedeemDialog}
               />
             ))

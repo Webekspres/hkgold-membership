@@ -1,8 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { DevTierSwitcher } from "@/components/dev/dev-tier-switcher";
 import {
   HomeHeroHeader,
   HOME_HERO_CARD_OVERLAP,
@@ -22,13 +21,11 @@ import { usePromotionBanners } from "@/hooks/use-promotion-banners";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { useUpcomingEvents } from "@/hooks/use-upcoming-events";
 import { getNearestBranch } from "@/services/branches";
-import type { MemberTier } from "@/types/auth";
 
 const nearestBranch = getNearestBranch();
 
 export default function HomeScreen() {
   const { card, refetch: refetchProfile } = useMyProfile();
-  const [devTier, setDevTier] = useState<MemberTier | null>(null);
   const {
     articles: latestNews,
     isError: latestNewsError,
@@ -60,11 +57,6 @@ export default function HomeScreen() {
   );
   const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
-  const previewTier =
-    __DEV__ && devTier
-      ? devTier
-      : ((card?.currentTier ?? "SILVER") as MemberTier);
-
   return (
     <View className="flex-1 bg-background">
       <SafeAreaView className="flex-1" edges={["left", "right", "bottom"]} style={{ paddingBottom: 4 }}>
@@ -88,15 +80,9 @@ export default function HomeScreen() {
                 <MemberWalletCard
                   fullName={card.fullName}
                   memberNumber={card.memberNumber}
-                  currentTier={previewTier}
+                  currentTier={card.currentTier}
                   pointBalance={card.pointBalance}
                 />
-                {__DEV__ ? (
-                  <DevTierSwitcher
-                    selected={previewTier}
-                    onSelect={setDevTier}
-                  />
-                ) : null}
               </View>
             ) : null}
           </View>

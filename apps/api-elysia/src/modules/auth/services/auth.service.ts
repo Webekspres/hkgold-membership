@@ -4,12 +4,18 @@ import {
   RegisterRequest,
   LoginRequest,
   ChangePasswordRequest,
+  ForgotPasswordSendOtpRequest,
+  ForgotPasswordResetRequest,
+  ForgotPasswordSendOtpResult,
   UpdateUserProfileRequest,
   AuthResponse,
   UserData,
-  MemberData
 } from '../types/auth.types';
 import { jwtService } from './jwt.service';
+import { AuthError } from '../errors/auth.error';
+import { passwordResetOtpService } from '../../otp/services/password-reset-otp.service';
+import { OtpError } from '../../otp/types/otp.types';
+import { normalizePhoneForFonnte } from '../../otp/services/fonnte.service';
 
 // Phone number validation & normalization
 const normalizePhoneNumber = (phone: string): string => {
@@ -61,6 +67,128 @@ const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
+
+/** YYMM-NNNN — ditolak di forgot-password (hanya email/HP). */
+const isMemberNumber = (value: string): boolean => /^\d{4}-\d{4}$/.test(value.trim());
+
+type ResolvedResetTarget = {
+  userId: string;
+  memberId: string;
+  phoneNumber: string;
+};
+
+async function assertNoPendingPhoneChange(memberId: string): Promise<void> {
+  const pending = await prisma.changePhoneApproval.findFirst({
+    where: { memberId, status: 'PENDING' },
+    select: { id: true },
+  });
+  if (pending) {
+    throw new AuthError(
+      'PENDING_PHONE_CHANGE',
+      'Tidak bisa ubah password saat ada permintaan ganti nomor yang menunggu.',
+    );
+  }
+}
+
+async function resolveForgotPasswordTarget(
+  identifier: string | undefined,
+  userId?: string,
+): Promise<ResolvedResetTarget> {
+  if (userId) {
+    const member = await prisma.member.findUnique({
+      where: { userId },
+      select: { id: true, phoneNumber: true, userId: true },
+    });
+    if (!member) {
+      throw new AuthError('NOT_FOUND', 'Akun tidak ditemukan');
+    }
+    return {
+      userId: member.userId,
+      memberId: member.id,
+      phoneNumber: member.phoneNumber,
+    };
+  }
+
+  const trimmed = (identifier ?? '').trim();
+  if (!trimmed) {
+    throw new AuthError('VALIDATION', 'Email atau nomor HP wajib diisi');
+  }
+
+  if (isMemberNumber(trimmed)) {
+    throw new AuthError(
+      'VALIDATION',
+      'Gunakan email atau nomor HP, bukan nomor member',
+    );
+  }
+
+  if (trimmed.includes('@')) {
+    if (!validateEmail(trimmed)) {
+      throw new AuthError('VALIDATION', 'Format email tidak valid');
+    }
+    const user = await prisma.user.findUnique({
+      where: { email: trimmed },
+      select: {
+        id: true,
+        member: { select: { id: true, phoneNumber: true } },
+      },
+    });
+    if (!user || !user.member) {
+      throw new AuthError('NOT_FOUND', 'Akun tidak ditemukan');
+    }
+    return {
+      userId: user.id,
+      memberId: user.member.id,
+      phoneNumber: user.member.phoneNumber,
+    };
+  }
+
+  if (!/^[0-9+]+$/.test(trimmed)) {
+    throw new AuthError('VALIDATION', 'Gunakan email atau nomor HP');
+  }
+
+  let searchPhone: string;
+  try {
+    searchPhone = normalizePhoneNumber(trimmed);
+  } catch {
+    throw new AuthError('VALIDATION', 'Nomor HP tidak valid');
+  }
+
+  // DB bisa simpan +62… (API register) atau 62… (Filament/seeder).
+  const phoneVariants = searchPhone.startsWith('+')
+    ? [searchPhone, searchPhone.slice(1)]
+    : [searchPhone, `+${searchPhone}`];
+
+  const member = await prisma.member.findFirst({
+    where: { phoneNumber: { in: phoneVariants } },
+    select: { id: true, userId: true, phoneNumber: true },
+  });
+  if (!member) {
+    throw new AuthError('NOT_FOUND', 'Akun tidak ditemukan');
+  }
+  return {
+    userId: member.userId,
+    memberId: member.id,
+    phoneNumber: member.phoneNumber,
+  };
+}
+
+function assertWaPhone(phoneNumber: string): string {
+  const raw = (phoneNumber ?? '').trim();
+  if (!raw) {
+    throw new AuthError(
+      'WA_NOT_SET',
+      'Kamu belum atur nomor WA. Hubungi admin',
+    );
+  }
+  try {
+    return normalizePhoneForFonnte(raw);
+  } catch {
+    throw new AuthError(
+      'WA_NOT_SET',
+      'Kamu belum atur nomor WA. Hubungi admin',
+    );
+  }
+}
 
 // Auth select: field yang dibutuhkan login/JWT saja (bukan full profile).
 const authUserSelect = {
@@ -230,9 +358,13 @@ export class AuthService implements IAuthService {
     } else {
       // Login via phone number atau member number
       let searchIdentifier = trimmed;
+      let phoneVariants: string[] = [];
       if (trimmed.match(/^[0-9+]/)) {
         try {
           searchIdentifier = normalizePhoneNumber(trimmed);
+          phoneVariants = searchIdentifier.startsWith('+')
+            ? [searchIdentifier, searchIdentifier.slice(1)]
+            : [searchIdentifier, `+${searchIdentifier}`];
         } catch {
           // Not a valid phone, might be member number
         }
@@ -241,7 +373,9 @@ export class AuthService implements IAuthService {
       const member = await prisma.member.findFirst({
         where: {
           OR: [
-            { phoneNumber: searchIdentifier },
+            ...(phoneVariants.length > 0
+              ? [{ phoneNumber: { in: phoneVariants } }]
+              : [{ phoneNumber: searchIdentifier }]),
             { memberNumber: searchIdentifier },
           ],
         },
@@ -311,11 +445,16 @@ export class AuthService implements IAuthService {
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
+      include: { member: { select: { id: true } } },
     });
 
     if (!user) {
       throw new Error('User tidak ditemukan');
+    }
+
+    if (user.member) {
+      await assertNoPendingPhoneChange(user.member.id);
     }
 
     // Verify old password
@@ -337,6 +476,60 @@ export class AuthService implements IAuthService {
     await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword }
+    });
+
+    return { message: 'Password berhasil diubah' };
+  }
+
+  async sendForgotPasswordOtp(
+    data: ForgotPasswordSendOtpRequest,
+    userId?: string,
+  ): Promise<ForgotPasswordSendOtpResult> {
+    const target = await resolveForgotPasswordTarget(data.identifier, userId);
+    await assertNoPendingPhoneChange(target.memberId);
+    assertWaPhone(target.phoneNumber);
+
+    try {
+      return await passwordResetOtpService.sendOtp(target.phoneNumber);
+    } catch (error) {
+      if (error instanceof OtpError) {
+        throw new AuthError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  async resetPasswordWithOtp(
+    data: ForgotPasswordResetRequest,
+    userId?: string,
+  ): Promise<{ message: string }> {
+    const { otp, newPassword } = data;
+
+    if (!otp || !newPassword) {
+      throw new AuthError('VALIDATION', 'OTP dan password baru wajib diisi');
+    }
+
+    if (newPassword.length < 8) {
+      throw new AuthError('VALIDATION', 'Password baru minimal 8 karakter');
+    }
+
+    const target = await resolveForgotPasswordTarget(data.identifier, userId);
+    await assertNoPendingPhoneChange(target.memberId);
+    assertWaPhone(target.phoneNumber);
+
+    try {
+      await passwordResetOtpService.verifyOtp(target.phoneNumber, otp);
+    } catch (error) {
+      if (error instanceof OtpError) {
+        throw new AuthError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    const hashedPassword = await Bun.password.hash(newPassword);
+    await prisma.user.update({
+      where: { id: target.userId },
+      data: { password: hashedPassword },
     });
 
     return { message: 'Password berhasil diubah' };
