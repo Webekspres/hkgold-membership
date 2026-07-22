@@ -1,0 +1,102 @@
+# HK Gold Membership — Staging Full Docker Compose
+# Domains:
+#   Backoffice Filament → https://hkgoldvip.com
+#   API Elysia          → https://api.hkgoldvip.com
+#
+# Prerequisite:
+#   Simpan DOPPLER_TOKEN staging di environment VPS atau file .env.staging
+#
+# Jalankan:
+#   docker compose -f docker-compose.staging.yml up -d --build
+
+networks:
+  hkgold-staging-network:
+    driver: bridge
+
+volumes:
+  mysql-staging-data:
+  redis-staging-data:
+  certbot-webroot:
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: hkgold-stg-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${STG_MYSQL_ROOT_PASSWORD:-stg_root_password_secure}
+      MYSQL_DATABASE: hkgold_membership_staging
+    volumes:
+      - mysql-staging-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - hkgold-staging-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${STG_MYSQL_ROOT_PASSWORD:-stg_root_password_secure}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: hkgold-stg-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-staging-data:/data
+    networks:
+      - hkgold-staging-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-elysia:
+    build:
+      context: .
+      dockerfile: apps/api-elysia/Dockerfile.staging
+    container_name: hkgold-stg-api
+    restart: unless-stopped
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN_API:-$DOPPLER_TOKEN}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hkgold-staging-network
+
+  backoffice:
+    build:
+      context: .
+      dockerfile: apps/backoffice-filament/Dockerfile.staging
+    container_name: hkgold-stg-backoffice
+    restart: unless-stopped
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN_BACKOFFICE:-$DOPPLER_TOKEN}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hkgold-staging-network
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: hkgold-stg-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/staging.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    depends_on:
+      - api-elysia
+      - backoffice
+    networks:
+      - hkgold-staging-network
