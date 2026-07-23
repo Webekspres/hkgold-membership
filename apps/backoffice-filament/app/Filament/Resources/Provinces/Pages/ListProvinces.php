@@ -16,7 +16,8 @@ class ListProvinces extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Tambah Provinsi'),
+                ->label('Tambah Provinsi')
+                ->goldStyle(),
         ];
     }
 }

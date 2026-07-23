@@ -12,6 +12,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - php - 8.5
 - filament/filament (FILAMENT) - v5
 - laravel/framework (LARAVEL) - v13
+- laravel/horizon (HORIZON) - v5
 - laravel/prompts (PROMPTS) - v0
 - livewire/livewire (LIVEWIRE) - v4
 - laravel/boost (BOOST) - v2
@@ -98,7 +99,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Always use curly braces for control structures, even for single-line bodies.
 - Use PHP 8 constructor property promotion: `public function __construct(public GitHub $github) { }`. Do not leave empty zero-parameter `__construct()` methods unless the constructor is private.
 - Use explicit return type declarations and type hints for all method parameters: `function isAccessible(User $user, ?string $path = null): bool`
-- Follow existing application Enum naming conventions.
+- Use TitleCase for Enum keys: `FavoritePerson`, `BestLake`, `Monthly`.
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
@@ -107,6 +108,13 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+
+=== tests rules ===
+
+# Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
 === laravel/core rules ===
 
@@ -155,3 +163,207 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+---
+
+# HK Gold Backoffice — Project Guidelines
+
+Guidelines below are specific to this app (`apps/backoffice-filament`). They extend (not replace) the Laravel Boost rules above.
+
+## Project Context
+
+- **Product:** HK Gold VIP — integrated membership & loyalty platform for luxury gold retail (Mala Emas).
+- **This app:** Filament v5 admin backoffice for staff operations.
+- **Monorepo:** `hkgold-membership` — shared schema in `packages/database/schema.prisma`, ElysiaJS API backend, Laravel backoffice here.
+- **Active branch:** `backoffice` for Filament work.
+
+## Monorepo & Environment
+
+- **Schema source of truth:** Always read `packages/database/schema.prisma` **before** writing migrations, models, or Filament resources. Laravel migrations and Eloquent models must stay in sync with Prisma (`@@map`, column names, types, relations).
+- **Prisma → Laravel mapping:** Follow `.cursor/rules/make-resource.mdc` for UUID keys, `HasUuids`, `@@map` table names, soft deletes only when Prisma has `deletedAt`, and realistic Indonesian faker context.
+- **Local stack:** Docker provides MySQL (`33068`), Redis (`6381`), MinIO (`9002` API / `9003` console). Object storage uses disk name `r2` — MinIO locally, Cloudflare R2 in production (env-only difference).
+- **Env (Doppler):** Project `hkgoldvip`, config `dev_backoffice` (`doppler.yaml`). Template keys: `.env.example` — jangan commit `.env`. Jalankan `composer dev` / `composer dev:flyenv` (script membungkus `doppler run`). One-off: `doppler run -- php artisan …`.
+- **Dev server:** `composer dev` (atau `php artisan serve --port=8800` di dalam `doppler run -- …`) dari `apps/backoffice-filament/`.
+- **R2 wipe on fresh seed:** `migrate:fresh --seed` may wipe the `r2` bucket when `wipe_r2_on_fresh_seed` is enabled (local default).
+
+## Git Workflow
+
+- Do **not** commit or push unless the user explicitly asks.
+- Do **not** create documentation files unless requested.
+- Keep changes scoped — avoid unrelated refactors in the same task.
+
+## Agent Tooling (Cursor)
+
+Wajib memakai keempat tools berikut di setiap sesi Cursor:
+
+- **graphify** — sebelum pertanyaan arsitektur/alur: `graphify query "..."`, `graphify path "A" "B"`, atau `graphify explain "..."` bila `graphify-out/graph.json` ada. Setelah ubah kode: `graphify update .` (AST-only).
+- **rtk** — prefix CLI verbose: `rtk git status`, `rtk php artisan test --compact`, `rtk rg …`. Boost MCP tools tetap prioritas; jika `rtk` gagal, jalankan perintah biasa. Setup: `rtk init -g --agent cursor`.
+- **ponytail** — ladder YAGNI / reuse / min diff (root `AGENTS.md` + `.cursor/rules/ponytail.mdc`).
+- **caveman** — jawaban ringkas (full; Bahasa Indonesia). Code fence, error, path, CLI: byte-exact. Label Filament UI tetap Bahasa Indonesia penuh (bukan caveman).
+
+## UI Language & Navigation
+
+- Semua label Filament dalam **Bahasa Indonesia**: `navigationLabel`, `modelLabel`, `pluralModelLabel`, heading section, notifikasi, empty state.
+- Ikuti konvensi `navigationGroup` yang sudah ada:
+  - `Manajemen Pengguna` — Member, Staff, Cabang, Persetujuan Ganti Nomor
+  - `Master Lokasi` — Provinsi, Kota, Kecamatan, Kelurahan, Kode Pos
+  - `CMS` — Konten, Banner Promosi, FAQ
+  - `Katalog Reward` — Kategori Reward, Katalog (Reward)
+  - `Konfigurasi` — Manajemen Tier (+ aturan konversi + **benefit inline** di form Tier)
+  - `Loyalty Point` — Mutasi Poin
+  - `Redeem Poin` — Antrean Kupon (`RedeemToken`), invoice terkait
+  - `Notifikasi` — Kampanye push + inbox page
+- Custom pages (non-CRUD): `MemberLookupPage`, `NotificationInboxPage`, `PromotionBannerPage`, `FaqPage`.
+- Reuse ikon `Heroicon::Outlined*` konsisten dengan resource sejenis.
+
+## Filament Architecture
+
+Use the **split structure** already in this codebase — do not inline large schemas in the Resource class:
+
+```
+app/Filament/
+├── Resources/{Name}/
+│   ├── {Name}Resource.php      # tipis: model, label, delegasi form/table/infolist
+│   ├── Schemas/                # {Name}Form.php, {Name}Infolist.php
+│   ├── Tables/                 # {Name}sTable.php
+│   ├── Support/                # {Name}FormSupport.php — normalisasi & helper UI
+│   ├── Actions/                # aksi non-CRUD (modal wizard, inject, approve)
+│   ├── Pages/                  # List, Create, Edit, View
+│   ├── RelationManagers/       # bila perlu di View/Edit
+│   └── Widgets/                # stat/chart di halaman List
+├── Pages/                      # custom Page (non-CRUD standar)
+│   └── Support/
+app/Services/                   # logic bisnis reusable (prioritas untuk modul kompleks)
+app/Data/                       # DTO readonly (payload/result)
+app/Exceptions/                 # domain exception + error code
+```
+
+- Setiap file PHP baru: `declare(strict_types=1);`
+- Class Resource tetap tipis — wire `Form::configure()`, `Table::configure()`, `Infolist::configure()`.
+- Logic simpan/mutasi di **Page** (`mutateFormDataBeforeCreate`, `handleRecordCreation`, dll.) atau **Support** — bukan di class schema.
+- **Mutasi non-CRUD** (contoh: suntik poin manual): standarkan di `Actions/` + panggil dari `Tables/*Table.php` → `headerActions()` atau `Pages/*` → `getHeaderActions()`. Jangan aktifkan `canCreate()` hanya untuk menambah aksi tulis.
+- **Service layer:** fleksibel — ikuti pola file terdekat. Untuk modul kompleks (loyalty, transaksi ACID), ekstrak ke `app/Services/{Domain}/` agar bisa dipakai ulang API nanti; Filament hanya orchestrasi UI.
+- **Page vs Resource:** Jika ragu fitur harus Resource atau custom Page, **tanya user dulu**. Default: CRUD entity → Resource; singleton/settings/repeater tanpa entity → Page (contoh: `PromotionBannerPage`).
+
+## Domain Conventions
+
+### Members & Staff
+
+- Format nomor member: `YYMM-NNNN` (contoh `2606-0001`; increment 4 digit reset tiap bulan) — gunakan `MemberFormSupport::generateMemberNumber()`.
+- Field tier/status memakai enum yang ada (`TierStatus`, dll.).
+- `Member` punya `point_balance`, `highest_point`, `current_tier` — jangan asumsikan hanya `point_balance`.
+
+### Branches (Cabang)
+
+- Branch code: `HK01`, `HK02`, … — use `BranchFormSupport::generateBranchCode()`. Disable `branch_code` on edit.
+- `is_online_warehouse` for online warehouse flag.
+- `address` (text) for display; `address_id` → normalized `Address` model.
+- Belum ada lat/lng di schema — “cabang terdekat” di mobile masih mock sampai kolom geo + API nearest ada.
+
+### CMS gaps yang diminta kontrak mobile
+
+| Entity | Field | Status |
+| --- | --- | --- |
+| Banner Promosi | `link_url`, `sort_order` | ✅ Ada — form Banner Promosi + reorder repeater |
+| Konten EVENT | `location_address`, `location_url` | ✅ Ada — visible hanya saat type EVENT |
+| Konten NEWS | kategori | Belum ada |
+| Member | `birth_date` | ✅ Ada — DatePicker di form Member |
+| Member | `gender` | ✅ Ada di schema/API mobile — pastikan form Member ikut jika admin perlu edit |
+| Tier benefit | `title`, `description`, `sort_order`, `is_active` | ✅ Repeater di `TierMemberResource` → sync `TierBenefit`; mobile baca `GET /api/tier/levels` |
+
+Setelah migrasi baru: jalankan `php artisan migrate` lalu pastikan API Elysia map field yang sama.
+
+### Points, Redeem, Rewards
+
+- Hormati aturan bisnis dari model Prisma (`PointMutation`, `RedeemInvoice`, `RewardBranchStock`, `ConversionRule`, `TierMember`, dll.).
+- Gunakan nominal retail Indonesia yang realistis di factory/seeder (bukan angka generik satu digit).
+- **Ringkasan loyalty (implementasi saat ini):**
+  - Poin dihitung `floor(nominal / conversion_nominal)` — gunakan `bcmath`, hindari `float` untuk Rupiah.
+  - Konversi memakai `current_tier` member **sebelum** poin ditambah.
+  - Setelah suntik poin: tier hanya **naik** otomatis (tidak turun).
+  - Suntik manual: transaksi ACID (insert `PointMutation`, update `Member`, tulis `ActivityLog`) via `ManualPointInjectionService`.
+  - `ActivityLog.user_id` → `users` (bukan `staff_id`). Before/after JSON di `before_json` / `after_json`.
+  - Nomor struk (`reference_id`) unik global per `transaction_type_id`; boleh kosong (null).
+  - `PointMutation`: `member_id` wajib, `branch_id` nullable.
+- Detail implementasi: lihat `app/Services/Loyalty/` dan `tests/Feature/Loyalty/`.
+- **Redeem kasir — wizard scan + OTP (`RedeemTokenResource` / Antrean Kupon):**
+  - Header action `VerifyRedeemTokenAction` — wizard 3 langkah (Token → Kirim OTP → Konfirmasi).
+  - Langkah **Token**: Filament `Tabs` — **Scan QR** (default) | **Ketik Manual**.
+  - Scan QR: `html5-qrcode` + Alpine `redeemTokenQrScanner` (`resources/js/components/redeem-token-qr-scanner.js`).
+  - Entry Vite terpisah: `resources/js/redeem-token-scanner.js` — di-load global via renderHook `filament.partials.redeem-token-scanner-assets` di `AppPanelProvider` (jangan andalkan `app.js`; Filament panel tidak memuatnya).
+  - Blade scanner: `resources/views/filament/resources/redeem-tokens/partials/token-qr-scanner.blade.php`.
+  - Normalisasi kode token (ketik / hasil scan): `VerifyRedeemTokenFormSupport::normalizeTokenCode()` — 10 karakter alfanumerik uppercase; QR mobile berisi plain `tokenCode`.
+  - Kamera browser butuh **HTTPS** atau `localhost`; dukung laptop (webcam) dan tablet/HP (kamera belakang).
+  - Setelah ubah JS: `npm run build` atau `composer dev` (vite) + hard refresh browser.
+- **Redeem post-confirm (Fase 8):**
+  - Setelah OTP sukses di `VerifyRedeemTokenAction`: **redirect** ke view `RedeemInvoiceResource` (bukan stay di Antrean Kupon).
+  - Push FCM ke member: panggil pipeline notifikasi existing (`NotificationService` → `MobileAppPush` → `FcmPushDriver`) dari `RedeemConfirmationService` **setelah** commit invoice — **fail-soft** (gagal FCM tidak rollback redeem).
+  - Payload data: `type=redeem_invoice`, `invoiceId` → deep link mobile `/redeem/[id]`.
+  - Token perangkat disimpan lewat api-elysia (`device_push_tokens`); jangan invent sender FCM baru.
+  - Spesifikasi: `memory/dev_phase_redeem.md` (Fase 8).
+
+### Persetujuan ganti nomor HP (`PhoneApprovalResource`)
+
+- **Nav:** `Manajemen Pengguna` → Persetujuan Ganti Nomor — akses **Administrator / SuperAdmin** saja.
+- **Model:** `ChangePhoneApproval` (`phone_approvals`) — `source` (`SELF_SERVICE` \| `ADMIN_ASSISTED`), status `PENDING` \| `APPROVED` \| `REJECTED` \| `CANCELLED`.
+- **Path admin-assisted:** member submit nomor baru + alasan via mobile (`POST /api/member/change-phone/request-admin`) → langsung PENDING **tanpa OTP**; admin review di Filament.
+- **Aksi approve/reject:** `ApprovePhoneChangeAction` / `RejectPhoneChangeAction` → `ChangePhoneApiClient` → `POST /internal/change-phone/approve|reject` (api-elysia) + notifikasi WA.
+- **Referensi:** `app/Filament/Resources/PhoneApprovals/`, `app/Services/ChangePhone/ChangePhoneApiClient.php`.
+
+### FAQ CMS
+
+- Custom page `FaqPage` + model `FaqItem` — sync ke mobile via `GET /api/faq` (api-elysia). Test: `tests/Feature/Cms/FaqSyncTest.php`.
+
+## Data Normalization
+
+### Phone numbers
+
+- UI prefix: `+62` on `TextInput`.
+- Display: `MemberFormSupport::formatPhoneForDisplay()`.
+- Persist: `MemberFormSupport::normalizePhone()` → stored as `62xxxxxxxxxx` (no `+`).
+- Reuse this for Member, Branch, Staff — do not duplicate phone logic.
+
+### Address (cascading selects)
+
+- Flow: `province_id` → `city_id` → `sub_district_id` → `village_id` → `postal_code_id` → `street`.
+- Persist via `MemberFormSupport::syncAddress()`; load via resource-specific `addressState()` helpers.
+- Build display string via `buildAddressString()` pattern in `BranchFormSupport`.
+- When adding new resources with addresses, **extract shared form fields** into a reusable component/trait rather than copy-pasting — goal is DRY across Member, Branch, and future forms.
+
+### Slugs & codes
+
+- Content slugs: `ContentFormSupport::generateSlug()`.
+- Follow existing auto-generation patterns; don't invent new formats without asking.
+
+## Media & File Upload (disk `r2`)
+
+- Always use disk `r2` for CMS/banner media (not `public` for new features).
+- **Staging pattern:** FileUpload `directory('temp/')` → on save, move from `temp/` to final folder (`contents/`, `banners/`, etc.) and create/update `Media` record.
+- Reference implementations: `ContentFormSupport`, `PromotionBannerSupport`.
+- Clean up orphaned `temp/` files and old `Media` records when replacing images.
+- On `migrate:fresh --seed`, R2 bucket may be wiped — do not rely on orphaned files persisting locally.
+
+## Testing
+
+- Pest **tidak wajib by default** — tulis/update test hanya jika user meminta.
+- Bila diminta: `php artisan make:test --pest {Name}` lalu `php artisan test --compact`.
+- Catatan: `phpunit.xml` memakai SQLite in-memory; beberapa migration MySQL-specific bisa gagal di test suite — prefer MySQL lokal atau `DatabaseTransactions` bila perlu.
+
+## Reference Resources
+
+Salin pola dari resource berikut saat membangun fitur baru:
+
+| Jenis fitur | Referensi |
+|---|---|
+| Full CRUD + View + Infolist | `Members/MemberResource` |
+| Cabang + RelationManagers + widget stat | `Branches/BranchResource` |
+| CMS + media R2 + RichEditor | `Contents/ContentResource` |
+| Custom Page + repeater | `Pages/PromotionBannerPage` |
+| Master data read-only (modal) | `Provinces/ProvinceResource` |
+| List + chart widgets | `Members/` widgets |
+| List read-only + filter + stat cards | `PointMutations/PointMutationResource` |
+| Aksi non-CRUD (wizard modal) | `PointMutations/Actions/InjectManualPointAction` |
+| Wizard redeem + scan QR (Alpine + Vite) | `RedeemTokens/Actions/VerifyRedeemTokenAction` |
+| Konfigurasi tier + konversi inline | `TierMembers/TierMemberResource` |
+| List read-only + approve/reject (internal API) | `PhoneApprovals/PhoneApprovalResource` |
+

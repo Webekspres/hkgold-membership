@@ -9,10 +9,12 @@ use App\Filament\Resources\Provinces\Schemas\ProvinceForm;
 use App\Filament\Resources\Provinces\Tables\ProvincesTable;
 use App\Models\Province;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ProvinceResource extends Resource
 {
@@ -30,7 +32,14 @@ class ProvinceResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $recordTitleAttribute = 'nama';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null && $user->hasRole(Utils::getSuperAdminName());
+    }
 
     public static function form(Schema $schema): Schema
     {

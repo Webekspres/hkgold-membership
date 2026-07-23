@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Media;
-use App\Models\Reward;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -16,12 +15,6 @@ class MediaSeeder extends Seeder
 
     public function run(): void
     {
-        if (Reward::query()->count() === 0) {
-            $this->call(RewardSeeder::class);
-        }
-
-        $rewardIds = Reward::query()->pluck('id')->all();
-
         $files = [
             'cincin-emas-22k.jpg',
             'kalung-antam-1.jpg',
@@ -37,11 +30,10 @@ class MediaSeeder extends Seeder
             'news-harga-emas.jpg',
         ];
 
-        foreach ($files as $index => $fileName) {
+        foreach ($files as $fileName) {
             Media::query()->firstOrCreate(
                 ['file_name' => $fileName],
                 [
-                    'reward_id' => $index < 6 ? $rewardIds[$index % count($rewardIds)] : null,
                     'caption' => 'Aset media HK GOLD VIP - '.$fileName,
                     'file_type' => 'image/jpeg',
                     'file_url' => 'https://cdn.hkgoldvip.id/media/'.Str::uuid().'/'.$fileName,

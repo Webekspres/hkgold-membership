@@ -49,9 +49,9 @@ class MemberTierDistributionChartWidget extends ChartWidget
     protected function getData(): array
     {
         $counts = Member::query()
-            ->selectRaw('tier, COUNT(*) as total')
-            ->groupBy('tier')
-            ->pluck('total', 'tier');
+            ->selectRaw('current_tier, COUNT(*) as total')
+            ->groupBy('current_tier')
+            ->pluck('total', 'current_tier');
 
         $total = (int) $counts->sum();
 
@@ -64,7 +64,7 @@ class MemberTierDistributionChartWidget extends ChartWidget
             TierStatus::Silver->value => ['#94a3b8', '#cbd5e1'],
             TierStatus::Gold->value => ['#eab308', '#fde047'],
             TierStatus::Platinum->value => ['#64748b', '#94a3b8'],
-            TierStatus::Sapphire->value => ['#3b82f6', '#93c5fd'],
+            TierStatus::Elite->value => ['#3b82f6', '#93c5fd'],
         ];
 
         foreach (TierStatus::cases() as $tier) {
@@ -96,7 +96,7 @@ class MemberTierDistributionChartWidget extends ChartWidget
             TierStatus::Silver => 'Silver',
             TierStatus::Gold => 'Gold',
             TierStatus::Platinum => 'Platinum',
-            TierStatus::Sapphire => 'Sapphire',
+            TierStatus::Elite => 'Elite',
         };
     }
 }

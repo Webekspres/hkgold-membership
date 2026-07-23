@@ -4,42 +4,37 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\InvoiceStatus;
+use App\Enums\RedeemStatus;
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\RedeemInvoiceFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RedeemInvoice extends Model
 {
     /** @use HasFactory<RedeemInvoiceFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasAuditableActivityLogs, HasFactory, HasUuids;
 
     protected $table = 'redeem_invoices';
 
     protected $fillable = [
         'invoice_number',
         'member_id',
+        'staff_id',
         'branch_id',
         'reward_id',
-        'points_deducted',
+        'redeem_token_id',
+        'points_redeemed',
         'status',
-        'qr_token',
-        'expires_at',
-        'qr_expires_at',
-        'confirmed_by_id',
-        'cancelled_by_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'points_deducted' => 'decimal:2',
-            'status' => InvoiceStatus::class,
-            'expires_at' => 'datetime',
-            'qr_expires_at' => 'datetime',
+            'points_redeemed' => 'integer',
+            'status' => RedeemStatus::class,
         ];
     }
 
@@ -58,13 +53,13 @@ class RedeemInvoice extends Model
         return $this->belongsTo(Reward::class);
     }
 
-    public function confirmedBy(): BelongsTo
+    public function staff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'confirmed_by_id');
+        return $this->belongsTo(Staff::class);
     }
 
-    public function cancelledBy(): BelongsTo
+    public function redeemToken(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'cancelled_by_id');
+        return $this->belongsTo(RedeemToken::class, 'redeem_token_id');
     }
 }

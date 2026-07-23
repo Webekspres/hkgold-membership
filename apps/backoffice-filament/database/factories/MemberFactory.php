@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\TierStatus;
-use App\Models\Address;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,12 +19,12 @@ class MemberFactory extends Factory
     public function configure(): static
     {
         return $this->afterMaking(function (Member $member): void {
-            if ($member->id !== null) {
+            if ($member->user_id !== null) {
                 return;
             }
 
-            $user = User::factory()->customer()->create();
-            $member->setAttribute('id', $user->id);
+            $user = User::factory()->member()->create();
+            $member->setAttribute('user_id', $user->id);
         });
     }
 
@@ -36,19 +35,30 @@ class MemberFactory extends Factory
     {
         $tier = fake()->randomElement(TierStatus::cases());
         $pointsByTier = [
-            TierStatus::Silver->value => fake()->numberBetween(0, 49_999),
-            TierStatus::Gold->value => fake()->numberBetween(50_000, 199_999),
-            TierStatus::Platinum->value => fake()->numberBetween(200_000, 499_999),
-            TierStatus::Sapphire->value => fake()->numberBetween(500_000, 2_000_000),
+            TierStatus::Silver->value => fake()->numberBetween(0, 49),
+            TierStatus::Gold->value => fake()->numberBetween(50, 199),
+            TierStatus::Platinum->value => fake()->numberBetween(200, 499),
+            TierStatus::Elite->value => fake()->numberBetween(500, 2000),
         ];
 
+        $pointBalance = $pointsByTier[$tier->value];
+        $highestPoint = fake()->boolean(70)
+            ? $pointBalance
+            : fake()->numberBetween($pointBalance, $pointBalance + 10_000);
+
         return [
-            'address_id' => Address::factory(),
-            'member_code' => 'HK'.fake()->unique()->regexify('[A-Z]{1}[0-9]{7}'),
-            'dob' => fake()->dateTimeBetween('-65 years', '-21 years')->format('Y-m-d'),
-            'total_points' => $pointsByTier[$tier->value],
-            'tier' => $tier,
-            'phone_change_pending' => false,
+            // Default null: picking random existing branch IDs races with RefreshDatabase on shared MySQL.
+            'registered_at_branch_id' => null,
+            'address_id' => null,
+            'member_number' => now()->format('ym').'-'.fake()->unique()->numerify('####'),
+            // Format Filament: 62… (tanpa +). Unique — jangan hardcode nomor produksi di sini.
+            'phone_number' => '628'.fake()->unique()->numerify('##########'),
+            'current_tier' => $tier,
+            'point_balance' => $pointBalance,
+            'highest_point' => $highestPoint,
+            'last_activity_at' => now(),
+            'is_suspended' => false,
+            'birth_date' => fake()->dateTimeBetween('-60 years', '-18 years'),
         ];
     }
 }

@@ -14,21 +14,18 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Address master (FK chain)
-            ProvinceSeeder::class,
-            RegencySeeder::class,
-            DistrictSeeder::class,
-            VillageSeeder::class,
-            PostalCodeSeeder::class,
+            LocationSeeder::class,
             AddressSeeder::class,
-            // Core loyalty domain
-            LoyaltyConfigSeeder::class,
+            TierMemberSeeder::class,
+            TransactionTypeSeeder::class,
+            ConversionRuleSeeder::class,
             CategoryRewardSeeder::class,
             RewardSeeder::class,
             MediaSeeder::class,
             ShieldRolesSeeder::class,
             UserSeeder::class,
             BranchSeeder::class,
+            BranchImageSeeder::class,
             StaffSeeder::class,
             MemberSeeder::class,
             BranchRewardStockSeeder::class,
@@ -38,8 +35,13 @@ class DatabaseSeeder extends Seeder
             PointInjectionBatchSeeder::class,
             PointMutationSeeder::class,
             PointAnnualArchiveSeeder::class,
+            RedeemTokenSeeder::class,
             RedeemInvoiceSeeder::class,
             ContentSeeder::class,
+            FaqItemSeeder::class,
+            NotificationSeeder::class,
+            NotificationCampaignSeeder::class,
+            DevicePushTokenSeeder::class,
         ]);
     }
 }

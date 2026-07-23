@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Tables;
+namespace App\Filament\Resources\Members\Tables;
 
-use App\Enums\TierStatus as EnumsTierStatus;
+use App\Enums\TierStatus;
+use App\Filament\Resources\Members\Schemas\MemberForm;
+use App\Models\Branch;
 use Filament\Actions\ViewAction;
-use Filament\Tables\Table;
-use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Table;
 
 class MembersTable
 {
@@ -17,34 +20,20 @@ class MembersTable
     {
         return $table
             ->columns([
-                TextColumn::make('member_code')
-                    ->label('Kode member')
+                TextColumn::make('member_number')
+                    ->label('No. Member')
+                    ->color('primary')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->copyMessage('Nomor member disalin')
+                    ->copyMessageDuration(1500),
 
-                // PERBAIKAN: Menggabungkan Avatar dan Nama ke dalam 1 kolom menggunakan Stack Horizontal
-                TextColumn::make('user.name')
-                    ->label('Member')
-                    ->weight(FontWeight::SemiBold)
+                TextColumn::make('user.full_name')
+                    ->label('Nama')
                     ->searchable()
-                    ->description(fn($record): ?string => $record->member_code ? null : null) // Opsional jika butuh sub-text
-                    // Gunakan metode prepended untuk menyelipkan Avatar bulat sebelum teks Nama
-                    ->prependView('filament.tables.columns.avatar-wrapper', [
-                        'image' => fn($record) => $record->user?->profilePhoto?->file_url
-                    ])
-                    // --- ATAU CARA FILAMENT STANDARD TANPA CUSTOM VIEW (REKOMENDASI): ---
-                    ->html()
-                    ->formatStateUsing(function ($record, $state) {
-                        $avatarUrl = $record->user?->profilePhoto?->file_url
-                            ?? 'https://ui-avatars.com/api/?name=' . urlencode($state) . '&background=random';
-                        return "
-                            <div class='flex items-center gap-3'>
-                                <img src='{$avatarUrl}' class='w-10 h-10 rounded-full object-cover border border-gray-200' alt='Avatar'>
-                                <span class='font-semibold'>{$state}</span>
-                            </div>
-                        ";
-                    }),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('user.email')
                     ->label('Email')
@@ -52,35 +41,49 @@ class MembersTable
                     ->sortable()
                     ->toggleable(),
 
-                TextColumn::make('user.phone')
-                    ->label('Telepon')
+                TextColumn::make('phone_number')
+                    ->label('No. HP')
                     ->searchable()
                     ->sortable()
+                    ->formatStateUsing(fn (?string $state): string => filled($state)
+                        ? '+'.ltrim($state, '+')
+                        : '—')
                     ->toggleable(),
 
-                TextColumn::make('total_points')
-                    ->label('Total poin')
-                    ->numeric(decimalPlaces: 2)
+                TextColumn::make('registeredBranch.name')
+                    ->label('Cabang')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—')
+                    ->toggleable(),
+
+                TextColumn::make('point_balance')
+                    ->label('Poin')
+                    ->numeric()
                     ->sortable()
                     ->toggleable(),
 
-                TextColumn::make('tier')
+                TextColumn::make('current_tier')
                     ->label('Tier')
                     ->badge()
-                    ->formatStateUsing(fn(EnumsTierStatus $state): string => match ($state) {
-                        EnumsTierStatus::Silver => 'Silver',
-                        EnumsTierStatus::Gold => 'Gold',
-                        EnumsTierStatus::Platinum => 'Platinum',
-                        EnumsTierStatus::Sapphire => 'Sapphire',
+                    ->formatStateUsing(fn (TierStatus $state): string => match ($state) {
+                        TierStatus::Silver => 'Silver',
+                        TierStatus::Gold => 'Gold',
+                        TierStatus::Platinum => 'Platinum',
+                        TierStatus::Elite => 'Elite',
                     })
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false), // Jangan disembunyikan agar tabel terisi proporsional
+                    ->toggleable(),
 
-                TextColumn::make('dob')
-                    ->label('Tanggal lahir')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('user.is_active')
+                    ->label('Aktif')
+                    ->boolean()
+                    ->toggleable(),
+
+                IconColumn::make('is_suspended')
+                    ->label('Suspend')
+                    ->boolean()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
@@ -90,11 +93,22 @@ class MembersTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                TrashedFilter::make(),
+                SelectFilter::make('current_tier')
+                    ->label('Tier')
+                    ->options(MemberForm::tierOptions()),
+                SelectFilter::make('registered_at_branch_id')
+                    ->label('Cabang')
+                    ->options(fn (): array => Branch::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->preload(),
+                TernaryFilter::make('is_suspended')
+                    ->label('Ditangguhkan')
+                    ->placeholder('Semua')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak'),
             ])
             ->recordActions([
                 ViewAction::make(),
-            ])
-            ->columnManager();
+            ]);
     }
 }

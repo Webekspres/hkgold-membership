@@ -3,6 +3,11 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+// Doppler injects DB_DATABASE=dev; force test DB before any TestCase boots.
+putenv('DB_DATABASE=hkgold_membership_test');
+$_ENV['DB_DATABASE'] = 'hkgold_membership_test';
+$_SERVER['DB_DATABASE'] = 'hkgold_membership_test';
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -17,6 +22,10 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
  // ->use(RefreshDatabase::class)
     ->in('Feature');
+
+pest()->extend(TestCase::class)->in('Unit');
+
+require_once __DIR__.'/Feature/Loyalty/bulk-injection-helpers.php';
 
 /*
 |--------------------------------------------------------------------------

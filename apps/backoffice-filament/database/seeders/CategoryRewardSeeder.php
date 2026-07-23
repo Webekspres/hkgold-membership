@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\CategoryReward;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategoryRewardSeeder extends Seeder
 {
@@ -28,7 +29,10 @@ class CategoryRewardSeeder extends Seeder
         ];
 
         foreach ($categories as $name) {
-            CategoryReward::query()->firstOrCreate(['name' => $name]);
+            CategoryReward::query()->firstOrCreate(
+                ['slug' => Str::slug($name)],
+                ['name' => $name],
+            );
         }
     }
 }

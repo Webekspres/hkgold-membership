@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\TierStatus;
+use App\Models\Concerns\HasAuditableActivityLogs;
 use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,37 +17,47 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Member extends Model
 {
     /** @use HasFactory<MemberFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasAuditableActivityLogs, HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'members';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
+        'user_id',
+        'registered_at_branch_id',
         'address_id',
-        'member_code',
-        'dob',
-        'total_points',
-        'tier',
-        'phone_change_pending',
+        'member_number',
+        'phone_number',
+        'current_tier',
+        'point_balance',
+        'highest_point',
+        'last_activity_at',
+        'is_suspended',
+        'birth_date',
+        'gender',
+        'phone_changed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'dob' => 'date',
-            'total_points' => 'decimal:2',
-            'tier' => TierStatus::class,
-            'phone_change_pending' => 'boolean',
+            'current_tier' => TierStatus::class,
+            'point_balance' => 'integer',
+            'highest_point' => 'integer',
+            'last_activity_at' => 'datetime',
+            'is_suspended' => 'boolean',
+            'birth_date' => 'date',
+            'phone_changed_at' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class);
+    }
+
+    public function registeredBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'registered_at_branch_id');
     }
 
     public function address(): BelongsTo
@@ -64,6 +75,11 @@ class Member extends Model
         return $this->hasMany(RedeemInvoice::class);
     }
 
+    public function redeemTokens(): HasMany
+    {
+        return $this->hasMany(RedeemToken::class);
+    }
+
     public function phoneApprovals(): HasMany
     {
         return $this->hasMany(PhoneApproval::class);
@@ -72,16 +88,6 @@ class Member extends Model
     public function inactivityLogs(): HasMany
     {
         return $this->hasMany(MemberAnomaly::class);
-    }
-
-    public function fraudSuspectsAsOne(): HasMany
-    {
-        return $this->hasMany(FraudSuspect::class, 'member_1_id');
-    }
-
-    public function fraudSuspectsAsTwo(): HasMany
-    {
-        return $this->hasMany(FraudSuspect::class, 'member_2_id');
     }
 
     public function annualArchives(): HasMany

@@ -1,0 +1,47 @@
+---
+globs: **/backoffice-filament/database/**
+alwaysApply: false
+---
+
+# SYSTEM RULES: Laravel 13 & Filament v5 Code Generation
+
+Project Context: "hk-gold-vip" (Integrated Membership & Loyalty Platform)
+
+You are constrained to these strict architectural and translation rules whenever generating Laravel code from the Mala Emas Prisma schema.
+
+## 1. Artisan & Scaffolding First Approach
+
+- ALWAYS prioritize the use of Artisan and Filament CLI commands to scaffold files.
+- You must output the exact, unified Artisan command (e.g., `php artisan make:model ModelName -m -f -s`) at the beginning of your response to scaffold the Model, Migration, Factory, and Seeder simultaneously.
+- If the resource requires a back-office interface, provide the Filament resource command: `php artisan make:filament-resource ModelName`.
+
+## 2. General Constraints
+
+- Always include `declare(strict_types=1);` at the top of every PHP file.
+- Use strict typing for all method parameters and return types (e.g., `public function register(array $data): bool`).
+- Follow modern Laravel 13 syntax and conventions.
+
+## 3. Database & Migrations
+
+- **Primary Keys:** Translate Prisma `String @id @default(uuid()) @db.Char(36)` to Laravel UUID: `$table->uuid('id')->primary();`.
+- **Naming:** Read `@@map("table_name")` for the exact database table name to ensure compatibility with the ElysiaJS backend.
+- **Foreign Keys:** Must use constrained foreign UUIDs (e.g., `$table->foreignUuid('member_id')->constrained('members')->cascadeOnDelete();`).
+- **Timestamps:** Always include `$table->timestamps();`. 
+- **Soft Deletes:** Add `$table->softDeletes();` ONLY for models that explicitly have `deletedAt DateTime?` in the Prisma schema (e.g., `members`, `redeem_invoices`).
+
+## 4. Eloquent Models
+
+- **Traits:** Always use `Illuminate\Database\Eloquent\Concerns\HasUuids` for UUID primary keys.
+- **Properties:** Explicitly set `protected $table = 'table_name';`. Only mass-assignable fields go into `protected $fillable = [];`.
+- **Casts:** Use Laravel 11+ method syntax for attributes: `protected function casts(): array { return [ 'tier' => TierStatus::class ]; }`.
+- **Relationships:** Define all `belongsTo`, `hasMany`, `hasOne` explicitly with strict return types (e.g., `public function member(): BelongsTo`).
+
+## 5. Context-Aware Factories & Seeders (Gold & Loyalty Context)
+
+- **Business Logic Context:** You MUST analyze the table name and its role in a Luxury Gold Retail & Loyalty Engine ecosystem.
+- **Faker Generation:** Do not use generic fakers blindly.
+  - If the table is `members`, fake realistic Indonesian names and valid formatting for `member_number` (e.g., `now()->format('ym').'-'.fake()->unique()->numerify('####')` → `2606-0001`).
+  - If the table is `point_mutations`, fake realistic gold retail transaction amounts (e.g., `fake()->numberBetween(2000000, 50000000)`) and points following the loyalty config tiers, not single digits.
+  - If the table is `branches`, use the specific context of the 17 central Java branches (e.g., Pontianak, Semarang, Solo).
+  - If the table is `redeem_invoices`, fake random status according to the `InvoiceStatus` enum (`PENDING`, `CONFIRMED`, `CANCELLED`, `TIMEOUT`).
+- **Seeders:** Ensure seeders call the factory and create at least 10 realistic records, handling relational integrity (e.g., creating a `User` before a `Member` or `Staff`).

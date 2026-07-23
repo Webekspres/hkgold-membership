@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Models\Content;
-use App\Models\Media;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Content>
@@ -21,27 +22,35 @@ class ContentFactory extends Factory
      */
     public function definition(): array
     {
-        $type = fake()->randomElement(ContentType::cases());
+        $type = fake()->randomElement([ContentType::News, ContentType::Event]);
+        $title = match ($type) {
+            ContentType::News => fake()->randomElement([
+                'Harga Emas Stabil di Awal Bulan',
+                'Promo Akhir Tahun HK GOLD VIP',
+                'Tips Merawat Perhiasan Emas',
+            ]),
+            ContentType::Event => 'Gathering Member HK GOLD VIP '.fake()->city(),
+            default => fake()->sentence(4),
+        };
 
         return [
             'type' => $type,
-            'title' => match ($type) {
-                ContentType::News => fake()->randomElement([
-                    'Harga Emas Stabil di Awal Bulan',
-                    'Promo Akhir Tahun HK GOLD VIP',
-                    'Tips Merawat Perhiasan Emas',
-                ]),
-                ContentType::Event => 'Gathering Member HK GOLD VIP '.fake()->city(),
-                ContentType::Exhibition => 'Pameran Koleksi Emas Eksklusif 2026',
-                ContentType::Banner => 'Banner Utama Aplikasi Mobile',
-            },
-            'body' => fake('id_ID')->paragraphs(3, true),
-            'location' => fake()->optional(0.6)->city(),
-            'start_date' => fake()->optional(0.8)->dateTimeBetween('-1 month', '+3 months'),
-            'end_date' => fake()->optional(0.6)->dateTimeBetween('+1 week', '+6 months'),
-            'is_published' => true,
-            'media_id' => Media::query()->whereDoesntHave('content')->inRandomOrder()->value('id')
-                ?? Media::factory(),
+            'title' => $title,
+            'slug' => Str::slug($title).'-'.fake()->unique()->numerify('###'),
+            'body_content' => fake('id_ID')->paragraphs(3, true),
+            'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
+            'location_address' => $type === ContentType::Event
+                ? fake('id_ID')->address()
+                : null,
+            'location_url' => $type === ContentType::Event
+                ? 'https://maps.google.com/?q='.urlencode(fake('id_ID')->city())
+                : null,
+            'status' => fake()->randomElement([
+                ContentStatus::Draft,
+                ContentStatus::Archived,
+                ContentStatus::Published,
+            ]),
+            'is_staged' => false,
         ];
     }
 }

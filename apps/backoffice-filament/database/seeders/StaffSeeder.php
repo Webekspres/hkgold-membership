@@ -22,10 +22,10 @@ class StaffSeeder extends Seeder
         }
 
         if (User::query()->whereIn('role', [
-            Role::StoreManager,
-            Role::Marketing,
-            Role::Executive,
+            Role::Administrator,
             Role::SuperAdmin,
+            Role::Marketing,
+            Role::StoreManager,
         ])->count() === 0) {
             $this->call(UserSeeder::class);
         }
@@ -33,17 +33,21 @@ class StaffSeeder extends Seeder
         $branchIds = Branch::query()->pluck('id')->all();
 
         $staffUsers = User::query()
-            ->whereIn('role', [Role::StoreManager, Role::Marketing, Role::Executive, Role::SuperAdmin])
+            ->whereIn('role', [
+                Role::Administrator,
+                Role::SuperAdmin,
+                Role::Marketing,
+                Role::StoreManager,
+            ])
             ->whereDoesntHave('staff')
             ->get();
 
         foreach ($staffUsers as $index => $user) {
             Staff::query()->firstOrCreate(
-                ['id' => $user->id],
+                ['user_id' => $user->id],
                 [
                     'branch_id' => $branchIds[$index % count($branchIds)],
-                    'allowed_ip' => fake()->optional(0.5)->ipv4(),
-                    'is_device_approved' => $user->role !== Role::SuperAdmin,
+                    'employee_code' => 'EMP'.str_pad((string) ($index + 1), 5, '0', STR_PAD_LEFT),
                 ],
             );
         }

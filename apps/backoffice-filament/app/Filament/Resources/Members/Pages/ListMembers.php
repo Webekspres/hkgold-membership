@@ -19,11 +19,7 @@ class ListMembers extends ListRecords
         return [
             CreateAction::make()
                 ->label('Tambah Member')
-                ->color('primary')
-                ->extraAttributes([
-                    'style' => 'background: linear-gradient(135deg, #f5c842, #e8a020); border: none;',
-                    'class' => 'text-black font-bold hover:opacity-90 shadow-lg'
-                ]),
+                ->goldStyle(),
         ];
     }
 
@@ -38,16 +34,16 @@ class ListMembers extends ListRecords
         ];
     }
 
-    protected function getColumns(): int | string | array
+    protected function getColumns(): int|string|array
     {
         return [
             'md' => 2,
-            'lg' => 3, // sesuaikan dengan span widget Anda
+            'lg' => 3,
         ];
     }
 
     /**
-     * @return int | array<string, int | null>
+     * @return int|array<string, int|null>
      */
     public function getHeaderWidgetsColumns(): int|array
     {

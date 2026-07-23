@@ -70,7 +70,7 @@ return [
 
     'super_admin' => [
         'enabled' => true,
-        'name' => 'super_admin',
+        'name' => 'administrator',
         'define_via_gate' => true,
         'intercept_gate' => 'before',
     ],
@@ -87,7 +87,7 @@ return [
     */
 
     'panel_user' => [
-        'enabled' => true,
+        'enabled' => false,
         'name' => 'panel_user',
     ],
 
@@ -232,7 +232,11 @@ return [
     |
     */
 
-    'custom_permissions' => [],
+    'custom_permissions' => [
+        'Update:PromotionBannerPage' => 'Update Banner Promosi',
+        'Update:FaqPage' => 'Update FAQ',
+        'View:MemberLookupPage' => 'Cari Member',
+    ],
 
     /*
     |--------------------------------------------------------------------------

@@ -20,20 +20,14 @@ class FraudSuspectFactory extends Factory
      */
     public function definition(): array
     {
-        $reasons = [
-            'Transaksi poin identik dalam rentang 5 menit di cabang berbeda',
-            'Nomor HP dan alamat email mirip dengan member lain',
-            'Pola redeem reward berulang melebihi batas normal',
-            'Akun baru dengan akumulasi poin tinggi dalam 7 hari',
-            'Device fingerprint cocok dengan member yang pernah diflag',
-        ];
+        $members = Member::factory()->count(2)->create();
 
         return [
-            'member_1_id' => Member::factory(),
-            'member_2_id' => Member::factory(),
-            'confidence_score' => fake()->randomFloat(2, 55, 98),
-            'reason' => fake()->randomElement($reasons),
-            'is_resolved' => fake()->boolean(30),
+            'detected_name' => fake('id_ID')->name(),
+            'detected_birth_date' => fake()->dateTimeBetween('-65 years', '-21 years'),
+            'suspect_member_ids' => $members->pluck('id')->all(),
+            'status' => fake()->randomElement(['PENDING_REVIEW', 'CLEARED', 'SUSPENDED']),
+            'admin_notes' => fake()->optional(0.5)->sentence(),
         ];
     }
 }

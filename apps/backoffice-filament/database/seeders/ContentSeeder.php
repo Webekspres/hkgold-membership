@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\ContentStatus;
 use App\Enums\ContentType;
 use App\Models\Content;
-use App\Models\Media;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ContentSeeder extends Seeder
 {
@@ -16,46 +17,49 @@ class ContentSeeder extends Seeder
 
     public function run(): void
     {
-        if (Media::query()->count() === 0) {
-            $this->call(MediaSeeder::class);
-        }
-
-        $mediaIds = Media::query()
-            ->whereDoesntHave('user')
-            ->whereDoesntHave('content')
-            ->pluck('id')
-            ->all();
-
         $items = [
-            [ContentType::News, 'Harga Emas Stabil di Awal Bulan'],
-            [ContentType::News, 'Promo Akhir Tahun HK GOLD VIP'],
-            [ContentType::Event, 'Gathering Member Pontianak 2026'],
-            [ContentType::Event, 'Workshop Investasi Emas Pemula'],
-            [ContentType::Exhibition, 'Pameran Koleksi Emas Eksklusif'],
-            [ContentType::Banner, 'Banner Utama Aplikasi Mobile'],
-            [ContentType::News, 'Tips Merawat Perhiasan Emas'],
-            [ContentType::Event, 'Grand Opening Cabang Solo'],
-            [ContentType::Exhibition, 'Showcase Perhiasan Antam Terbaru'],
-            [ContentType::Banner, 'Banner Promo Ramadhan'],
-            [ContentType::News, 'Program Loyalitas Sapphire Resmi Diluncurkan'],
-            [ContentType::Event, 'Charity Gold Run HK GOLD VIP'],
+            [ContentType::News, 'Harga Emas Stabil di Awal Bulan', null, null],
+            [ContentType::News, 'Promo Akhir Tahun HK GOLD VIP', null, null],
+            [
+                ContentType::Event,
+                'Gathering Member Pontianak 2026',
+                'Ballroom Hotel Mercure Pontianak, Jl. Jenderal Ahmad Yani No. 91, Pontianak',
+                'https://maps.google.com/?q=Hotel+Mercure+Pontianak',
+            ],
+            [
+                ContentType::Event,
+                'Workshop Investasi Emas Pemula',
+                'Gedung Serbaguna HK GOLD VIP Semarang, Jl. Pandanaran No. 12, Semarang',
+                'https://maps.google.com/?q=Pandanaran+Semarang',
+            ],
+            [ContentType::News, 'Tips Merawat Perhiasan Emas', null, null],
+            [
+                ContentType::Event,
+                'Grand Opening Cabang Solo',
+                'HK GOLD VIP Solo, Jl. Slamet Riyadi No. 250, Surakarta',
+                'https://maps.google.com/?q=Slamet+Riyadi+Surakarta',
+            ],
+            [ContentType::News, 'Program Loyalitas Elite Resmi Diluncurkan', null, null],
+            [
+                ContentType::Event,
+                'Charity Gold Run HK GOLD VIP',
+                'Taman Bungkul Surabaya, Jl. Raya Darmo, Surabaya',
+                'https://maps.google.com/?q=Taman+Bungkul+Surabaya',
+            ],
         ];
 
-        foreach ($items as $index => [$type, $title]) {
-            if (! array_key_exists($index, $mediaIds)) {
-                break;
-            }
-
-            Content::query()->firstOrCreate(
-                ['title' => $title],
+        foreach ($items as [$type, $title, $locationAddress, $locationUrl]) {
+            Content::query()->updateOrCreate(
+                ['slug' => Str::slug($title)],
                 [
                     'type' => $type,
-                    'body' => fake('id_ID')->paragraphs(2, true),
-                    'location' => fake()->optional(0.5)->city(),
-                    'start_date' => fake()->dateTimeBetween('-1 month', '+2 months'),
-                    'end_date' => fake()->optional(0.5)->dateTimeBetween('+1 week', '+4 months'),
-                    'is_published' => true,
-                    'media_id' => $mediaIds[$index],
+                    'title' => $title,
+                    'body_content' => fake('id_ID')->paragraphs(2, true),
+                    'event_date' => $type === ContentType::Event ? fake()->dateTimeBetween('+1 week', '+3 months') : null,
+                    'location_address' => $locationAddress,
+                    'location_url' => $locationUrl,
+                    'status' => ContentStatus::Published,
+                    'is_staged' => false,
                 ],
             );
         }

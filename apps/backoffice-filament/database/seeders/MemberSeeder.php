@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\Role;
+use App\Enums\TierStatus;
 use App\Models\Address;
+use App\Models\Branch;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,25 +23,46 @@ class MemberSeeder extends Seeder
             $this->call(AddressSeeder::class);
         }
 
+        if (Branch::query()->count() === 0) {
+            $this->call(BranchSeeder::class);
+        }
+
         $addressIds = Address::query()->pluck('id')->all();
+        $branchIds = Branch::query()->pluck('id')->all();
+
+        $seedMemberNumber = now()->format('ym') . '-0001';
+
+        if (! Member::query()->where('member_number', $seedMemberNumber)->exists()) {
+            Member::factory()->create([
+                'member_number' => $seedMemberNumber,
+                'address_id' => $addressIds[0] ?? null,
+                'registered_at_branch_id' => Branch::query()->where('branch_code', 'HK01')->value('id'),
+                'current_tier' => TierStatus::Silver,
+                'point_balance' => 0,
+                'highest_point' => 0,
+                'is_suspended' => false,
+                'birth_date' => '1995-06-15',
+            ]);
+        }
 
         $customerUsers = User::query()
-            ->where('role', Role::Customer)
+            ->where('role', Role::Member)
             ->whereDoesntHave('member')
             ->get();
 
         if ($customerUsers->isEmpty()) {
             $this->call(UserSeeder::class);
             $customerUsers = User::query()
-                ->where('role', Role::Customer)
+                ->where('role', Role::Member)
                 ->whereDoesntHave('member')
                 ->get();
         }
 
         foreach ($customerUsers->values() as $index => $user) {
             Member::factory()->create([
-                'id' => $user->id,
+                'user_id' => $user->id,
                 'address_id' => $addressIds[$index % count($addressIds)],
+                'registered_at_branch_id' => $branchIds[$index % count($branchIds)],
             ]);
         }
 
@@ -48,8 +71,9 @@ class MemberSeeder extends Seeder
         if ($remaining > 0) {
             Member::factory()
                 ->count($remaining)
-                ->create(fn (): array => [
+                ->create(fn(): array => [
                     'address_id' => fake()->randomElement($addressIds),
+                    'registered_at_branch_id' => fake()->randomElement($branchIds),
                 ]);
         }
     }
