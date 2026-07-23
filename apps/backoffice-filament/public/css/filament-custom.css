@@ -6,11 +6,25 @@
     border-right: 1px solid rgba(245, 203, 104, 0.15) !important;
 }
 
-/* Topbar Header Container: 50% Dark Gold Gradient -> 50% White */
+/* Topbar Header Container: Dark Gold Gradient matching Sidebar Width -> White for rest */
 .fi-topbar,
 .fi-topbar-nav {
-    background: linear-gradient(90deg, #120e07 0%, #2e220b 25%, #4a3813 50%, #ffffff 50%, #ffffff 100%) !important;
+    background: linear-gradient(
+        90deg,
+        #120e07 0%,
+        #2e220b calc(var(--sidebar-width, 16rem) * 0.5),
+        #4a3813 var(--sidebar-width, 16rem),
+        #ffffff var(--sidebar-width, 16rem),
+        #ffffff 100%
+    ) !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+@media (max-width: 1023px) {
+    .fi-topbar,
+    .fi-topbar-nav {
+        background: #ffffff !important;
+    }
 }
 
 /* Topbar Elements Styling */
