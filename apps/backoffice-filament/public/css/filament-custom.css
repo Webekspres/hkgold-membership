@@ -1,9 +1,51 @@
-/* Custom Dark Gold Sidebar for Filament */
+/* Custom Dark Gold Sidebar & Topbar Header for Filament */
 
 /* Sidebar Container: Vertical Gradient (Dark to Dark Gold) */
 .fi-sidebar {
     background: linear-gradient(180deg, #120e07 0%, #261d0a 50%, #453412 100%) !important;
     border-right: 1px solid rgba(245, 203, 104, 0.15) !important;
+}
+
+/* Topbar Header Container: Horizontal Dark Gold Gradient */
+.fi-topbar,
+.fi-topbar-nav {
+    background: linear-gradient(90deg, #120e07 0%, #261d0a 50%, #453412 100%) !important;
+    border-bottom: 1px solid rgba(245, 203, 104, 0.15) !important;
+}
+
+/* Topbar Text & Icons: Gold Accent */
+.fi-topbar button,
+.fi-topbar a,
+.fi-topbar span,
+.fi-topbar svg,
+.fi-topbar-item {
+    color: #f5cb68 !important;
+}
+
+.fi-topbar button:hover,
+.fi-topbar a:hover {
+    color: #ffe8a3 !important;
+}
+
+/* Global Search Input / Trigger in Topbar */
+.fi-topbar-global-search-ctn input,
+.fi-global-search-field input,
+.fi-topbar input {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(245, 203, 104, 0.25) !important;
+    color: #f5cb68 !important;
+}
+
+.fi-topbar input::placeholder {
+    color: rgba(245, 203, 104, 0.5) !important;
+}
+
+/* Topbar User Menu & Profile Badge */
+.fi-user-menu-btn,
+.fi-topbar-user-menu-btn {
+    background-color: rgba(245, 203, 104, 0.08) !important;
+    border: 1px solid rgba(245, 203, 104, 0.2) !important;
+    border-radius: 9999px !important;
 }
 
 /* Sidebar Nav & Header Elements */
