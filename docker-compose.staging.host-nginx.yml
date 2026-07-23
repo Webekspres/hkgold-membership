@@ -1,8 +1,13 @@
 # Override untuk VPS yang sudah punya host nginx (80/443 + certbot).
-# Host proxy: staging.hkgoldvip.com → :8000, api.staging.hkgoldvip.com → :3000
+# Host proxy:
+#   staging.hkgoldvip.com      → :8000
+#   api.staging.hkgoldvip.com  → :3000
+#   phpmyadmin.hkgoldvip.com   → :8088  (lihat docker-compose.staging.phpmyadmin.yml)
 #
 # Pakai:
-#   docker compose -f docker-compose.staging.yml -f docker-compose.staging.host-nginx.yml \
+#   docker compose -f docker-compose.staging.yml \
+#     -f docker-compose.staging.host-nginx.yml \
+#     -f docker-compose.staging.phpmyadmin.yml \
 #     --env-file .env.staging up -d --build
 
 services:
