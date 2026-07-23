@@ -21,8 +21,15 @@
 }
 
 .fi-sidebar-nav,
-.fi-sidebar-group {
+.fi-sidebar-group,
+.fi-sidebar-group-items,
+.fi-sidebar-sub-group-items,
+.fi-sidebar-item,
+.fi-sidebar-item-active {
     background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Group Labels (CMS, Management, etc) */
@@ -71,24 +78,14 @@
     color: #ffe8a3 !important;
 }
 
-/* ALL Active Items & Links in Sidebar: Gold Gradient to Transparent */
-.fi-sidebar .fi-active,
-.fi-sidebar .fi-sidebar-item-active,
-.fi-sidebar .fi-sidebar-item-active > a,
-.fi-sidebar .fi-sidebar-item-active > button,
-.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-btn,
+/* ONLY Specific Active Link / Button Item: Gold Gradient to Transparent */
 .fi-sidebar a.fi-active,
 .fi-sidebar button.fi-active,
 .fi-sidebar a[aria-current="page"],
 .fi-sidebar button[aria-current="page"],
-.fi-sidebar [aria-current="page"],
-.fi-sidebar .bg-gray-100,
-.fi-sidebar .bg-gray-50,
-.fi-sidebar .bg-white,
-.fi-sidebar .bg-white\/5,
-.fi-sidebar .bg-white\/10,
-.fi-sidebar .dark\:bg-white\/5,
-.fi-sidebar .dark\:bg-white\/10 {
+.fi-sidebar a.fi-sidebar-item-btn.fi-active,
+.fi-sidebar-item-active > a,
+.fi-sidebar-item-active > button {
     background-color: transparent !important;
     background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
     background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
@@ -101,25 +98,24 @@
     --tw-bg-opacity: 0 !important;
 }
 
-/* Force eliminate any inner white background on active item children */
-.fi-sidebar .fi-active *,
-.fi-sidebar .fi-sidebar-item-active *,
-.fi-sidebar [aria-current="page"] * {
+/* Force eliminate inner white background on active item children */
+.fi-sidebar a.fi-active *,
+.fi-sidebar button.fi-active *,
+.fi-sidebar a[aria-current="page"] *,
+.fi-sidebar button[aria-current="page"] * {
     background-color: transparent !important;
     background: transparent !important;
 }
 
 /* Active Text & Icon: Vibrant Gold */
-.fi-sidebar .fi-active .fi-sidebar-item-label,
-.fi-sidebar .fi-active .fi-sidebar-item-icon,
-.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label,
-.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon,
-.fi-sidebar [aria-current="page"] .fi-sidebar-item-label,
-.fi-sidebar [aria-current="page"] .fi-sidebar-item-icon,
 .fi-sidebar a.fi-active span,
 .fi-sidebar a.fi-active svg,
+.fi-sidebar button.fi-active span,
+.fi-sidebar button.fi-active svg,
 .fi-sidebar a[aria-current="page"] span,
-.fi-sidebar a[aria-current="page"] svg {
+.fi-sidebar a[aria-current="page"] svg,
+.fi-sidebar button[aria-current="page"] span,
+.fi-sidebar button[aria-current="page"] svg {
     color: #f5cb68 !important;
     font-weight: 700 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
