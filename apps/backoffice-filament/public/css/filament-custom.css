@@ -1,15 +1,15 @@
-/* Custom Dark Gold Sidebar for Filament */
+/* Custom Dark Gold Sidebar for Filament with Vertical Gradient & Glossy Gold Active Box */
 
-/* Sidebar Container */
+/* Sidebar Container: Vertical Gradient (Dark to Dark Gold) */
 .fi-sidebar {
-    background-color: #0f0d0a !important;
-    border-right: 1px solid rgba(245, 203, 104, 0.12) !important;
+    background: linear-gradient(180deg, #120e07 0%, #261d0a 50%, #453412 100%) !important;
+    border-right: 1px solid rgba(245, 203, 104, 0.15) !important;
 }
 
-/* Sidebar Header / Brand Logo */
+/* Sidebar Nav & Header Elements */
 .fi-sidebar-header {
-    background-color: transparent !important;
-    border-bottom: 1px solid rgba(245, 203, 104, 0.1) !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(245, 203, 104, 0.12) !important;
     padding-top: 1.25rem !important;
     padding-bottom: 1.25rem !important;
 }
@@ -20,51 +20,72 @@
     object-fit: contain !important;
 }
 
-/* Group Labels (e.g. CMS, Management) */
+.fi-sidebar-nav {
+    background: transparent !important;
+}
+
+/* Group Labels (CMS, Management, etc) */
 .fi-sidebar-group-label {
-    color: rgba(245, 203, 104, 0.65) !important;
+    color: #f5cb68 !important;
+    opacity: 0.85 !important;
     font-size: 0.75rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
 }
 
-/* Inactive Sidebar Item Button */
-.fi-sidebar-item-btn {
-    color: rgba(255, 255, 255, 0.75) !important;
+/* Inactive Items: Warm Golden Yellow */
+.fi-sidebar-item-btn,
+.fi-sidebar-item-label,
+.fi-sidebar-group-button {
+    color: #f5cb68 !important;
     border-radius: 0.75rem !important;
     transition: all 0.2s ease-in-out !important;
 }
 
-.fi-sidebar-item-btn:hover {
-    background-color: rgba(245, 203, 104, 0.08) !important;
-    color: #f5cb68 !important;
-}
-
-/* Sidebar Item Icons */
 .fi-sidebar-item-icon {
-    color: #e5b038 !important;
+    color: #f5cb68 !important;
     transition: color 0.2s ease-in-out !important;
 }
 
-.fi-sidebar-item-btn:hover .fi-sidebar-item-icon {
-    color: #f5cb68 !important;
+/* Hover State for Inactive Items */
+.fi-sidebar-item-btn:hover {
+    background: rgba(245, 203, 104, 0.12) !important;
+    color: #ffe8a3 !important;
 }
 
-/* Active Sidebar Item */
+.fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
+.fi-sidebar-item-btn:hover .fi-sidebar-item-label {
+    color: #ffe8a3 !important;
+}
+
+/* Active Item Box: Glossy Gold Gradient (Overrides Filament default white box) */
+.fi-sidebar-item-active > a,
+.fi-sidebar-item-active > button,
 .fi-sidebar-item-active .fi-sidebar-item-btn,
 .fi-sidebar-item-btn[aria-current="page"],
 .fi-sidebar-item-btn.fi-active {
-    background-color: rgba(245, 203, 104, 0.1) !important;
-    border: 1px solid rgba(245, 203, 104, 0.4) !important;
-    color: #f5cb68 !important;
+    background: linear-gradient(135deg, rgba(245, 203, 104, 0.28) 0%, rgba(184, 141, 50, 0.45) 100%) !important;
+    border: 1px solid rgba(245, 203, 104, 0.55) !important;
+    border-radius: 0.75rem !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
-    box-shadow: 0 4px 15px -3px rgba(235, 202, 134, 0.15) !important;
+    box-shadow: 0 4px 20px -2px rgba(245, 203, 104, 0.25) !important;
+    backdrop-filter: blur(4px) !important;
 }
 
+/* Active Text & Icon */
+.fi-sidebar-item-active .fi-sidebar-item-label,
+.fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-label,
 .fi-sidebar-item-active .fi-sidebar-item-icon,
 .fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-icon {
-    color: #f5cb68 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Sub-menu items */
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn {
+    color: rgba(245, 203, 104, 0.85) !important;
 }
 
 /* Sidebar Footer (Copyright) */
@@ -72,7 +93,7 @@
     margin-top: 2rem;
     padding: 1.25rem 1rem;
     border-top: 1px solid rgba(245, 203, 104, 0.15);
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(245, 203, 104, 0.65);
     font-size: 0.75rem;
     line-height: 1.4;
 }
