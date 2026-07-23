@@ -35,10 +35,6 @@
     <div class="fi-hkgold-login__card-container">
         <div class="fi-hkgold-login__card-wrapper">
             <x-filament-panels::page.simple>
-                <div class="fi-hkgold-card-logo-ctn">
-                    <img src="{{ asset('images/logo-horizontal.webp') }}" alt="HK Gold Logo" class="fi-hkgold-card-logo">
-                </div>
-
                 {{ $this->content }}
             </x-filament-panels::page.simple>
         </div>
