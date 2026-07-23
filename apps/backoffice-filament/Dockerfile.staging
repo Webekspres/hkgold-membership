@@ -3,9 +3,8 @@ FROM webdevops/php-nginx:8.4-alpine AS base
 WORKDIR /app
 
 # Install system dependencies & Doppler CLI
-RUN apk add --no-cache curl bash nodejs npm
-
-RUN curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh
+RUN apk add --no-cache curl bash nodejs npm gnupg \
+  && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh
 
 # Copy composer and npm files
 COPY apps/backoffice-filament/composer.json apps/backoffice-filament/composer.lock ./
@@ -27,6 +26,7 @@ RUN npm run build
 # Fix permissions
 RUN chown -R application:application /app/storage /app/bootstrap/cache \
     && chmod -R 775 /app/storage /app/bootstrap/cache \
+    && sed -i 's/\r$//' /app/docker-entrypoint.sh \
     && chmod +x /app/docker-entrypoint.sh
 
 ENV WEB_DOCUMENT_ROOT=/app/public
@@ -34,4 +34,4 @@ ENV PHP_MEMORY_LIMIT=512M
 
 EXPOSE 80
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]

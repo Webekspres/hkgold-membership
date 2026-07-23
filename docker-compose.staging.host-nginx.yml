@@ -1,0 +1,18 @@
+# Override untuk VPS yang sudah punya host nginx (80/443 + certbot).
+# Host proxy: staging.hkgoldvip.com → :8000, api.staging.hkgoldvip.com → :3000
+#
+# Pakai:
+#   docker compose -f docker-compose.staging.yml -f docker-compose.staging.host-nginx.yml \
+#     --env-file .env.staging up -d --build
+
+services:
+  nginx-proxy:
+    profiles: ["docker-nginx"]
+
+  api-elysia:
+    ports:
+      - "3000:3000"
+
+  backoffice:
+    ports:
+      - "8000:80"
