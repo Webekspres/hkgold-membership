@@ -35,7 +35,7 @@ class MemberPanelProvider extends PanelProvider
             ->brandLogoHeight('2.5rem')
             ->globalSearch(false)
             ->assets([
-                Css::make('custom-filament', secure_asset('css/filament-custom.css?v=' . filemtime(public_path('css/filament-custom.css')))),
+                Css::make('custom-filament', '/css/filament-custom.css?v=' . filemtime(public_path('css/filament-custom.css'))),
             ])
             ->darkMode(false)
             ->spa(true)
