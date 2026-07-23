@@ -35,13 +35,11 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login(Login::class)
-            ->darkMode(false)
-            // tidak perlu refresh untuk pindah halaman
-            ->spa(true)
-            ->defaultThemeMode(ThemeMode::Light)
-            // ->assets([
-            //     Css::make('custom')->relativePublicPath('css/filament-custom.css'),
-            // ])
+            ->brandLogo(fn () => asset('images/logo-horizontal.webp'))
+            ->brandLogoHeight('2.5rem')
+            ->assets([
+                Css::make('custom-filament', asset('css/filament-custom.css')),
+            ])
             ->colors([
                 'primary' => '#ebca86',
                 'emerald' => Color::Emerald,
@@ -93,6 +91,10 @@ class AppPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): View => view('filament.partials.redeem-token-scanner-assets'),
+            )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn (): View => view('filament.partials.sidebar-footer'),
             );
     }
 }

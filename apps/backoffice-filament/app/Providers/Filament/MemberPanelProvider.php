@@ -11,8 +11,11 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -28,6 +31,11 @@ class MemberPanelProvider extends PanelProvider
             ->id('member')
             ->path('member')
             ->login(Login::class)
+            ->brandLogo(fn () => asset('images/logo-horizontal.webp'))
+            ->brandLogoHeight('2.5rem')
+            ->assets([
+                Css::make('custom-filament', asset('css/filament-custom.css')),
+            ])
             ->darkMode(false)
             ->spa(true)
             ->defaultThemeMode(ThemeMode::Light)
@@ -56,6 +64,10 @@ class MemberPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn (): View => view('filament.partials.sidebar-footer'),
+            );
     }
 }
