@@ -39,6 +39,6 @@ docker image prune -f
 
 echo "========================================================="
 echo "  Deploy Staging Selesai!                                "
-echo "  Backoffice: https://hkgoldvip.com                      "
-echo "  API:        https://api.hkgoldvip.com                  "
+echo "  Backoffice: https://staging.hkgoldvip.com              "
+echo "  API:        https://api.staging.hkgoldvip.com          "
 echo "========================================================="

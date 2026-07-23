@@ -1,7 +1,7 @@
 # HK Gold Membership — Staging Full Docker Compose
 # Domains:
-#   Backoffice Filament → https://hkgoldvip.com
-#   API Elysia          → https://api.hkgoldvip.com
+#   Backoffice Filament → https://staging.hkgoldvip.com
+#   API Elysia          → https://api.staging.hkgoldvip.com
 #
 # Prerequisite:
 #   Simpan DOPPLER_TOKEN staging di environment VPS atau file .env.staging
