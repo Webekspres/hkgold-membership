@@ -37,6 +37,13 @@
             <x-filament-panels::page.simple>
                 {{ $this->content }}
             </x-filament-panels::page.simple>
+
+            <div class="fi-hkgold-login__security-footer">
+                <svg class="fi-hkgold-security-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                <span>Akses aman dan terenkripsi</span>
+            </div>
         </div>
     </div>
 </div>
@@ -228,24 +235,100 @@
         display: flex;
         flex-direction: column;
         background-color: #ffffff;
-        border-radius: 1rem;
-        padding: 2.25rem 2rem;
-        box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1.25rem;
+        padding: 2.5rem 2.25rem;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.04);
     }
 
-    .fi-hkgold-card-logo-ctn {
-        order: -1;
+    /* Replace brand logo in simple page header with oval logo-icon.webp */
+    .fi-hkgold-login .fi-logo img,
+    .fi-hkgold-login .fi-simple-header img,
+    .fi-hkgold-login .fi-simple-page-header img {
+        content: url('{{ asset('images/logo-icon.webp') }}') !important;
+        height: 4.25rem !important;
+        max-height: 4.5rem !important;
+        width: auto !important;
+        object-fit: contain !important;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Header text & gold badge styling inside card */
+    .fi-hkgold-login .fi-simple-header,
+    .fi-hkgold-login .fi-simple-page-header {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .fi-hkgold-login .fi-simple-header-heading,
+    .fi-hkgold-login .fi-simple-page-heading,
+    .fi-hkgold-login .fi-header-heading {
+        font-size: 1.625rem !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        margin-top: 0.25rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    /* Insert Portal HK GOLD VIP badge above heading */
+    .fi-hkgold-login .fi-simple-header-heading::before,
+    .fi-hkgold-login .fi-simple-page-heading::before,
+    .fi-hkgold-login .fi-header-heading::before {
+        content: 'Portal HK GOLD VIP';
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #d9a838;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.25rem;
+    }
+
+    .fi-hkgold-login .fi-simple-header-subheading,
+    .fi-hkgold-login .fi-simple-page-subheading,
+    .fi-hkgold-login .fi-header-subheading {
+        font-size: 0.875rem !important;
+        color: #6b7280 !important;
+        font-weight: 400 !important;
+    }
+
+    /* Gold button styling */
+    .fi-hkgold-login .fi-btn {
+        background: linear-gradient(135deg, #d1a13b 0%, #ebca86 50%, #9a6b1f 100%) !important;
+        border: none !important;
+        border-radius: 0.625rem !important;
+        font-weight: 700 !important;
+        color: #1c1917 !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+        font-size: 1rem !important;
+        box-shadow: 0 4px 14px rgba(217, 168, 56, 0.25) !important;
+        transition: all 0.2s ease;
+    }
+
+    .fi-hkgold-login .fi-btn:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+    }
+
+    /* Security footer */
+    .fi-hkgold-login__security-footer {
         display: flex;
         align-items: center;
         justify-content: center;
-        /* margin-bottom: .5rem; */
+        gap: 0.4rem;
+        margin-top: 1.25rem;
+        color: #6b7280;
+        font-size: 0.8125rem;
+        font-weight: 500;
     }
 
-    .fi-hkgold-card-logo {
-        height: 2.75rem;
-        width: auto;
-        object-fit: contain;
+    .fi-hkgold-security-icon {
+        width: 1rem;
+        height: 1rem;
+        color: #6b7280;
     }
 
     @media (min-width: 1024px) {
