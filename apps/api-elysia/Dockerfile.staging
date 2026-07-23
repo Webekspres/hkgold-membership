@@ -1,35 +1,19 @@
-FROM oven/bun:1.2-alpine AS base
+FROM oven/bun:1.2-alpine
 
 WORKDIR /app
 
-# Install curl & bash untuk Doppler CLI
-RUN apk add --no-cache curl bash libc6-compat
+# curl/bash untuk Doppler CLI; libc6-compat untuk beberapa native deps
+RUN apk add --no-cache curl bash libc6-compat gnupg \
+  && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh
 
-# Install Doppler CLI
-RUN curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh
-
-# Copy package files untuk monorepo dependency caching
-COPY package.json bun.lock ./
-COPY packages/database/package.json ./packages/database/
-COPY apps/api-elysia/package.json ./apps/api-elysia/
-
-# Copy Prisma schema
-COPY packages/database/schema.prisma ./packages/database/schema.prisma
-
-# Install dependencies
+# App punya bun.lock sendiri (bukan workspace root)
+COPY apps/api-elysia/package.json apps/api-elysia/bun.lock ./
 RUN bun install --frozen-lockfile || bun install
 
-# Copy source code
-COPY packages/database ./packages/database
-COPY apps/api-elysia ./apps/api-elysia
-
-# Generate Prisma Client
-WORKDIR /app/packages/database
+COPY apps/api-elysia/ ./
 RUN bunx prisma generate
-
-WORKDIR /app/apps/api-elysia
 
 EXPOSE 3000
 
-# Entrypoint menggunakan Doppler untuk menginjeksi secrets saat runtime container
+# Secrets diinject runtime via DOPPLER_TOKEN (stg_backend)
 CMD ["doppler", "run", "--", "bun", "run", "src/index.ts"]

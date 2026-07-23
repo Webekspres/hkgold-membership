@@ -6,6 +6,7 @@ use App\Listeners\WipeR2BucketOnDatabaseRefreshed;
 use Filament\Actions\Action;
 use Illuminate\Database\Events\DatabaseRefreshed;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(DatabaseRefreshed::class, WipeR2BucketOnDatabaseRefreshed::class);
+
+        // Staging/prod di balik TLS terminator: paksa https untuk asset/route URL
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
 
         Action::macro('goldStyle', function () {
             return $this

@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/sh
 set -e
 
 echo "==> Running Laravel optimizations and migrations via Doppler..."
