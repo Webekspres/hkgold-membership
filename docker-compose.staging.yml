@@ -2,6 +2,8 @@
 # Domains:
 #   Backoffice Filament → https://staging.hkgoldvip.com
 #   API Elysia          → https://api.staging.hkgoldvip.com
+#   phpMyAdmin (opsional, host-nginx) → https://phpmyadmin.hkgoldvip.com
+#     → docker-compose.staging.phpmyadmin.yml + docker/nginx/phpmyadmin.hkgoldvip.com.conf
 #
 # Prerequisite:
 #   Simpan DOPPLER_TOKEN staging di environment VPS atau file .env.staging

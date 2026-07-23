@@ -1,0 +1,24 @@
+# phpMyAdmin — expose only on localhost; host nginx proxies phpmyadmin.hkgoldvip.com
+# Login form: isi Server = `db` (staging MySQL). Production host ditambah nanti.
+#
+# Dipakai bersama docker-compose.staging.yml (+ host-nginx override di VPS).
+
+services:
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    container_name: hkgold-stg-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    environment:
+      PMA_ARBITRARY: "1"
+      # Dropdown default: staging MySQL (service name di compose)
+      PMA_HOSTS: db
+      PMA_VERBOSES: "Staging MySQL"
+      UPLOAD_LIMIT: 64M
+      # Jangan set PMA_USER/PMA_PASSWORD — login manual di UI
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hkgold-staging-network
