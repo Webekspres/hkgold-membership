@@ -1,4 +1,4 @@
-/* Custom Dark Gold Sidebar for Filament with Vertical Gradient & Glossy Gold Active Box */
+/* Custom Dark Gold Sidebar for Filament */
 
 /* Sidebar Container: Vertical Gradient (Dark to Dark Gold) */
 .fi-sidebar {
@@ -20,7 +20,8 @@
     object-fit: contain !important;
 }
 
-.fi-sidebar-nav {
+.fi-sidebar-nav,
+.fi-sidebar-group {
     background: transparent !important;
 }
 
@@ -36,6 +37,7 @@
 
 /* Inactive Items: Warm Golden Yellow */
 .fi-sidebar-item-btn,
+.fi-sidebar-item-button,
 .fi-sidebar-item-label,
 .fi-sidebar-group-button {
     color: #f5cb68 !important;
@@ -49,38 +51,57 @@
 }
 
 /* Hover State for Inactive Items */
-.fi-sidebar-item-btn:hover {
+.fi-sidebar-item-btn:hover,
+.fi-sidebar-item-button:hover {
     background: rgba(245, 203, 104, 0.12) !important;
     color: #ffe8a3 !important;
 }
 
 .fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
-.fi-sidebar-item-btn:hover .fi-sidebar-item-label {
+.fi-sidebar-item-btn:hover .fi-sidebar-item-label,
+.fi-sidebar-item-button:hover .fi-sidebar-item-icon,
+.fi-sidebar-item-button:hover .fi-sidebar-item-label {
     color: #ffe8a3 !important;
 }
 
-/* Active Item Box: Glossy Gold Gradient (Overrides Filament default white box) */
+/* Active Item Container & Button: Gold Gradient to Transparent */
+.fi-sidebar-item-active,
 .fi-sidebar-item-active > a,
 .fi-sidebar-item-active > button,
 .fi-sidebar-item-active .fi-sidebar-item-btn,
+.fi-sidebar-item-active .fi-sidebar-item-button,
 .fi-sidebar-item-btn[aria-current="page"],
-.fi-sidebar-item-btn.fi-active {
-    background: linear-gradient(135deg, rgba(245, 203, 104, 0.28) 0%, rgba(184, 141, 50, 0.45) 100%) !important;
-    border: 1px solid rgba(245, 203, 104, 0.55) !important;
+.fi-sidebar-item-btn.fi-active,
+.fi-sidebar-item[aria-current="page"] > a,
+.fi-sidebar-item[aria-current="page"] > button,
+li.fi-sidebar-item.fi-sidebar-item-active > a {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0) 100%) !important;
+    background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0) 100%) !important;
+    border: 1px solid rgba(245, 203, 104, 0.45) !important;
     border-radius: 0.75rem !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 20px -2px rgba(245, 203, 104, 0.25) !important;
-    backdrop-filter: blur(4px) !important;
+    box-shadow: 0 4px 15px -3px rgba(245, 203, 104, 0.2) !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+    --tw-shadow: none !important;
 }
 
-/* Active Text & Icon */
+/* Force eliminate any inner white background on active item children */
+.fi-sidebar-item-active *,
+.fi-sidebar-item[aria-current="page"] * {
+    background-color: transparent !important;
+}
+
+/* Active Text & Icon: Vibrant Gold */
 .fi-sidebar-item-active .fi-sidebar-item-label,
 .fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-label,
 .fi-sidebar-item-active .fi-sidebar-item-icon,
-.fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-icon {
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+.fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-icon,
+.fi-sidebar-item-active span,
+.fi-sidebar-item-active svg {
+    color: #f5cb68 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Sub-menu items */
