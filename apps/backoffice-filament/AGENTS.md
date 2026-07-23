@@ -186,6 +186,23 @@ Guidelines below are specific to this app (`apps/backoffice-filament`). They ext
 - **Dev server:** `composer dev` (atau `php artisan serve --port=8800` di dalam `doppler run -- …`) dari `apps/backoffice-filament/`.
 - **R2 wipe on fresh seed:** `migrate:fresh --seed` may wipe the `r2` bucket when `wipe_r2_on_fresh_seed` is enabled (local default).
 
+## Filament Assets & VPS Deployment Rules
+
+- **Filament Custom Asset Registration (`PanelProvider`)**:
+  - Always register custom CSS/JS assets using `public_path(...)` (contoh: `Css::make('custom-filament', public_path('css/filament-custom.css'))`).
+  - **DILARANG** memakai string path relatif ber-query parameter seperti `/css/filament-custom.css?v=...` di `Css::make()`. Hal itu menyebabkan `php artisan filament:upgrade` crash saat `composer dump-autoload` / build Docker (`copy(/css/...): Failed to open stream`).
+- **HTTPS Scheme Enforcement**:
+  - `AppServiceProvider.php` wajib memanggil `URL::forceScheme('https')` untuk environment non-local (`staging`/`production`) atau request domain `hkgoldvip.com` agar browser tidak memblokir CSS/JS (Mixed Content Policy).
+- **Perintah Build & Deploy VPS Staging**:
+  - Jalankan `docker compose` di VPS Wajib mengikutsertakan file override & env staging:
+    ```bash
+    docker compose --env-file .env.staging -f docker-compose.staging.yml -f docker-compose.staging.override.yml up -d --build backoffice
+    ```
+  - Bersihkan cache setelah container jalan:
+    ```bash
+    docker compose --env-file .env.staging -f docker-compose.staging.yml -f docker-compose.staging.override.yml exec -T backoffice doppler run -- php artisan optimize:clear
+    ```
+
 ## Git Workflow
 
 - Do **not** commit or push unless the user explicitly asks.

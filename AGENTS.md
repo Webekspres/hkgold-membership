@@ -20,6 +20,10 @@ Sumber kebenaran status implementasi / roadmap produk:
 - API: [`apps/api-elysia/AGENTS.md`](apps/api-elysia/AGENTS.md) §8
 - Backoffice: [`apps/backoffice-filament/AGENTS.md`](apps/backoffice-filament/AGENTS.md)
 
+### Deployment & Asset Rules (Staging VPS)
+- Backoffice Filament asset kustom wajib didaftarkan via `public_path(...)` di `PanelProvider` (jangan path relatif ber-query).
+- Deploy VPS staging wajib pakai `--env-file .env.staging -f docker-compose.staging.yml -f docker-compose.staging.override.yml`.
+
 ---
 
 # Ponytail, lazy senior dev mode
