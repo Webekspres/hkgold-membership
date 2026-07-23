@@ -39,20 +39,25 @@
 .fi-sidebar-item-btn,
 .fi-sidebar-item-button,
 .fi-sidebar-item-label,
-.fi-sidebar-group-button {
+.fi-sidebar-group-button,
+.fi-sidebar a,
+.fi-sidebar button {
     color: #f5cb68 !important;
     border-radius: 0.75rem !important;
     transition: all 0.2s ease-in-out !important;
 }
 
-.fi-sidebar-item-icon {
+.fi-sidebar-item-icon,
+.fi-sidebar svg {
     color: #f5cb68 !important;
     transition: color 0.2s ease-in-out !important;
 }
 
 /* Hover State for Inactive Items */
 .fi-sidebar-item-btn:hover,
-.fi-sidebar-item-button:hover {
+.fi-sidebar-item-button:hover,
+.fi-sidebar a:hover,
+.fi-sidebar button:hover {
     background: rgba(245, 203, 104, 0.12) !important;
     color: #ffe8a3 !important;
 }
@@ -60,52 +65,69 @@
 .fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
 .fi-sidebar-item-btn:hover .fi-sidebar-item-label,
 .fi-sidebar-item-button:hover .fi-sidebar-item-icon,
-.fi-sidebar-item-button:hover .fi-sidebar-item-label {
+.fi-sidebar-item-button:hover .fi-sidebar-item-label,
+.fi-sidebar a:hover svg,
+.fi-sidebar a:hover span {
     color: #ffe8a3 !important;
 }
 
-/* Active Item Container & Button: Gold Gradient to Transparent */
-.fi-sidebar-item-active,
-.fi-sidebar-item-active > a,
-.fi-sidebar-item-active > button,
-.fi-sidebar-item-active .fi-sidebar-item-btn,
-.fi-sidebar-item-active .fi-sidebar-item-button,
-.fi-sidebar-item-btn[aria-current="page"],
-.fi-sidebar-item-btn.fi-active,
-.fi-sidebar-item[aria-current="page"] > a,
-.fi-sidebar-item[aria-current="page"] > button,
-li.fi-sidebar-item.fi-sidebar-item-active > a {
+/* ALL Active Items & Links in Sidebar: Gold Gradient to Transparent */
+.fi-sidebar .fi-active,
+.fi-sidebar .fi-sidebar-item-active,
+.fi-sidebar .fi-sidebar-item-active > a,
+.fi-sidebar .fi-sidebar-item-active > button,
+.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-btn,
+.fi-sidebar a.fi-active,
+.fi-sidebar button.fi-active,
+.fi-sidebar a[aria-current="page"],
+.fi-sidebar button[aria-current="page"],
+.fi-sidebar [aria-current="page"],
+.fi-sidebar .bg-gray-100,
+.fi-sidebar .bg-gray-50,
+.fi-sidebar .bg-white,
+.fi-sidebar .bg-white\/5,
+.fi-sidebar .bg-white\/10,
+.fi-sidebar .dark\:bg-white\/5,
+.fi-sidebar .dark\:bg-white\/10 {
     background-color: transparent !important;
-    background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0) 100%) !important;
-    background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0) 100%) !important;
+    background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
+    background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
     border: 1px solid rgba(245, 203, 104, 0.45) !important;
     border-radius: 0.75rem !important;
     box-shadow: 0 4px 15px -3px rgba(245, 203, 104, 0.2) !important;
     --tw-ring-color: transparent !important;
     --tw-ring-shadow: none !important;
     --tw-shadow: none !important;
+    --tw-bg-opacity: 0 !important;
 }
 
 /* Force eliminate any inner white background on active item children */
-.fi-sidebar-item-active *,
-.fi-sidebar-item[aria-current="page"] * {
+.fi-sidebar .fi-active *,
+.fi-sidebar .fi-sidebar-item-active *,
+.fi-sidebar [aria-current="page"] * {
     background-color: transparent !important;
+    background: transparent !important;
 }
 
 /* Active Text & Icon: Vibrant Gold */
-.fi-sidebar-item-active .fi-sidebar-item-label,
-.fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-label,
-.fi-sidebar-item-active .fi-sidebar-item-icon,
-.fi-sidebar-item-btn[aria-current="page"] .fi-sidebar-item-icon,
-.fi-sidebar-item-active span,
-.fi-sidebar-item-active svg {
+.fi-sidebar .fi-active .fi-sidebar-item-label,
+.fi-sidebar .fi-active .fi-sidebar-item-icon,
+.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label,
+.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon,
+.fi-sidebar [aria-current="page"] .fi-sidebar-item-label,
+.fi-sidebar [aria-current="page"] .fi-sidebar-item-icon,
+.fi-sidebar a.fi-active span,
+.fi-sidebar a.fi-active svg,
+.fi-sidebar a[aria-current="page"] span,
+.fi-sidebar a[aria-current="page"] svg {
     color: #f5cb68 !important;
     font-weight: 700 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Sub-menu items */
-.fi-sidebar-sub-group-items .fi-sidebar-item-btn {
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn,
+.fi-sidebar-sub-group-items a {
     color: rgba(245, 203, 104, 0.85) !important;
 }
 
