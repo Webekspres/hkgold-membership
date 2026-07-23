@@ -243,7 +243,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 1.25rem;
+        /* margin-bottom: .5rem; */
     }
 
     .fi-hkgold-card-logo {
