@@ -23,9 +23,7 @@
 .fi-sidebar-nav,
 .fi-sidebar-group,
 .fi-sidebar-group-items,
-.fi-sidebar-sub-group-items,
-.fi-sidebar-item,
-.fi-sidebar-item-active {
+.fi-sidebar-sub-group-items {
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -78,14 +76,24 @@
     color: #ffe8a3 !important;
 }
 
-/* ONLY Specific Active Link / Button Item: Gold Gradient to Transparent */
+/* Parent LI of active item (li.fi-active): Transparent container */
+.fi-sidebar li.fi-active,
+.fi-sidebar li.fi-sidebar-item-active {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* The A / Link element inside li.fi-active: Gold Gradient to Transparent Horizontal */
+.fi-sidebar li.fi-active > a,
+.fi-sidebar li.fi-active > button,
+.fi-sidebar li.fi-sidebar-item-active > a,
+.fi-sidebar li.fi-sidebar-item-active > button,
 .fi-sidebar a.fi-active,
 .fi-sidebar button.fi-active,
 .fi-sidebar a[aria-current="page"],
-.fi-sidebar button[aria-current="page"],
-.fi-sidebar a.fi-sidebar-item-btn.fi-active,
-.fi-sidebar-item-active > a,
-.fi-sidebar-item-active > button {
+.fi-sidebar button[aria-current="page"] {
     background-color: transparent !important;
     background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
     background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
@@ -98,7 +106,11 @@
     --tw-bg-opacity: 0 !important;
 }
 
-/* Force eliminate inner white background on active item children */
+/* Force eliminate inner white background on active link children */
+.fi-sidebar li.fi-active > a *,
+.fi-sidebar li.fi-active > button *,
+.fi-sidebar li.fi-sidebar-item-active > a *,
+.fi-sidebar li.fi-sidebar-item-active > button *,
 .fi-sidebar a.fi-active *,
 .fi-sidebar button.fi-active *,
 .fi-sidebar a[aria-current="page"] *,
@@ -108,6 +120,12 @@
 }
 
 /* Active Text & Icon: Vibrant Gold */
+.fi-sidebar li.fi-active > a .fi-sidebar-item-label,
+.fi-sidebar li.fi-active > a .fi-sidebar-item-icon,
+.fi-sidebar li.fi-active > a svg,
+.fi-sidebar li.fi-active > a span,
+.fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-label,
+.fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-icon,
 .fi-sidebar a.fi-active span,
 .fi-sidebar a.fi-active svg,
 .fi-sidebar button.fi-active span,
