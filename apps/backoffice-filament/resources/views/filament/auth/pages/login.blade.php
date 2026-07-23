@@ -35,6 +35,13 @@
     <div class="fi-hkgold-login__card-container">
         <div class="fi-hkgold-login__card-wrapper">
             <x-filament-panels::page.simple>
+                <div class="fi-hkgold-card-header">
+                    <img src="{{ asset('images/logo-horizontal.webp') }}" alt="HK Gold Logo" class="fi-hkgold-card-logo">
+                    <div class="fi-hkgold-card-badge">
+                        <span>Portal HK GOLD VIP</span>
+                    </div>
+                </div>
+
                 {{ $this->content }}
             </x-filament-panels::page.simple>
         </div>
@@ -230,6 +237,36 @@
         padding: 2.25rem 2rem;
         box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .fi-hkgold-card-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .fi-hkgold-card-logo {
+        height: 2.75rem;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 0.75rem;
+    }
+
+    .fi-hkgold-card-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        background: rgba(184, 141, 50, 0.08);
+        border: 1px solid rgba(184, 141, 50, 0.25);
+        color: #997424;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
     }
 
     @media (min-width: 1024px) {
