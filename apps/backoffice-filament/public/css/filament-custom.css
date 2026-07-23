@@ -203,15 +203,15 @@
     --tw-bg-opacity: 0 !important;
 }
 
-/* Force eliminate inner white background on active link children */
-.fi-sidebar li.fi-active > a *,
-.fi-sidebar li.fi-active > button *,
-.fi-sidebar li.fi-sidebar-item-active > a *,
-.fi-sidebar li.fi-sidebar-item-active > button *,
-.fi-sidebar a.fi-active *,
-.fi-sidebar button.fi-active *,
-.fi-sidebar a[aria-current="page"] *,
-.fi-sidebar button[aria-current="page"] * {
+/* Force eliminate inner white background on active link children (except badges) */
+.fi-sidebar li.fi-active > a *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-active > button *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-sidebar-item-active > a *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-sidebar-item-active > button *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a.fi-active *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button.fi-active *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a[aria-current="page"] *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button[aria-current="page"] *:not(.fi-badge):not(.fi-sidebar-item-badge) {
     background-color: transparent !important;
     background: transparent !important;
 }
@@ -220,25 +220,51 @@
 .fi-sidebar li.fi-active > a .fi-sidebar-item-label,
 .fi-sidebar li.fi-active > a .fi-sidebar-item-icon,
 .fi-sidebar li.fi-active > a svg,
-.fi-sidebar li.fi-active > a span,
+.fi-sidebar li.fi-active > a span:not(.fi-badge):not(.fi-sidebar-item-badge),
 .fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-label,
 .fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-icon,
-.fi-sidebar a.fi-active span,
+.fi-sidebar a.fi-active span:not(.fi-badge):not(.fi-sidebar-item-badge),
 .fi-sidebar a.fi-active svg,
-.fi-sidebar button.fi-active span,
+.fi-sidebar button.fi-active span:not(.fi-badge):not(.fi-sidebar-item-badge),
 .fi-sidebar button.fi-active svg,
-.fi-sidebar a[aria-current="page"] span,
+.fi-sidebar a[aria-current="page"] span:not(.fi-badge):not(.fi-sidebar-item-badge),
 .fi-sidebar a[aria-current="page"] svg,
-.fi-sidebar button[aria-current="page"] span,
+.fi-sidebar button[aria-current="page"] span:not(.fi-badge):not(.fi-sidebar-item-badge),
 .fi-sidebar button[aria-current="page"] svg {
     color: #f5cb68 !important;
     font-weight: 700 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
+/* Sidebar Item Notification Badges (e.g., Kotak Masuk count) */
+.fi-sidebar .fi-badge,
+.fi-sidebar .fi-sidebar-item-badge,
+.fi-sidebar-item-btn .fi-badge,
+.fi-sidebar-item-badge span,
+.fi-sidebar span.fi-badge {
+    background-color: #b88d32 !important;
+    background-image: linear-gradient(135deg, #b88d32 0%, #d9a838 100%) !important;
+    background: linear-gradient(135deg, #b88d32 0%, #d9a838 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+    padding: 0.15rem 0.5rem !important;
+}
+
+.fi-sidebar .fi-badge *,
+.fi-sidebar .fi-sidebar-item-badge *,
+.fi-sidebar span.fi-badge * {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    background: transparent !important;
+    text-shadow: none !important;
+}
+
 /* Sub-menu items (Default state) */
-.fi-sidebar-sub-group-items .fi-sidebar-item-btn span,
-.fi-sidebar-sub-group-items a span {
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn span:not(.fi-badge),
+.fi-sidebar-sub-group-items a span:not(.fi-badge) {
     color: #ffffff !important;
 }
 
