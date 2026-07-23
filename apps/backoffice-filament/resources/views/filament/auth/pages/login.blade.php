@@ -35,6 +35,10 @@
     <div class="fi-hkgold-login__card-container">
         <div class="fi-hkgold-login__card-wrapper">
             <x-filament-panels::page.simple>
+                <div class="fi-hkgold-card-logo-ctn">
+                    <img src="{{ asset('images/logo-horizontal.webp') }}" alt="HK Gold Logo" class="fi-hkgold-card-logo">
+                </div>
+
                 {{ $this->content }}
             </x-filament-panels::page.simple>
         </div>
@@ -225,11 +229,27 @@
     }
 
     .fi-hkgold-login .fi-simple-page-content {
+        display: flex;
+        flex-direction: column;
         background-color: #ffffff;
         border-radius: 1rem;
         padding: 2.25rem 2rem;
         box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .fi-hkgold-card-logo-ctn {
+        order: -1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* margin-bottom: .5rem; */
+    }
+
+    .fi-hkgold-card-logo {
+        height: 2.75rem;
+        width: auto;
+        object-fit: contain;
     }
 
     @media (min-width: 1024px) {

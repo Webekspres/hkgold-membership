@@ -1,0 +1,299 @@
+/* Custom Dark Gold Sidebar & Topbar Header for Filament */
+
+/* Sidebar Container: Vertical Gradient (Dark to Dark Gold) */
+.fi-sidebar {
+    background: linear-gradient(180deg, #120e07 0%, #261d0a 50%, #453412 100%) !important;
+    border-right: 1px solid rgba(245, 203, 104, 0.15) !important;
+}
+
+/* Custom Elegant Scrollbar for Sidebar */
+.fi-sidebar *,
+.fi-sidebar-nav {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(245, 203, 104, 0.25) transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar,
+.fi-sidebar-nav::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-track,
+.fi-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-thumb,
+.fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(245, 203, 104, 0.25) !important;
+    border-radius: 9999px !important;
+    border: 1px solid transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-thumb:hover,
+.fi-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(245, 203, 104, 0.5) !important;
+}
+
+/* Topbar Header Container: Seamless #120e07 matching Sidebar -> White for rest */
+.fi-topbar,
+.fi-topbar-nav {
+    background: linear-gradient(
+        90deg,
+        #120e07 0%,
+        #120e07 var(--sidebar-width, 16rem),
+        #ffffff var(--sidebar-width, 16rem),
+        #ffffff 100%
+    ) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+@media (max-width: 1023px) {
+    .fi-topbar,
+    .fi-topbar-nav {
+        background: #ffffff !important;
+    }
+}
+
+/* Topbar Elements Styling */
+.fi-topbar button,
+.fi-topbar a,
+.fi-topbar span,
+.fi-topbar svg,
+.fi-topbar-item {
+    color: #374151 !important;
+}
+
+.fi-topbar-start button,
+.fi-topbar-start a,
+.fi-topbar-start span,
+.fi-topbar-start svg {
+    color: #f5cb68 !important;
+}
+
+.fi-topbar button:hover,
+.fi-topbar a:hover {
+    color: #997424 !important;
+}
+
+/* Hide Topbar Global Search */
+.fi-topbar-global-search-ctn,
+.fi-global-search-field,
+.fi-topbar-global-search-button,
+[data-filament-global-search-input] {
+    display: none !important;
+}
+
+/* Page Background: Soft gray-white (top-left) -> Subtle Gold (top-right) */
+body:not(:has(.fi-hkgold-login)),
+.fi-layout,
+.fi-main-ctn,
+.fi-main {
+    background-color: #f8fafc !important;
+    background-image: linear-gradient(
+        120deg,
+        #f8fafc 0%,
+        #f8fafc 45%,
+        rgba(245, 203, 104, 0.12) 80%,
+        rgba(217, 168, 56, 0.17) 100%
+    ) !important;
+    background-attachment: fixed !important;
+}
+
+/* Topbar User Menu & Profile Badge */
+.fi-user-menu-btn,
+.fi-topbar-user-menu-btn {
+    background-color: #f8fafc !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 9999px !important;
+}
+
+/* Sidebar Nav & Header Elements */
+.fi-sidebar-header {
+    background: transparent !important;
+    border-bottom: none !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+}
+
+.fi-sidebar-header img {
+    max-height: 2.5rem !important;
+    width: auto !important;
+    object-fit: contain !important;
+}
+
+.fi-sidebar-nav,
+.fi-sidebar-group,
+.fi-sidebar-group-items,
+.fi-sidebar-sub-group-items {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Group Labels (CMS, Management, etc) - Stay Gold */
+.fi-sidebar-group-label {
+    color: #f5cb68 !important;
+    opacity: 0.85 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+}
+
+/* Inactive Items (Default State): Text White, Icon Gold */
+.fi-sidebar-item-btn,
+.fi-sidebar-item-button,
+.fi-sidebar-group-button,
+.fi-sidebar a,
+.fi-sidebar button {
+    border-radius: 0.75rem !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-item-btn span,
+.fi-sidebar-item-button span,
+.fi-sidebar a span,
+.fi-sidebar button span {
+    color: #ffffff !important;
+}
+
+.fi-sidebar-item-icon,
+.fi-sidebar svg {
+    color: #f5cb68 !important;
+    transition: color 0.2s ease-in-out !important;
+}
+
+/* Hover State for Inactive Items */
+.fi-sidebar-item-btn:hover,
+.fi-sidebar-item-button:hover,
+.fi-sidebar a:hover,
+.fi-sidebar button:hover {
+    background: rgba(245, 203, 104, 0.12) !important;
+}
+
+.fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
+.fi-sidebar-item-btn:hover .fi-sidebar-item-label,
+.fi-sidebar-item-button:hover .fi-sidebar-item-icon,
+.fi-sidebar-item-button:hover .fi-sidebar-item-label,
+.fi-sidebar a:hover svg,
+.fi-sidebar a:hover span {
+    color: #ffe8a3 !important;
+}
+
+/* Parent LI of active item (li.fi-active): Transparent container */
+.fi-sidebar li.fi-active,
+.fi-sidebar li.fi-sidebar-item-active {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* The A / Link element inside li.fi-active: Gold Gradient to Transparent Horizontal */
+.fi-sidebar li.fi-active > a,
+.fi-sidebar li.fi-active > button,
+.fi-sidebar li.fi-sidebar-item-active > a,
+.fi-sidebar li.fi-sidebar-item-active > button,
+.fi-sidebar a.fi-active,
+.fi-sidebar button.fi-active,
+.fi-sidebar a[aria-current="page"],
+.fi-sidebar button[aria-current="page"] {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
+    background: linear-gradient(90deg, rgba(245, 203, 104, 0.35) 0%, rgba(205, 160, 54, 0.18) 65%, rgba(245, 203, 104, 0.02) 100%) !important;
+    border: 1px solid rgba(245, 203, 104, 0.45) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 4px 15px -3px rgba(245, 203, 104, 0.2) !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+    --tw-shadow: none !important;
+    --tw-bg-opacity: 0 !important;
+}
+
+/* Force eliminate inner white background on active link children (except badges) */
+.fi-sidebar li.fi-active > a *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-active > button *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-sidebar-item-active > a *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-sidebar-item-active > button *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a.fi-active *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button.fi-active *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a[aria-current="page"] *:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button[aria-current="page"] *:not(.fi-badge):not(.fi-sidebar-item-badge) {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* Active Text & Icon: Stay Gold (#f5cb68) */
+.fi-sidebar li.fi-active > a .fi-sidebar-item-label,
+.fi-sidebar li.fi-active > a .fi-sidebar-item-icon,
+.fi-sidebar li.fi-active > a svg,
+.fi-sidebar li.fi-active > a span:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-label,
+.fi-sidebar li.fi-sidebar-item-active > a .fi-sidebar-item-icon,
+.fi-sidebar a.fi-active span:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a.fi-active svg,
+.fi-sidebar button.fi-active span:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button.fi-active svg,
+.fi-sidebar a[aria-current="page"] span:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar a[aria-current="page"] svg,
+.fi-sidebar button[aria-current="page"] span:not(.fi-badge):not(.fi-sidebar-item-badge),
+.fi-sidebar button[aria-current="page"] svg {
+    color: #f5cb68 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Sidebar Item Notification Badges (e.g., Kotak Masuk count) */
+.fi-sidebar .fi-badge,
+.fi-sidebar .fi-sidebar-item-badge,
+.fi-sidebar-item-btn .fi-badge,
+.fi-sidebar-item-badge span,
+.fi-sidebar span.fi-badge {
+    background-color: #b88d32 !important;
+    background-image: linear-gradient(135deg, #b88d32 0%, #d9a838 100%) !important;
+    background: linear-gradient(135deg, #b88d32 0%, #d9a838 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+    padding: 0.15rem 0.5rem !important;
+}
+
+.fi-sidebar .fi-badge *,
+.fi-sidebar .fi-sidebar-item-badge *,
+.fi-sidebar span.fi-badge * {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    background: transparent !important;
+    text-shadow: none !important;
+}
+
+/* Sub-menu items (Default state) */
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn span:not(.fi-badge),
+.fi-sidebar-sub-group-items a span:not(.fi-badge) {
+    color: #ffffff !important;
+}
+
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn svg,
+.fi-sidebar-sub-group-items a svg {
+    color: #f5cb68 !important;
+}
+
+/* Sidebar Footer (Copyright) */
+.fi-hkgold-sidebar-footer {
+    margin-top: 2rem;
+    padding: 1.25rem 1rem;
+    border-top: 1px solid rgba(245, 203, 104, 0.15);
+    color: rgba(245, 203, 104, 0.65);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.fi-hkgold-sidebar-footer p {
+    margin: 0;
+}
