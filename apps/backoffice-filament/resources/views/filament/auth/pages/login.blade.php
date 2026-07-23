@@ -1,5 +1,8 @@
 <div class="fi-hkgold-login">
-    <div class="fi-hkgold-login__backdrop" aria-hidden="true"></div>
+    <div class="fi-hkgold-login__backdrop" aria-hidden="true">
+        <div class="fi-hkgold-login__gradient"></div>
+        <div class="fi-hkgold-login__pattern"></div>
+    </div>
 
     <x-filament-panels::page.simple>
         {{ $this->content }}
@@ -37,22 +40,33 @@
         position: fixed;
         inset: 0;
         z-index: 0;
-        background-image: url('{{ asset('images/background.webp') }}');
+        pointer-events: none;
+        background-color: #ffffff;
+    }
+
+    /* Diagonal putih → emas tipis → putih (brand mobile) */
+    .fi-hkgold-login__gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #ffffff 28%,
+            rgba(245, 200, 66, 0.28) 48%,
+            rgba(209, 161, 59, 0.22) 52%,
+            #ffffff 72%,
+            #ffffff 100%
+        );
+    }
+
+    .fi-hkgold-login__pattern {
+        position: absolute;
+        inset: 0;
+        background-image: url('{{ asset('images/pattern-horizontal.webp') }}');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        pointer-events: none;
-    }
-
-    @media (min-width: 1024px) {
-        .fi-hkgold-login__backdrop {
-            inset: auto;
-            top: 50%;
-            left: 50%;
-            width: 100vh;
-            height: 100vw;
-            transform: translate(-50%, -50%) rotate(270deg);
-        }
+        opacity: 0.25;
     }
 
     .fi-hkgold-login .fi-simple-page {

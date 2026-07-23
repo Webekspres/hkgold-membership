@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -16,6 +17,14 @@ import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 
 const CARD_CLASSNAME =
   'w-full border-stone-200 bg-stone-50 shadow-md shadow-stone-900/10';
+
+/** Diagonal putih → emas tipis → putih (brand `#f5c842` / `#D1A13B`). */
+const AUTH_BG_GRADIENT = [
+  '#ffffff',
+  'rgba(245, 200, 66, 0.28)',
+  'rgba(209, 161, 59, 0.22)',
+  '#ffffff',
+] as const;
 
 type AuthScreenShellProps = PropsWithChildren<{
   scrollable?: boolean;
@@ -59,8 +68,14 @@ export function AuthScreenShell({ children, scrollable = false }: AuthScreenShel
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={[...AUTH_BG_GRADIENT]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      />
       <Image
-        source={require('@/assets/media/pattern-vertical.webp')}
+        source={require('@/assets/media/pattern-horizontal.webp')}
         style={styles.background}
         contentFit="cover"
       />
@@ -105,7 +120,10 @@ export const authLogoStyle = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#ffffff',
+  },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
   },
   background: {
     position: 'absolute',
