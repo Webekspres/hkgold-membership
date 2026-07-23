@@ -26,8 +26,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(DatabaseRefreshed::class, WipeR2BucketOnDatabaseRefreshed::class);
 
-        // Staging/prod di balik TLS terminator: paksa https untuk asset/route URL
-        if (str_starts_with((string) config('app.url'), 'https://')) {
+        // Enforce HTTPS for staging/production or SSL reverse proxy
+        if ($this->app->environment('staging', 'production') || str_starts_with((string) config('app.url'), 'https://') || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
 
