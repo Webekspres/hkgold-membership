@@ -6,6 +6,36 @@
     border-right: 1px solid rgba(245, 203, 104, 0.15) !important;
 }
 
+/* Custom Elegant Scrollbar for Sidebar */
+.fi-sidebar *,
+.fi-sidebar-nav {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(245, 203, 104, 0.25) transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar,
+.fi-sidebar-nav::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-track,
+.fi-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-thumb,
+.fi-sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(245, 203, 104, 0.25) !important;
+    border-radius: 9999px !important;
+    border: 1px solid transparent !important;
+}
+
+.fi-sidebar ::-webkit-scrollbar-thumb:hover,
+.fi-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(245, 203, 104, 0.5) !important;
+}
+
 /* Topbar Header Container: Seamless #120e07 matching Sidebar -> White for rest */
 .fi-topbar,
 .fi-topbar-nav {
@@ -92,7 +122,7 @@
     box-shadow: none !important;
 }
 
-/* Group Labels (CMS, Management, etc) */
+/* Group Labels (CMS, Management, etc) - Stay Gold */
 .fi-sidebar-group-label {
     color: #f5cb68 !important;
     opacity: 0.85 !important;
@@ -102,16 +132,22 @@
     text-transform: uppercase !important;
 }
 
-/* Inactive Items: Warm Golden Yellow */
+/* Inactive Items (Default State): Text White, Icon Gold */
 .fi-sidebar-item-btn,
 .fi-sidebar-item-button,
-.fi-sidebar-item-label,
 .fi-sidebar-group-button,
 .fi-sidebar a,
 .fi-sidebar button {
-    color: #f5cb68 !important;
     border-radius: 0.75rem !important;
     transition: all 0.2s ease-in-out !important;
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-item-btn span,
+.fi-sidebar-item-button span,
+.fi-sidebar a span,
+.fi-sidebar button span {
+    color: #ffffff !important;
 }
 
 .fi-sidebar-item-icon,
@@ -126,7 +162,6 @@
 .fi-sidebar a:hover,
 .fi-sidebar button:hover {
     background: rgba(245, 203, 104, 0.12) !important;
-    color: #ffe8a3 !important;
 }
 
 .fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
@@ -181,7 +216,7 @@
     background: transparent !important;
 }
 
-/* Active Text & Icon: Vibrant Gold */
+/* Active Text & Icon: Stay Gold (#f5cb68) */
 .fi-sidebar li.fi-active > a .fi-sidebar-item-label,
 .fi-sidebar li.fi-active > a .fi-sidebar-item-icon,
 .fi-sidebar li.fi-active > a svg,
@@ -201,10 +236,15 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Sub-menu items */
-.fi-sidebar-sub-group-items .fi-sidebar-item-btn,
-.fi-sidebar-sub-group-items a {
-    color: rgba(245, 203, 104, 0.85) !important;
+/* Sub-menu items (Default state) */
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn span,
+.fi-sidebar-sub-group-items a span {
+    color: #ffffff !important;
+}
+
+.fi-sidebar-sub-group-items .fi-sidebar-item-btn svg,
+.fi-sidebar-sub-group-items a svg {
+    color: #f5cb68 !important;
 }
 
 /* Sidebar Footer (Copyright) */
