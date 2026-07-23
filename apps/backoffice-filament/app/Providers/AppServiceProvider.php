@@ -26,8 +26,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(DatabaseRefreshed::class, WipeR2BucketOnDatabaseRefreshed::class);
 
-        // Enforce HTTPS for staging/production or SSL reverse proxy
-        if ($this->app->environment('staging', 'production') || str_starts_with((string) config('app.url'), 'https://') || request()->header('X-Forwarded-Proto') === 'https') {
+        // Force HTTPS for non-local environments and hkgoldvip.com staging/production domain
+        if (! $this->app->isLocal() || str_contains(request()->getHost(), 'hkgoldvip.com') || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
 
