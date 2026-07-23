@@ -37,6 +37,7 @@ class AppPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandLogo(fn () => asset('images/logo-horizontal.webp'))
             ->brandLogoHeight('2.5rem')
+            ->globalSearch(false)
             ->assets([
                 Css::make('custom-filament', asset('css/filament-custom.css')),
             ])

@@ -77,17 +77,28 @@
     color: #997424 !important;
 }
 
-/* Global Search Input / Trigger in Topbar */
-.fi-topbar-global-search-ctn input,
-.fi-global-search-field input,
-.fi-topbar input {
-    background-color: #f8fafc !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    color: #1f2937 !important;
+/* Hide Topbar Global Search */
+.fi-topbar-global-search-ctn,
+.fi-global-search-field,
+.fi-topbar-global-search-button,
+[data-filament-global-search-input] {
+    display: none !important;
 }
 
-.fi-topbar input::placeholder {
-    color: #9ca3af !important;
+/* Page Background: Soft gray-white (top-left) -> Subtle Gold (top-right) */
+body:not(:has(.fi-hkgold-login)),
+.fi-layout,
+.fi-main-ctn,
+.fi-main {
+    background-color: #f8fafc !important;
+    background-image: linear-gradient(
+        60deg,
+        #f8fafc 0%,
+        #f8fafc 45%,
+        rgba(245, 203, 104, 0.12) 80%,
+        rgba(217, 168, 56, 0.22) 100%
+    ) !important;
+    background-attachment: fixed !important;
 }
 
 /* Topbar User Menu & Profile Badge */
