@@ -39,7 +39,7 @@ class AppPanelProvider extends PanelProvider
             ->brandLogoHeight('2.5rem')
             ->globalSearch(false)
             ->assets([
-                Css::make('custom-filament', asset('css/filament-custom.css?v=' . filemtime(public_path('css/filament-custom.css')))),
+                Css::make('custom-filament', secure_asset('css/filament-custom.css?v=' . filemtime(public_path('css/filament-custom.css')))),
             ])
             ->colors([
                 'primary' => '#ebca86',
