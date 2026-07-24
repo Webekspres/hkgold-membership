@@ -103,14 +103,8 @@
     .fi-hkgold-login__gradient {
         position: absolute;
         inset: 0;
-        background: linear-gradient(
-            135deg,
-            #151009 0%,
-            #2e220b 25%,
-            #5e4717 50%,
-            #997424 78%,
-            #cda036 100%
-        );
+        /* Match sidebar chrome — solid dark, no gold wash */
+        background: #0a0a0a;
     }
 
     .fi-hkgold-login__pattern {
@@ -120,8 +114,10 @@
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.28;
-        mix-blend-mode: overlay;
+        opacity: 0.18;
+        /* no blur — crisp pattern; skip overlay blend so pattern stays visible on #0a0a0a */
+        filter: none;
+        mix-blend-mode: normal;
     }
 
     /* Left Hero Content (Desktop) */
@@ -208,7 +204,7 @@
         color: rgba(255, 255, 255, 0.55);
     }
 
-    /* Right Side Login Form Container */
+    /* Right Side Login Form Container — match Filament page gray wash */
     .fi-hkgold-login__card-container {
         width: 100%;
         position: relative;
@@ -217,7 +213,14 @@
         align-items: center;
         justify-content: center;
         padding: 2rem 1.5rem;
-        background-color: transparent;
+        background-color: #f1f5f9;
+        background-image: linear-gradient(
+            120deg,
+            #f1f5f9 0%,
+            #e8eef4 45%,
+            #e2e8f0 80%,
+            #d8e0ea 100%
+        );
     }
 
     .fi-hkgold-login__card-wrapper {
@@ -338,7 +341,14 @@
 
         .fi-hkgold-login__card-container {
             width: 50%;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
+            background-image: linear-gradient(
+                120deg,
+                #f1f5f9 0%,
+                #e8eef4 45%,
+                #e2e8f0 80%,
+                #d8e0ea 100%
+            );
         }
 
         .fi-hkgold-login .fi-simple-page-content {
