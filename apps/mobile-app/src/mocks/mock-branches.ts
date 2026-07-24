@@ -112,9 +112,3 @@ export const MOCK_BRANCH_LIST: BranchItem[] = [
     locationUrl: 'https://maps.google.com/?q=HK+Gold+Kota+Kasablanka',
   },
 ];
-
-export const MOCK_NEAREST_BRANCH: BranchItem = {
-  ...MOCK_BRANCH_LIST[0],
-  distanceKm: 1.2,
-  imageUrl: null, // UI pakai placeholder lokal
-};

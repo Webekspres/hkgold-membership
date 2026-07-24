@@ -262,6 +262,8 @@ model Branch {
   addressId         String?  @map("address_id") @db.Char(36) // Relasi ke master alamat ternormalisasi
   phone             String?  @map("phone") @db.VarChar(20)
   locationUrl       String?  @map("location_url") @db.VarChar(500) // Link Google Maps lokasi cabang
+  latitude          Decimal? @map("latitude") @db.Decimal(10, 7)
+  longitude         Decimal? @map("longitude") @db.Decimal(10, 7)
   isOnlineWarehouse Boolean  @default(false) @map("is_online_warehouse")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, ThemeProvider, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState, type ReactNode } from "react";
+import { StatusBar } from "react-native";
 import { useColorScheme } from "nativewind";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -76,6 +77,11 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView className="flex-1">
         <ThemeProvider value={NAV_THEME.light}>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="transparent"
+            translucent
+          />
           <AnimatedSplashOverlay />
           <AuthGate>
             <Stack screenOptions={{ headerShown: false }}>

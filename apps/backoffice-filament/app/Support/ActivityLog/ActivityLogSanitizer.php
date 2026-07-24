@@ -46,6 +46,8 @@ class ActivityLogSanitizer
             'address',
             'phone',
             'location_url',
+            'latitude',
+            'longitude',
             'is_online_warehouse',
             'address_id',
         ],

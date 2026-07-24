@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import {
   Keyboard,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   View,
   type KeyboardEvent,
@@ -15,23 +15,36 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/card';
 import { SCREEN_HORIZONTAL_PADDING } from '@/constants/layout/screen-layout';
 
-const CARD_CLASSNAME =
-  'w-full border-stone-200 bg-stone-50 shadow-md shadow-stone-900/10';
+/** Match backoffice mobile login chrome — dark + pattern. */
+const AUTH_BG = '#0a0a0a';
 
-/** Diagonal putih → emas tipis → putih (brand `#f5c842` / `#D1A13B`). */
-const AUTH_BG_GRADIENT = [
-  '#ffffff',
-  'rgba(245, 200, 66, 0.28)',
-  'rgba(209, 161, 59, 0.22)',
-  '#ffffff',
-] as const;
+const CARD_CLASSNAME =
+  'w-full rounded-[20px] border-black/5 bg-white shadow-md shadow-black/20';
 
 type AuthScreenShellProps = PropsWithChildren<{
   scrollable?: boolean;
+  /** Rendered below the white card (e.g. security footer on dark bg). */
+  footer?: ReactNode;
 }>;
 
 function AuthCard({ children }: PropsWithChildren) {
   return <Card className={CARD_CLASSNAME}>{children}</Card>;
+}
+
+function applyAuthStatusBar() {
+  StatusBar.setBarStyle('light-content');
+  if (Platform.OS === 'android') {
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setTranslucent(true);
+  }
+}
+
+function restoreDefaultStatusBar() {
+  StatusBar.setBarStyle('dark-content');
+  if (Platform.OS === 'android') {
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setTranslucent(true);
+  }
 }
 
 /**
@@ -43,8 +56,19 @@ function AuthCard({ children }: PropsWithChildren) {
  * keyboard. Konten jadi lebih tinggi dari layar → user bisa scroll sampai
  * CTA/footer di atas keyboard.
  */
-export function AuthScreenShell({ children, scrollable = false }: AuthScreenShellProps) {
+export function AuthScreenShell({
+  children,
+  scrollable = false,
+  footer,
+}: AuthScreenShellProps) {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    applyAuthStatusBar();
+    return () => {
+      restoreDefaultStatusBar();
+    };
+  }, []);
 
   useEffect(() => {
     const onShow = (e: KeyboardEvent) => {
@@ -66,13 +90,19 @@ export function AuthScreenShell({ children, scrollable = false }: AuthScreenShel
 
   const keyboardOpen = keyboardHeight > 0;
 
+  const body = (
+    <View style={styles.cardSlot}>
+      <AuthCard>{children}</AuthCard>
+      {footer ? <View style={styles.footerSlot}>{footer}</View> : null}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[...AUTH_BG_GRADIENT]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
       />
       <Image
         source={require('@/assets/media/pattern-horizontal.webp')}
@@ -95,14 +125,10 @@ export function AuthScreenShell({ children, scrollable = false }: AuthScreenShel
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets={false}
             bounces>
-            <View style={styles.cardSlot}>
-              <AuthCard>{children}</AuthCard>
-            </View>
+            {body}
           </ScrollView>
         ) : (
-          <View style={styles.cardSlot}>
-            <AuthCard>{children}</AuthCard>
-          </View>
+          body
         )}
       </SafeAreaView>
     </View>
@@ -110,9 +136,10 @@ export function AuthScreenShell({ children, scrollable = false }: AuthScreenShel
 }
 
 export const authLogoStyle = StyleSheet.create({
-  logo: {
-    width: 192,
-    height: 80,
+  /** Oval mark — match backoffice login card. */
+  icon: {
+    width: 72,
+    height: 72,
     alignSelf: 'center',
   },
 });
@@ -120,10 +147,7 @@ export const authLogoStyle = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
+    backgroundColor: AUTH_BG,
   },
   background: {
     position: 'absolute',
@@ -131,7 +155,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.25,
+    opacity: 0.38,
     transform: [{ scale: 1.25 }],
   },
   overlay: {
@@ -155,7 +179,11 @@ const styles = StyleSheet.create({
   },
   cardSlot: {
     width: '100%',
-    maxWidth: 448,
+    maxWidth: 416,
     alignSelf: 'center',
+  },
+  footerSlot: {
+    marginTop: 20,
+    alignItems: 'center',
   },
 });

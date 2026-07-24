@@ -4,9 +4,11 @@ import {
   BranchCityOption,
   BranchDetailData,
   BranchListItemData,
+  BranchNearestData,
   GetBranchesParams,
 } from '../types/branch.types';
 import { PaginatedResponse, encodeCursor, decodeCursor } from '../../../shared/types/pagination.types';
+import { haversineKm } from '../lib/haversine';
 
 const addressInclude = {
   village: {
@@ -92,6 +94,12 @@ function mapBranch(branch: {
   };
 }
 
+function toNumber(value: unknown): number | null {
+  if (value == null) return null;
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 export class BranchService implements IBranchService {
   async getById(id: number): Promise<BranchDetailData | null> {
     const branch = await prisma.branch.findUnique({
@@ -137,6 +145,33 @@ export class BranchService implements IBranchService {
     return [...byId.entries()]
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'id'));
+  }
+
+  async getNearest(lat: number, lng: number): Promise<BranchNearestData | null> {
+    const branches = await prisma.branch.findMany({
+      where: {
+        isOnlineWarehouse: false,
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      include: branchListInclude,
+    });
+
+    let best: BranchNearestData | null = null;
+
+    for (const branch of branches) {
+      const branchLat = toNumber(branch.latitude);
+      const branchLng = toNumber(branch.longitude);
+      if (branchLat == null || branchLng == null) continue;
+
+      const distanceKm =
+        Math.round(haversineKm(lat, lng, branchLat, branchLng) * 10) / 10;
+      if (!best || distanceKm < best.distanceKm) {
+        best = { ...mapBranch(branch), distanceKm };
+      }
+    }
+
+    return best;
   }
 
   async getAll(params: GetBranchesParams): Promise<PaginatedResponse<BranchListItemData>> {

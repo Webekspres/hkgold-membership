@@ -1,9 +1,9 @@
-import { Image } from "expo-image";
 import { router, Stack } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { AuthCardHeader } from "@/components/auth/auth-card-header";
 import {
   AuthField,
   AUTH_INPUT_CLASSNAME,
@@ -11,15 +11,11 @@ import {
 } from "@/components/auth/auth-field";
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { ForgotPasswordFlow } from "@/components/auth/forgot-password-flow";
-import {
-  authLogoStyle,
-  AuthScreenShell,
-} from "@/components/auth/auth-screen-shell";
+import { AuthScreenShell } from "@/components/auth/auth-screen-shell";
 import { GoldButton } from "@/components/shared/gold-button";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
-import { LOGO_ASSETS } from "@/config/assets";
 import { toast } from "@/lib/sonner";
 import { changePassword } from "@/services/auth";
 
@@ -86,16 +82,9 @@ export default function ChangePasswordScreen() {
         }}
       />
       <AuthScreenShell scrollable>
-        <CardHeader className="items-center gap-4">
-          <Image
-            source={LOGO_ASSETS.hkgold}
-            style={authLogoStyle.logo}
-            contentFit="contain"
-          />
-          <CardTitle className="text-lg text-stone-600">
-            {mode === "forgot" ? "Lupa Password" : "Ganti Password"}
-          </CardTitle>
-        </CardHeader>
+        <AuthCardHeader
+          title={mode === "forgot" ? "Lupa Password" : "Ganti Password"}
+        />
         <CardContent className="gap-4">
           {mode === "forgot" ? (
             <ForgotPasswordFlow
