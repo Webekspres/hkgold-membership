@@ -24,6 +24,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AppPanelProvider extends PanelProvider
@@ -38,8 +39,17 @@ class AppPanelProvider extends PanelProvider
             ->brandLogo(fn () => asset('images/logo-horizontal.webp'))
             ->brandLogoHeight('2.5rem')
             ->globalSearch(false)
+            ->darkMode(false)
+            ->defaultThemeMode(ThemeMode::Light)
+            ->spa()
             ->assets([
-                Css::make('custom-filament', public_path('css/filament-custom.css')),
+                // ponytail: html() loads source CSS directly (local≠need /css/app publish). public_path kept for filament:upgrade.
+                Css::make('custom-filament', public_path('css/filament-custom.css'))
+                    ->html(fn (): HtmlString => new HtmlString(
+                        '<link rel="stylesheet" href="'
+                        .e(asset('css/filament-custom.css').'?v='.filemtime(public_path('css/filament-custom.css')))
+                        .'" data-navigate-track />'
+                    )),
             ])
             ->colors([
                 'primary' => '#ebca86',
