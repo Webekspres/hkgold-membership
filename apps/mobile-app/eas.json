@@ -1,0 +1,21 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "staging": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "channel": "staging",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "APP_ENV": "staging"
+      }
+    }
+  },
+  "submit": {}
+}

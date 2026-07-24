@@ -36,6 +36,7 @@
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
+    "expo-updates": "~56.0.22",
     "expo-web-browser": "~56.0.5",
     "lucide-react-native": "^1.23.0",
     "nativewind": "^4.2.6",
@@ -71,7 +72,8 @@
     "android": "doppler run -- npx expo start --android",
     "ios": "doppler run -- npx expo start --ios",
     "web": "doppler run -- npx expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:staging:android": "npx eas-cli build -p android --profile staging"
   },
   "private": true
 }
