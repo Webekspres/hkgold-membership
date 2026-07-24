@@ -120,12 +120,12 @@ Prisma / `packages/database` bisa lebih maju dari MySQL lokal. Sebelum SELECT ko
 | `PromotionBanner` | `linkUrl`, `sortOrder` | ✅ Ada | Order `sortOrder asc`; `linkUrl` nullable |
 | `Content` (EVENT) | `locationAddress`, `locationUrl` | ✅ Ada | Hanya relevan untuk EVENT |
 | `Content` (NEWS) | kategori | **Belum ada** | Detail tanpa category |
-| `Branch` | lat / lng (nearest) | **Belum ada** (`locationUrl` ada) | Tidak expose nearest geo |
+| `Branch` | lat / lng (nearest) | ✅ Ada | `GET /api/branch/nearest?lat=&lng=` |
 | `Member` | `birthDate` | ✅ Ada | Pastikan migrasi Laravel `birth_date` sudah dijalankan |
 | `Member` | `gender` | ✅ Ada | `MALE` \| `FEMALE` \| null; migrasi Filament + Prisma |
 | `TierBenefit` | `title`, `description`, `sortOrder`, `isActive` | ✅ Ada | Exposed via `GET /api/tier/levels` |
 
-Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, **`faq`** (`GET /api/faq` — list terurut `sortOrder`), `redeem`, `device` (push-token), **`member`** (GET/PATCH `/me`, PUT `/me/avatar` + **change-phone**), **`address`** (`/options`, `/cascade-options`), **`tier`** (`/levels` + benefits, `/member`), **`point-ledger`** (`GET /api/point-ledger`), **`media`** (dipakai internal oleh avatar upload; generic `POST /api/media/upload` tetap ada), **`auth`** (login/register/change-password + **forgot-password OTP WA**).
+Modul publik yang sudah dipakai mobile: `content` (`q`/`dateFrom`/`dateTo`), `branch` (`q`/`city` + `/cities` + `/nearest`), `reward` (`sortBy`/`sortOrder` + cursor sort-aware; **list/catalog/home** hanya reward dengan stok tersedia > 0; **detail** tetap return reward stok habis tapi `branchStocks` hanya cabang available > 0), `promotion-banner`, **`faq`** (`GET /api/faq` — list terurut `sortOrder`), `redeem`, `device` (push-token), **`member`** (GET/PATCH `/me`, PUT `/me/avatar` + **change-phone**), **`address`** (`/options`, `/cascade-options`), **`tier`** (`/levels` + benefits, `/member`), **`point-ledger`** (`GET /api/point-ledger`), **`media`** (dipakai internal oleh avatar upload; generic `POST /api/media/upload` tetap ada), **`auth`** (login/register/change-password + **forgot-password OTP WA**).
 
 ### Member — ganti nomor HP (dual path)
 

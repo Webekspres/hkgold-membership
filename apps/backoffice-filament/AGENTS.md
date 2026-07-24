@@ -275,7 +275,7 @@ app/Exceptions/                 # domain exception + error code
 - Branch code: `HK01`, `HK02`, … — use `BranchFormSupport::generateBranchCode()`. Disable `branch_code` on edit.
 - `is_online_warehouse` for online warehouse flag.
 - `address` (text) for display; `address_id` → normalized `Address` model.
-- Belum ada lat/lng di schema — “cabang terdekat” di mobile masih mock sampai kolom geo + API nearest ada.
+- `latitude` / `longitude` wajib untuk cabang fisik (form); dipakai mobile `GET /api/branch/nearest`.
 
 ### CMS gaps yang diminta kontrak mobile
 

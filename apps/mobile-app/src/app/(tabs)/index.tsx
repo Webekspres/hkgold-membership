@@ -17,12 +17,10 @@ import { createPullToRefreshControl } from "@/components/shared/pull-to-refresh"
 import { useHomeRewardCatalog } from "@/hooks/use-home-reward-catalog";
 import { useLatestNews } from "@/hooks/use-latest-news";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useNearestBranch } from "@/hooks/use-nearest-branch";
 import { usePromotionBanners } from "@/hooks/use-promotion-banners";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { useUpcomingEvents } from "@/hooks/use-upcoming-events";
-import { getNearestBranch } from "@/services/branches";
-
-const nearestBranch = getNearestBranch();
 
 export default function HomeScreen() {
   const { card, refetch: refetchProfile } = useMyProfile();
@@ -43,6 +41,12 @@ export default function HomeScreen() {
     isError: rewardCatalogError,
     refetch: refetchRewards,
   } = useHomeRewardCatalog();
+  const {
+    branch: nearestBranch,
+    status: nearestStatus,
+    refetch: refetchNearest,
+    requestPermission,
+  } = useNearestBranch();
 
   const refresh = useCallback(
     () =>
@@ -52,8 +56,16 @@ export default function HomeScreen() {
         refetchEvents(),
         refetchBanners(),
         refetchRewards(),
+        refetchNearest(),
       ]),
-    [refetchProfile, refetchNews, refetchEvents, refetchBanners, refetchRewards],
+    [
+      refetchProfile,
+      refetchNews,
+      refetchEvents,
+      refetchBanners,
+      refetchRewards,
+      refetchNearest,
+    ],
   );
   const { refreshing, onRefresh } = usePullToRefresh(refresh);
 
@@ -89,7 +101,11 @@ export default function HomeScreen() {
 
           <HomeShortcutGrid />
 
-          <NearestBranchSection branch={nearestBranch} />
+          <NearestBranchSection
+            branch={nearestBranch}
+            status={nearestStatus}
+            onRequestPermission={requestPermission}
+          />
 
           {promotionBanners.length > 0 ? (
             <PromotionBannerSlider banners={promotionBanners} />

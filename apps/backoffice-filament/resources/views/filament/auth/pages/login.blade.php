@@ -37,13 +37,6 @@
             <x-filament-panels::page.simple>
                 {{ $this->content }}
             </x-filament-panels::page.simple>
-
-            <div class="fi-hkgold-login__security-footer">
-                <svg class="fi-hkgold-security-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-                <span>Akses aman dan terenkripsi</span>
-            </div>
         </div>
     </div>
 </div>
@@ -88,7 +81,7 @@
         min-height: 100dvh;
         position: relative;
         isolation: isolate;
-        background-color: #151009;
+        background-color: #0a0a0a;
     }
 
     /* Golden Backdrop (Gradient + Pattern Overlay) */
@@ -114,7 +107,7 @@
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.18;
+        opacity: 0.38;
         /* no blur — crisp pattern; skip overlay blend so pattern stays visible on #0a0a0a */
         filter: none;
         mix-blend-mode: normal;
@@ -204,7 +197,8 @@
         color: rgba(255, 255, 255, 0.55);
     }
 
-    /* Right Side Login Form Container — match Filament page gray wash */
+    /* Mobile: transparent so dark+pattern backdrop shows through.
+       Desktop (lg+): right panel gets Filament page gray wash. */
     .fi-hkgold-login__card-container {
         width: 100%;
         position: relative;
@@ -213,14 +207,8 @@
         align-items: center;
         justify-content: center;
         padding: 2rem 1.5rem;
-        background-color: #f1f5f9;
-        background-image: linear-gradient(
-            120deg,
-            #f1f5f9 0%,
-            #e8eef4 45%,
-            #e2e8f0 80%,
-            #d8e0ea 100%
-        );
+        background-color: transparent;
+        background-image: none;
     }
 
     .fi-hkgold-login__card-wrapper {
@@ -314,24 +302,6 @@
     .fi-hkgold-login .fi-btn:hover {
         filter: brightness(1.05);
         transform: translateY(-1px);
-    }
-
-    /* Security footer */
-    .fi-hkgold-login__security-footer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.4rem;
-        margin-top: 1.25rem;
-        color: #6b7280;
-        font-size: 0.8125rem;
-        font-weight: 500;
-    }
-
-    .fi-hkgold-security-icon {
-        width: 1rem;
-        height: 1rem;
-        color: #6b7280;
     }
 
     @media (min-width: 1024px) {

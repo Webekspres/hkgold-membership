@@ -12,7 +12,8 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "NSLocationWhenInUseUsageDescription": "Izinkan akses lokasi untuk menampilkan cabang HK Gold terdekat."
       },
       "googleServicesFile": "./GoogleService-Info.plist"
     },
@@ -27,8 +28,15 @@
       "usesCleartextTraffic": true,
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
+    },
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#00000000",
+      "translucent": true
     },
     "web": {
       "bundler": "metro",
@@ -51,6 +59,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Izinkan aplikasi mengakses galeri untuk foto profil."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Izinkan akses lokasi untuk menampilkan cabang HK Gold terdekat."
         }
       ]
     ],

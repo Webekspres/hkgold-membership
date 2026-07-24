@@ -25,6 +25,8 @@ class Branch extends Model
         'address_id',
         'phone',
         'location_url',
+        'latitude',
+        'longitude',
         'is_online_warehouse',
     ];
 
@@ -32,6 +34,8 @@ class Branch extends Model
     {
         return [
             'is_online_warehouse' => 'boolean',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 

@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import { MOCK_NEAREST_BRANCH } from '@/mocks/mock-branches';
 import type { ApiEnvelope } from '@/types/auth';
 import type { BranchCityOption, BranchItem, BranchPage } from '@/types/branch';
 
@@ -73,7 +72,21 @@ export async function fetchBranchCities(): Promise<BranchCityOption[]> {
   return data.data;
 }
 
-/** Home nearest — tetap mock (out of scope). */
-export function getNearestBranch() {
-  return MOCK_NEAREST_BRANCH;
+type NearestBranchApiItem = BranchListApiItem & {
+  distanceKm: number;
+};
+
+export async function fetchNearestBranch(lat: number, lng: number): Promise<BranchItem> {
+  const { data } = await apiClient.get<ApiEnvelope<NearestBranchApiItem>>('/api/branch/nearest', {
+    params: { lat, lng },
+  });
+
+  if (!data.success || !data.data) {
+    throw new Error(data.message || 'Gagal mengambil cabang terdekat');
+  }
+
+  return {
+    ...mapBranchItem(data.data),
+    distanceKm: data.data.distanceKm,
+  };
 }

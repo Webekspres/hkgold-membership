@@ -19,19 +19,13 @@ Status produk terkini: lihat `apps/mobile-app/AGENTS.md` §1.
 - Ganti nomor HP dual path (self-service OTP + admin-assisted PENDING)
 - Filament Persetujuan Ganti Nomor + internal approve/reject API
 - AGENTS.md monorepo sudah di-sync
+- **Cabang terdekat (home):** geo `Branch.latitude`/`longitude` + Filament + `GET /api/branch/nearest` + mobile GPS + fallback izin
 
 ---
 
 ## P1 — Sisa nyata di app (kerjakan dulu)
 
-### 1. Cabang terdekat (home)
-
-- **Status:** mobile masih mock (`getNearestBranch`)
-- **Gap:** `Branch` belum lat/lng; API nearest belum ada
-- **Kerja:**
-  - Migrasi + Filament: kolom geo cabang
-  - API: endpoint nearest (atau query sorted by distance)
-  - Mobile: unmock home section + wire React Query
+_(kosong — cabang terdekat sudah selesai)_
 
 ---
 
@@ -79,11 +73,10 @@ Status produk terkini: lihat `apps/mobile-app/AGENTS.md` §1.
 
 ## Urutan saran eksekusi
 
-1. Cabang terdekat (schema geo → API → mobile)
-2. CMS hub atau hapus rute placeholder
-3. Cleanup mock / dev-tier-switcher mati
-4. QA FCM dev build
-5. Notifikasi inbox / kategori berita / fraud admin (sesuai prioritas bisnis)
+1. CMS hub atau hapus rute placeholder
+2. Cleanup mock / dev-tier-switcher mati
+3. QA FCM dev build
+4. Notifikasi inbox / kategori berita / fraud admin (sesuai prioritas bisnis)
 
 ---
 

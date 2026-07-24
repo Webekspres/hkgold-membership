@@ -15,6 +15,7 @@ import {
   AUTH_INPUT_CLASSNAME,
   AUTH_PLACEHOLDER_COLOR,
 } from "@/components/auth/auth-field";
+import { AuthCardHeader } from "@/components/auth/auth-card-header";
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell";
 import { GoldButton } from "@/components/shared/gold-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -407,7 +408,8 @@ function ProfileEditForm({ profile, card }: ProfileEditFormProps) {
         }}
       />
       <AuthScreenShell scrollable>
-        <View className="gap-4">
+        <AuthCardHeader title="Edit Profil" />
+        <View className="gap-4 px-6">
             <View className="items-center gap-3 py-2">
               <Pressable
                 onPress={() => void handlePickAvatar()}
@@ -622,7 +624,8 @@ export default function ProfileEditScreen() {
           }}
         />
         <AuthScreenShell>
-          <Text className="text-center text-sm text-stone-500">
+          <AuthCardHeader title="Edit Profil" />
+          <Text className="px-6 pb-6 text-center text-sm text-stone-500">
             Memuat profil...
           </Text>
         </AuthScreenShell>

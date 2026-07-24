@@ -50,6 +50,12 @@ class BranchInfolist
                             ->label('Alamat')
                             ->placeholder('—')
                             ->columnSpanFull(),
+                        TextEntry::make('latitude')
+                            ->label('Latitude')
+                            ->placeholder('—'),
+                        TextEntry::make('longitude')
+                            ->label('Longitude')
+                            ->placeholder('—'),
                     ]),
             ]);
     }

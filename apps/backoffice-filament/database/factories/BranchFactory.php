@@ -23,9 +23,9 @@ class BranchFactory extends Factory
         static $branchIndex = 0;
 
         $branches = [
-            ['code' => 'HK01', 'name' => 'HK Gold VIP Pontianak', 'address' => 'Jl. Gajah Mada No. 1, Pontianak'],
-            ['code' => 'HK02', 'name' => 'HK Gold VIP Semarang', 'address' => 'Jl. Pemuda No. 10, Semarang'],
-            ['code' => 'HK03', 'name' => 'HK Gold VIP Solo', 'address' => 'Jl. Slamet Riyadi No. 5, Solo'],
+            ['code' => 'HK01', 'name' => 'HK Gold VIP Pontianak', 'address' => 'Jl. Gajah Mada No. 1, Pontianak', 'lat' => -0.0379147, 'lng' => 109.3430635],
+            ['code' => 'HK02', 'name' => 'HK Gold VIP Semarang', 'address' => 'Jl. Pemuda No. 10, Semarang', 'lat' => -6.9803310, 'lng' => 110.4135517],
+            ['code' => 'HK03', 'name' => 'HK Gold VIP Solo', 'address' => 'Jl. Slamet Riyadi No. 5, Solo', 'lat' => -7.5676627, 'lng' => 110.8134472],
         ];
 
         $branch = $branches[$branchIndex % count($branches)];
@@ -39,7 +39,9 @@ class BranchFactory extends Factory
             'name' => $branch['name'],
             'address' => $branch['address'],
             'phone' => '021'.fake()->numerify('#######'),
-            'location_url' => fake()->optional(0.8)->url(),
+            'location_url' => sprintf('https://maps.google.com/?q=%.7f,%.7f', $branch['lat'], $branch['lng']),
+            'latitude' => $branch['lat'],
+            'longitude' => $branch['lng'],
             'is_online_warehouse' => false,
         ];
     }

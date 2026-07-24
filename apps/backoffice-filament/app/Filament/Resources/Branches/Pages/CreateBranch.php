@@ -35,6 +35,8 @@ class CreateBranch extends CreateRecord
                     : null,
                 'is_online_warehouse' => $data['is_online_warehouse'] ?? false,
                 'location_url' => $data['location_url'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
                 'address_id' => $addressId,
                 'address' => BranchFormSupport::buildAddressString($state),
             ]);

@@ -3,6 +3,7 @@ import { router, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { AuthCardHeader } from "@/components/auth/auth-card-header";
 import {
   AuthField,
   AUTH_INPUT_CLASSNAME,
@@ -11,7 +12,7 @@ import {
 import { AuthFooterLink } from "@/components/auth/auth-footer-link";
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell";
 import { GoldButton } from "@/components/shared/gold-button";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Text } from "@/components/ui/text";
@@ -361,11 +362,7 @@ export default function ChangePhoneScreen() {
         }}
       />
       <AuthScreenShell scrollable>
-        <CardHeader className="items-center gap-4">
-          <CardTitle className="text-lg text-stone-600">
-            Ganti Nomor HP
-          </CardTitle>
-        </CardHeader>
+        <AuthCardHeader title="Ganti Nomor HP" />
         <CardContent className="gap-4">
           {step === "loading" ? (
             <Text variant="muted" className="text-center text-stone-600">

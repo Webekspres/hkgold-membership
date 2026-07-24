@@ -1,26 +1,15 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 
+import { AuthCardHeader } from '@/components/auth/auth-card-header';
 import { ForgotPasswordFlow } from '@/components/auth/forgot-password-flow';
-import {
-  authLogoStyle,
-  AuthScreenShell,
-} from '@/components/auth/auth-screen-shell';
+import { AuthScreenShell } from '@/components/auth/auth-screen-shell';
 import { AuthFooterLink } from '@/components/auth/auth-footer-link';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LOGO_ASSETS } from '@/config/assets';
+import { CardContent } from '@/components/ui/card';
 
 export default function ForgotPasswordScreen() {
   return (
     <AuthScreenShell scrollable>
-      <CardHeader className="items-center gap-4">
-        <Image
-          source={LOGO_ASSETS.hkgold}
-          style={authLogoStyle.logo}
-          contentFit="contain"
-        />
-        <CardTitle className="text-lg text-stone-600">Lupa Password</CardTitle>
-      </CardHeader>
+      <AuthCardHeader title="Lupa Password" />
       <CardContent className="gap-4">
         <ForgotPasswordFlow
           mode="public"

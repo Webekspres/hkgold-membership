@@ -30,7 +30,7 @@ services:
       MYSQL_DATABASE: hkgold_membership_staging
     volumes:
       - mysql-staging-data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      # ponytail: staging only needs MYSQL_DATABASE; local init.sql creates *_test for Pest/bun test
     networks:
       - hkgold-staging-network
     healthcheck:

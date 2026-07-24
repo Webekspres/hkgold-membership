@@ -36,7 +36,7 @@ Tugas Anda adalah menulis, memodifikasi, dan merawat basis kode untuk aplikasi s
 
 ### Fase saat ini
 
-Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier benefit + FAQ + registrasi FCM token** sudah wired ke `apps/api-elysia` via `axios` + React Query. Sisa mock utama: home cabang terdekat.
+Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier benefit + FAQ + registrasi FCM token + cabang terdekat** sudah wired ke `apps/api-elysia` via `axios` + React Query.
 
 | Area | Status | Catatan |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | Home wallet | ✅ API | dari profile; pattern BG light |
 | Home banner | ✅ API | `usePromotionBanners` (stale 4 jam); hide jika kosong/`error` |
 | Home berita / event | ✅ API | limit 5 / 3; `staleTime` 15 menit |
-| Home cabang terdekat | 🟡 mock | API belum punya lat/lng / nearest |
+| Home cabang terdekat | ✅ API | `useNearestBranch` → GPS + `GET /api/branch/nearest`; deny → pesan + CTA |
 | Home katalog reward | ✅ API | `useHomeRewardCatalog` / `GET /api/reward/home` |
 | List + detail Berita | ✅ API | search debounce + date filter; detail `/berita/[id]` (UUID) |
 | List + detail Event | ✅ API | sama; detail `/events/[id]`; lokasi/maps jika field terisi |
@@ -73,7 +73,7 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | Banner tap URL | ✅ `PromotionBanner.linkUrl` | Slider buka URL jika terisi |
 | Urutan banner CMS | ✅ `PromotionBanner.sortOrder` | Order `sortOrder asc` |
 | Lokasi event + CTA maps | ✅ `Content.locationAddress` + `locationUrl` | Detail event tampil alamat + tombol maps |
-| Cabang terdekat | `Branch` **tanpa** lat/lng | Home nearest tetap mock |
+| Cabang terdekat | ✅ `Branch.latitude` / `longitude` + `GET /api/branch/nearest` | Home: GPS + fallback izin |
 | Kategori berita | `Content` **tanpa** category | Detail berita tanpa kategori |
 | `Member.birthDate` | ✅ ada di schema + migrasi | Profile tampil jika tidak null |
 | `Member.gender` | ✅ ada di schema + migrasi | Edit profil: `MALE` / `FEMALE` / null |
@@ -82,9 +82,8 @@ Struktur `src/` stabil. **Auth + konten + redeem + profil edit/avatar + tier ben
 | FAQ konten | ✅ `FaqItem` + `GET /api/faq` | Screen `/faq` wired ke API |
 ### Langkah berikutnya (prioritas wajar)
 
-1. Wire home nearest branch (butuh lat/lng cabang + endpoint nearest).
-2. CMS hub; QA FCM di **development build** (bukan Expo Go) dengan `google-services.json` / `GoogleService-Info.plist` lokal.
-3. (Opsional) in-app notification center; hapus file mati `components/dev/dev-tier-switcher.tsx` (sudah tidak dipakai di home).
+1. CMS hub; QA FCM di **development build** (bukan Expo Go) dengan `google-services.json` / `GoogleService-Info.plist` lokal.
+2. (Opsional) in-app notification center; hapus file mati `components/dev/dev-tier-switcher.tsx` (sudah tidak dipakai di home).
 
 ### Target jangka panjang (belum / parsial)
 
@@ -211,7 +210,7 @@ apps/mobile-app/
     ├── config/                  # brand, home-shortcuts, theme (Colors/Fonts starter)
     ├── constants/
     │   └── layout/              # grid, carousel, screen-layout, tier-benefit-carousel-layout
-    ├── mocks/                   # Fixture sisa (nearest branch, fixture tier legacy)
+    ├── mocks/                   # Fixture legacy (tier benefits, list cabang untuk mock reward)
     ├── types/                   # Shared domain types
     ├── services/                # Facade HTTP (auth, member, tier-benefits, redeem, …)
     ├── hooks/                   # React Query + use-register-push-token
@@ -238,7 +237,7 @@ assets/                            # Di root proyek (bukan di src/)
 
 | Lapisan | Import dari | Catatan |
 | --- | --- | --- |
-| **Screen** (`src/app/`) | `@/hooks/*` dan/atau `@/services/*` | Jangan import `@/mocks/*` di route kecuali sisa mock (home nearest) |
+| **Screen** (`src/app/`) | `@/hooks/*` dan/atau `@/services/*` | Jangan import `@/mocks/*` di route |
 | **Komponen** | props dari parent | Import `@/types/*` untuk tipe props; jangan panggil service di komponen presentasional |
 | **Hooks** | `@/services/*` | React Query (`useQuery` / `useInfiniteQuery`); `staleTime` sesuai domain |
 | **Services** | `apiClient` atau `@/mocks/*` | Facade HTTP; mock hanya untuk yang belum API |
@@ -260,7 +259,7 @@ assets/                            # Di root proyek (bukan di src/)
 | `events.ts` | list/upcoming/detail EVENT via content API |
 | `news.ts` | list/latest/detail NEWS via content API |
 | `banners.ts` | `fetchActivePromotionBanners` |
-| `branches.ts` | list + cities + `getNearestBranch` (masih mock) |
+| `branches.ts` | list + cities + `fetchNearestBranch` (GPS + API) |
 | `rewards.ts` | catalog page (sort/filter), categories, detail by sku, home catalog API |
 | `redeem.ts` | reserve / active / history / cancel / status |
 | `device-push.ts` | register / revoke FCM token |
@@ -272,7 +271,7 @@ assets/                            # Di root proyek (bukan di src/)
 
 ### Mocks (`src/mocks/`)
 
-Sisa aktif di runtime: nearest branch. `mock-tier-benefits.ts` = fixture legacy (screen pakai API). List berita/event/reward/banner/redeem/tier-benefit/faq **jangan** di-mock lagi di screen yang sudah API.
+Sisa fixture legacy: `mock-tier-benefits.ts` (screen pakai API). List berita/event/reward/banner/redeem/tier-benefit/faq/cabang nearest **jangan** di-mock lagi di screen yang sudah API.
 
 ### Root Stack (`src/app/_layout.tsx`)
 
@@ -427,7 +426,7 @@ Jangan ubah import di screen saat API siap — **ganti implementasi di `src/serv
 | Tier | `GET /api/tier/levels` (benefits aktif + rules), opsional `GET /api/tier/member` |
 | Konten | `GET /api/content?type=NEWS\|EVENT` (`q`, `dateFrom`, `dateTo`, cursor); `GET /api/content/:id` |
 | Banner | `GET /api/promotion-banner` |
-| Cabang | `GET /api/branch`, `GET /api/branch/cities` |
+| Cabang | `GET /api/branch`, `GET /api/branch/cities`, `GET /api/branch/nearest?lat=&lng=` |
 | Reward | `GET /api/reward` (`search`, filter, `sortBy`/`sortOrder`; hanya in-stock), `GET /api/reward/categories`, `GET /api/reward/home`, `GET /api/reward/:sku` (detail boleh stok habis; `branchStocks` filtered server-side, mobile guard `filterAvailableBranchStocks`) |
 | Redeem | `POST /api/redeem/token`, `GET /api/redeem/active`, `POST /api/redeem/cancel`, `GET /api/redeem/token/:id/status`, history |
 | Device push | `POST /api/device/push-token`, `DELETE /api/device/push-token` (JWT member) |

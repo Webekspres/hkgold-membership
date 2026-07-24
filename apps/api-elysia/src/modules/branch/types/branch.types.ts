@@ -21,6 +21,10 @@ export interface BranchDetailData {
   updatedAt: Date;
 }
 
+export interface BranchNearestData extends BranchDetailData {
+  distanceKm: number;
+}
+
 export type BranchListItemData = BranchDetailData;
 
 export interface BranchCityOption {
